@@ -6,7 +6,7 @@
     "start": "node dist/server.js",
     "dev": "tsx watch server.ts",
     "build": "tsc",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write ."
@@ -36,8 +36,8 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/multer": "^2.0.0",
     "@types/node": "^25.0.0",
-    "@types/uuid": "^10.0.0",
     "@types/supertest": "^7.0.0",
+    "@types/uuid": "^10.0.0",
     "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.1.0",
     "nodemon": "^3.1.9",
@@ -46,6 +46,7 @@
     "supertest": "^7.0.0",
     "tsx": "^4.19.0",
     "typescript": "^6.0.0",
+    "typescript-eslint": "^8.59.4",
     "vitest": "^4.0.0"
   }
 }

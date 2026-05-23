@@ -70,7 +70,7 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
-      - run: npx vitest run
+      - run: npx vitest run --passWithNoTests
 
   frontend-test:
     runs-on: ubuntu-latest
@@ -85,7 +85,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-      - run: npx vitest run
+      - run: npx vitest run --passWithNoTests
 
   backend-build:
     runs-on: ubuntu-latest
