@@ -18,7 +18,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 defineProps({ block: Object, modelValue: null, readonly: Boolean })
 defineEmits(['update:modelValue'])
 </script>

@@ -4,16 +4,13 @@ import { api } from '../services/api'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
-  const token = ref(null)
 
-  const isAuthenticated = computed(() => !!token.value)
+  const isAuthenticated = computed(() => !!user.value)
   const isGuest = computed(() => user.value?.isGuest || false)
   const role = computed(() => user.value?.role || 'student')
 
   function loadFromStorage() {
-    const stored = localStorage.getItem('token')
     const storedUser = localStorage.getItem('user')
-    if (stored) token.value = stored
     if (storedUser) {
       try {
         user.value = JSON.parse(storedUser)
@@ -23,28 +20,26 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function saveSession(t, u) {
-    token.value = t
+  function saveSession(u) {
     user.value = u
-    localStorage.setItem('token', t)
     localStorage.setItem('user', JSON.stringify(u))
   }
 
   async function login(username, password) {
     const data = await api.post('/auth/login', { username, password })
-    saveSession(data.token, data.user)
+    saveSession(data.user)
     return data
   }
 
   async function loginWithMicrosoft(payload) {
     const data = await api.post('/auth/microsoft', payload)
-    saveSession(data.token, data.user)
+    saveSession(data.user)
     return data
   }
 
   async function loginAsGuest({ name, classCode }) {
     const data = await api.post('/auth/guest', { name, classCode })
-    saveSession(data.token, { ...data.user, isGuest: true })
+    saveSession({ ...data.user, isGuest: true })
     return data
   }
 
@@ -67,10 +62,9 @@ export const useAuthStore = defineStore('auth', () => {
     return data
   }
 
-  function logout() {
-    token.value = null
+  async function logout() {
+    await api.post('/auth/logout')
     user.value = null
-    localStorage.removeItem('token')
     localStorage.removeItem('user')
     window.location.href = '/login'
   }
@@ -78,7 +72,6 @@ export const useAuthStore = defineStore('auth', () => {
   loadFromStorage()
   return {
     user,
-    token,
     isAuthenticated,
     isGuest,
     role,

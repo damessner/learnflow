@@ -23,7 +23,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 const props = defineProps({ block: Object, readonly: Boolean })
 const speaking = ref(false)

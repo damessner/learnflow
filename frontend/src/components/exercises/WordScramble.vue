@@ -18,7 +18,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const props = defineProps({ block: Object, modelValue: Array, readonly: Boolean })
 const emit = defineEmits(['update:modelValue'])
 

@@ -1,0 +1,299 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model assignments {
+  id String @id
+  worksheet_id        String
+  class_name          String?
+  class_id            String?
+  due_date            String?
+  created_by          String
+  retry_policy        String?               @default("single")
+  max_attempts        Int?                  @default(3)
+  peer_review_enabled Int?                  @default(0)
+  adaptive_difficulty String?
+  created_at          DateTime?             @default(now())
+  users               users                 @relation(fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  classes             classes?              @relation(fields: [class_id], references: [id], onUpdate: NoAction)
+  worksheets          worksheets            @relation(fields: [worksheet_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  peer_reviews        peer_reviews[]
+  submission_attempts submission_attempts[]
+  submissions         submissions[]
+  teams               teams[]
+
+  }
+
+model class_announcements {
+  id String @id
+  class_id   String
+  title      String
+  content    String?
+  created_by String
+  created_at DateTime? @default(now())
+  users      users     @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  classes    classes   @relation(fields: [class_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  }
+
+model class_students {
+  class_id   String
+  student_id String
+  joined_at  DateTime? @default(now())
+  users      users     @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  classes    classes   @relation(fields: [class_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([class_id, student_id])
+}
+
+model classes {
+  id String @id
+  name                String
+  description         String?
+  teacher_id          String
+  class_code          String                @unique(map: "classes_class_code_unique")
+  created_at          DateTime?             @default(now())
+  assignments         assignments[]         
+  class_announcements class_announcements[] 
+  class_students      class_students[]
+  users               users                 @relation(fields: [teacher_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model course_students {
+  course_id  String
+  student_id String
+  users      users   @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  courses    courses @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction) 
+
+  @@id([course_id, student_id])
+}
+
+model course_worksheets {
+  id String @id
+  course_id    String
+  worksheet_id String
+  order_index  Int?       @default(0)
+  worksheets   worksheets @relation(fields: [worksheet_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  courses      courses    @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  }
+
+model courses {
+  id String @id
+  name              String
+  description       String?
+  teacher_id        String
+  created_at        DateTime?           @default(now())
+  course_students   course_students[]
+  course_worksheets course_worksheets[]
+  users             users               @relation(fields: [teacher_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  }
+
+model learning_gamification {
+  id String @id
+  user_id     String
+  xp          Int?    @default(0)
+  level       Int?    @default(1)
+  badges      String? @default("[]")
+  streak_days Int?    @default(0)
+  users       users   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  }
+
+model learning_mastery {
+  id String @id
+  user_id           String
+  topic             String
+  mastery_level     Int?      @default(0)
+  last_practiced_at DateTime?
+  users             users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  }
+
+model learning_planner {
+  id String @id
+  user_id      String
+  date         String
+  worksheet_id String?
+  topic        String?
+  completed    Int?        @default(0)
+  worksheets   worksheets? @relation(fields: [worksheet_id], references: [id], onUpdate: NoAction)
+  users        users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  }
+
+model learning_queue {
+  id String @id
+  user_id          String
+  worksheet_id     String?
+  topic            String?
+  due_at           String?
+  difficulty_level String?
+  worksheets       worksheets? @relation(fields: [worksheet_id], references: [id], onUpdate: NoAction)
+  users            users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  }
+
+model media_files {
+  id String @id
+  filename      String
+  original_name String
+  mime_type     String?
+  size_bytes    Int?
+  uploaded_by   String?
+  url           String
+  created_at    DateTime? @default(now())
+  users         users?    @relation(fields: [uploaded_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  }
+
+model peer_reviews {
+  id String @id
+  assignment_id                         String
+  reviewer_id                           String
+  reviewee_id                           String
+  score                                 Float?
+  feedback                              String?
+  created_at                            DateTime?   @default(now())
+  users_peer_reviews_reviewee_idTousers users       @relation("peer_reviews_reviewee_idTousers", fields: [reviewee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_peer_reviews_reviewer_idTousers users       @relation("peer_reviews_reviewer_idTousers", fields: [reviewer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  assignments                           assignments @relation(fields: [assignment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  }
+
+model ratings {
+  id String @id
+  user_id    String
+  item_type  String
+  item_id    String
+  rating     Int
+  rater_role String
+  created_at DateTime? @default(now())
+  updated_at DateTime? @default(now())
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, item_type, item_id], map: "ratings_user_id_item_type_item_id_unique")
+}
+
+model settings {
+  key String @id
+  value String?
+
+  }
+
+model submission_attempts {
+  id String @id
+  submission_id  String?
+  assignment_id  String
+  user_id        String
+  attempt_number Int
+  answers        String?
+  score          Float?
+  max_score      Float?
+  created_at     DateTime?    @default(now())
+  users          users        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  assignments    assignments  @relation(fields: [assignment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  submissions    submissions? @relation(fields: [submission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  }
+
+model submissions {
+  id String @id
+  assignment_id                      String
+  user_id                            String
+  answers                            String?
+  score                              Float?
+  max_score                          Float?
+  submitted_at                       DateTime?
+  graded_by                          String?
+  feedback                           String?
+  created_at                         DateTime?             @default(now())
+  updated_at                         DateTime?             @default(now())
+  submission_attempts                submission_attempts[]
+  users_submissions_graded_byTousers users?                @relation("submissions_graded_byTousers", fields: [graded_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_submissions_user_idTousers   users                 @relation("submissions_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  assignments                        assignments           @relation(fields: [assignment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  }
+
+model team_members {
+  team_id    String
+  student_id String
+  joined_at  DateTime? @default(now())
+  users      users     @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  teams      teams     @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction) 
+
+  @@id([team_id, student_id])
+}
+
+model teams {
+  id String @id
+  assignment_id String
+  name          String?
+  created_at    DateTime?      @default(now())
+  team_members  team_members[]
+  assignments   assignments    @relation(fields: [assignment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  }
+
+model users {
+  id String @id
+  username                                     String                  @unique(map: "users_username_unique")
+  email                                        String                  @unique(map: "users_email_unique")
+  name                                         String
+  password_hash                                String?
+  role                                         String                  @default("student")
+  ms_oid                                       String?
+  ms_tenant                                    String?
+  created_at                                   DateTime?               @default(now())
+  updated_at                                   DateTime?               @default(now())
+  assignments                                  assignments[]           
+  class_announcements                          class_announcements[]   
+  class_students                               class_students[]
+  classes                                      classes[]
+  course_students                              course_students[]
+  courses                                      courses[]               
+  learning_gamification                        learning_gamification[] 
+  learning_mastery                             learning_mastery[]      
+  learning_planner                             learning_planner[]      
+  learning_queue                               learning_queue[]        
+  media_files                                  media_files[]           
+  peer_reviews_peer_reviews_reviewee_idTousers peer_reviews[]          @relation("peer_reviews_reviewee_idTousers") 
+  peer_reviews_peer_reviews_reviewer_idTousers peer_reviews[]          @relation("peer_reviews_reviewer_idTousers") 
+  ratings                                      ratings[]
+  submission_attempts                          submission_attempts[]   
+  submissions_submissions_graded_byTousers     submissions[]           @relation("submissions_graded_byTousers") 
+  submissions_submissions_user_idTousers       submissions[]           @relation("submissions_user_idTousers") 
+  team_members                                 team_members[]
+  worksheets                                   worksheets[]            
+}
+
+model worksheets {
+  id String @id
+  title             String
+  description       String?
+  subject           String?
+  grade_level       String?
+  content           String              @default("{\"blocks\":[]}")
+  total_points      Int?                @default(0)
+  is_published      Int?                @default(0)
+  created_by        String
+  tags              String?
+  rubric_json       String?
+  in_library        Int?                @default(0)
+  library_source    String?
+  cloned_from       String?
+  created_at        DateTime?           @default(now())
+  updated_at        DateTime?           @default(now())
+  assignments       assignments[]
+  course_worksheets course_worksheets[]
+  learning_planner  learning_planner[]
+  learning_queue    learning_queue[]
+  users             users               @relation(fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  }

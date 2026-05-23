@@ -24,6 +24,15 @@ function sanitizeUser(user: Record<string, unknown>) {
   return rest
 }
 
+function setTokenCookie(res: any, token: string) {
+  res.cookie('auth_token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  })
+}
+
 router.post('/login', async (req, res, next) => {
   try {
     const { username, password } = req.body
@@ -46,7 +55,8 @@ router.post('/login', async (req, res, next) => {
     }
 
     const token = makeToken({ userId: user.id, role: user.role, isGuest: false })
-    res.json({ token, user: sanitizeUser(user) })
+    setTokenCookie(res, token)
+    res.json({ user: sanitizeUser(user) })
   } catch (err) {
     next(err)
   }
@@ -79,7 +89,8 @@ router.post('/microsoft', async (req, res, next) => {
     }
 
     const token = makeToken({ userId: user.id, role: user.role, isGuest: false })
-    res.json({ token, user: sanitizeUser(user) })
+    setTokenCookie(res, token)
+    res.json({ user: sanitizeUser(user) })
   } catch (err) {
     next(err)
   }
@@ -130,8 +141,9 @@ router.post('/guest', async (req, res, next) => {
       isGuest: true,
       assignmentId: assignments.id,
     })
-
-    res.json({ token, user: { id, username, name, role: 'student' }, assignmentId: assignments.id })
+    
+    setTokenCookie(res, token)
+    res.json({ user: { id, username, name, role: 'student' }, assignmentId: assignments.id })
   } catch (err) {
     next(err)
   }
@@ -211,15 +223,25 @@ router.get('/config', (_req, res) => {
   res.json({ mode: process.env.MS_CLIENT_ID ? 'microsoft' : 'local' })
 })
 
+router.post('/logout', (_req, res) => {
+  res.clearCookie('auth_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  })
+  res.json({ message: 'Logged out' })
+})
+
 router.get('/verify', async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = req.cookies.auth_token || (authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null)
+    
+    if (!token) {
       res.status(401).json({ error: 'No token' })
       return
     }
 
-    const token = authHeader.slice(7)
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as Record<
       string,
       unknown
@@ -305,8 +327,9 @@ router.post('/teacher-token', requireAuth, requireRole('admin'), async (req, res
       process.env.JWT_SECRET || 'dev-secret',
       { expiresIn: '30d' },
     )
-
-    res.json({ token, teacherId: teacher.id })
+    
+    setTokenCookie(res, token)
+    res.json({ teacherId: teacher.id })
   } catch (err) {
     next(err)
   }

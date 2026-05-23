@@ -17,7 +17,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 defineProps({ block: Object, modelValue: null, readonly: Boolean })
 const emit = defineEmits(['update:modelValue'])
 function markCompleted() {

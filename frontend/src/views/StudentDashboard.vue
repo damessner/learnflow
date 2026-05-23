@@ -161,7 +161,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useClassesStore } from '../stores/classes'
 import { useSubmissionsStore } from '../stores/submissions'

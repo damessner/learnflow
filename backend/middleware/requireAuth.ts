@@ -18,12 +18,12 @@ declare global {
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const token = req.cookies?.auth_token || (authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null)
+  
+  if (!token) {
     res.status(401).json({ error: 'Unauthorized' })
     return
   }
-
-  const token = authHeader.slice(7)
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as AuthUser
     req.user = decoded

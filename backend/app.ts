@@ -2,6 +2,7 @@ import express from 'express'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import path from 'path'
+import cookieParser from 'cookie-parser'
 
 import { requestId } from './middleware/requestId'
 import { corsMiddleware } from './middleware/cors'
@@ -17,6 +18,7 @@ import learningRoutes from './routes/learning'
 import teamRoutes from './routes/teams'
 import mediaRoutes from './routes/media'
 import libraryRoutes from './routes/library'
+import aiRoutes from './routes/ai'
 
 export function createApp(): express.Application {
   const app = express()
@@ -48,6 +50,7 @@ export function createApp(): express.Application {
   )
 
   app.use(express.json({ limit: '10mb' }))
+  app.use(cookieParser())
   app.use(requestId)
 
   app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
@@ -62,9 +65,10 @@ export function createApp(): express.Application {
   app.use('/api/classes', classRoutes)
   app.use('/api/courses', courseRoutes)
   app.use('/api/learning', learningRoutes)
-  app.use('/api/teams', teamRoutes)
   app.use('/api/media', mediaRoutes)
+  app.use('/api/teams', teamRoutes)
   app.use('/api/library', libraryRoutes)
+  app.use('/api/ai', aiRoutes)
 
   app.use((req, _res, next) => {
     logger.info({ method: req.method, url: req.url, requestId: req.id }, 'Request')

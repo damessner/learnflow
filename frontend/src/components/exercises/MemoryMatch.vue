@@ -31,7 +31,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 defineProps({ block: Object, modelValue: null, readonly: Boolean })
 defineEmits(['update:modelValue'])
