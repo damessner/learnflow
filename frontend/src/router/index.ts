@@ -49,12 +49,13 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  const token = localStorage.getItem('token')
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const userStr = localStorage.getItem('user')
+  const user = userStr ? JSON.parse(userStr) : {}
+  const isAuthenticated = !!user.role
 
-  if (to.meta.requiresAuth && !token) return '/login'
+  if (to.meta.requiresAuth && !isAuthenticated) return '/login'
 
-  if (token && user.role) {
+  if (isAuthenticated) {
     if (to.path === '/login') {
       if (user.role === 'student' || user.isGuest) return '/student'
       if (user.role === 'admin') return '/admin'
