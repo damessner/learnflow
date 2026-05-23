@@ -30,5 +30,14 @@ export const useSubmissionsStore = defineStore('submissions', () => {
     return api.post(`/submissions/${submissionId}/feedback`, { feedback })
   }
 
-  return { currentSubmission, summary, loading, fetchAssignmentSubmission, saveProgress, submitAssignment, fetchStudentSummary, submitFeedback }
+  return {
+    currentSubmission,
+    summary,
+    loading,
+    fetchAssignmentSubmission,
+    saveProgress,
+    submitAssignment,
+    fetchStudentSummary,
+    submitFeedback,
+  }
 })

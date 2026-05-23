@@ -55,7 +55,10 @@ interface ScoreResult {
   feedback: string
 }
 
-function scoreGapFill(block: Block, answer: { gaps?: string[]; answers?: Record<string, string> }): ScoreResult {
+function scoreGapFill(
+  block: Block,
+  answer: { gaps?: string[]; answers?: Record<string, string> },
+): ScoreResult {
   if (!block.template) return { score: 0, maxScore: block.points, feedback: '' }
   const gapCount = (block.template.match(/\(\(.*?\)\)/g) || []).length
   let correct = 0
@@ -120,7 +123,8 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
               matchCount++
             }
           }
-          const earned = pairs.length > 0 ? Math.round((matchCount / pairs.length) * block.points) : 0
+          const earned =
+            pairs.length > 0 ? Math.round((matchCount / pairs.length) * block.points) : 0
           totalScore += earned
           feedback.push(`Matching: ${matchCount}/${pairs.length}`)
           break
@@ -205,11 +209,15 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           for (let i = 0; i < gapMsgs.length; i++) {
             const expected = gapMsgs[i].answer || ''
             const userVal = (ans[String(i)] || '').trim()
-            if (userVal.toLowerCase() === expected.toLowerCase() || isAcceptableVariant(userVal, expected)) {
+            if (
+              userVal.toLowerCase() === expected.toLowerCase() ||
+              isAcceptableVariant(userVal, expected)
+            ) {
               correct++
             }
           }
-          const earned = gapMsgs.length > 0 ? Math.round((correct / gapMsgs.length) * block.points) : 0
+          const earned =
+            gapMsgs.length > 0 ? Math.round((correct / gapMsgs.length) * block.points) : 0
           totalScore += earned
           feedback.push(`Dialogue: ${correct}/${gapMsgs.length}`)
           break
@@ -235,10 +243,14 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           let pairCorrect = 0
           for (let i = 0; i < pairs.length; i++) {
             const userVal = (ans[String(i)] || '').trim().toLowerCase()
-            const expected = direction === 'r2l' ? pairs[i].l.trim().toLowerCase() : pairs[i].r.trim().toLowerCase()
+            const expected =
+              direction === 'r2l'
+                ? pairs[i].l.trim().toLowerCase()
+                : pairs[i].r.trim().toLowerCase()
             if (userVal === expected || isAcceptableVariant(userVal, expected)) pairCorrect++
           }
-          const earned = pairs.length > 0 ? Math.round((pairCorrect / pairs.length) * block.points) : 0
+          const earned =
+            pairs.length > 0 ? Math.round((pairCorrect / pairs.length) * block.points) : 0
           totalScore += earned
           feedback.push(`Vocabulary: ${pairCorrect}/${pairs.length}`)
           break

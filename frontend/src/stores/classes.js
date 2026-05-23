@@ -77,5 +77,25 @@ export const useClassesStore = defineStore('classes', () => {
     return api.get(`/classes/${classId}/export-csv`)
   }
 
-  return { classes, currentClass, loading, fetchClasses, fetchClass, createClass, deleteClass, fetchClassProgress, fetchAllStudents, addStudent, removeStudent, addManualStudent, fetchStudentStatus, fetchAnnouncements, getAnnouncements, createAnnouncement, joinClass, importPdf, exportCsv }
+  return {
+    classes,
+    currentClass,
+    loading,
+    fetchClasses,
+    fetchClass,
+    createClass,
+    deleteClass,
+    fetchClassProgress,
+    fetchAllStudents,
+    addStudent,
+    removeStudent,
+    addManualStudent,
+    fetchStudentStatus,
+    fetchAnnouncements,
+    getAnnouncements,
+    createAnnouncement,
+    joinClass,
+    importPdf,
+    exportCsv,
+  }
 })

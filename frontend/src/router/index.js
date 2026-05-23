@@ -15,11 +15,31 @@ const routes = [
   { path: '/login', component: Login },
   { path: '/register-teacher', component: TeacherRegistration },
   { path: '/student', component: StudentDashboard, meta: { requiresAuth: true, role: 'student' } },
-  { path: '/student/course/:id', component: CourseView, meta: { requiresAuth: true, role: 'student' } },
-  { path: '/student/assignment/:id', component: WorksheetPlayer, meta: { requiresAuth: true, role: 'student' } },
-  { path: '/teacher', component: TeacherDashboard, meta: { requiresAuth: true, role: ['teacher', 'admin'] } },
-  { path: '/teacher/builder/:id?', component: WorksheetBuilder, meta: { requiresAuth: true, role: ['teacher', 'admin'] } },
-  { path: '/teacher/preview/:id', component: WorksheetPreview, meta: { requiresAuth: true, role: ['teacher', 'admin'] } },
+  {
+    path: '/student/course/:id',
+    component: CourseView,
+    meta: { requiresAuth: true, role: 'student' },
+  },
+  {
+    path: '/student/assignment/:id',
+    component: WorksheetPlayer,
+    meta: { requiresAuth: true, role: 'student' },
+  },
+  {
+    path: '/teacher',
+    component: TeacherDashboard,
+    meta: { requiresAuth: true, role: ['teacher', 'admin'] },
+  },
+  {
+    path: '/teacher/builder/:id?',
+    component: WorksheetBuilder,
+    meta: { requiresAuth: true, role: ['teacher', 'admin'] },
+  },
+  {
+    path: '/teacher/preview/:id',
+    component: WorksheetPreview,
+    meta: { requiresAuth: true, role: ['teacher', 'admin'] },
+  },
   { path: '/admin', component: AdminDashboard, meta: { requiresAuth: true, role: 'admin' } },
 ]
 

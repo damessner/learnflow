@@ -2,72 +2,121 @@
   <div class="page">
     <h2>Student Dashboard</h2>
 
-    <div style="display:flex;gap:1rem;margin:1rem 0">
-      <div style="flex:1;">
+    <div style="display: flex; gap: 1rem; margin: 1rem 0">
+      <div style="flex: 1">
         <div class="form-group">
           <label>Join Class by Code</label>
-          <div style="display:flex;gap:0.5rem">
+          <div style="display: flex; gap: 0.5rem">
             <input v-model="classCode" placeholder="Enter class code" />
-            <button class="btn-primary" @click="joinClass" :disabled="joining">Join</button>
+            <button class="btn-primary" :disabled="joining" @click="joinClass">Join</button>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="grid grid-2" style="margin-top:1rem">
+    <div class="grid grid-2" style="margin-top: 1rem">
       <div class="card">
         <h3>My Classes</h3>
-        <div v-if="myClasses.length === 0" style="color:var(--text-muted)">No classes yet</div>
-        <div v-for="c in myClasses" :key="c.id" style="padding:0.5rem 0;border-bottom:1px solid var(--border-color)">
+        <div v-if="myClasses.length === 0" style="color: var(--text-muted)">No classes yet</div>
+        <div
+          v-for="c in myClasses"
+          :key="c.id"
+          style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color)"
+        >
           <strong>{{ c.name }}</strong>
-          <span class="badge" style="margin-left:0.5rem">{{ c.class_code }}</span>
+          <span class="badge" style="margin-left: 0.5rem">{{ c.class_code }}</span>
         </div>
       </div>
 
       <div class="card">
         <h3>Announcements</h3>
-        <div v-if="announcements.length === 0" style="color:var(--text-muted)">No announcements</div>
-        <div v-for="a in announcements" :key="a.id" style="padding:0.5rem 0;border-bottom:1px solid var(--border-color)">
+        <div v-if="announcements.length === 0" style="color: var(--text-muted)">
+          No announcements
+        </div>
+        <div
+          v-for="a in announcements"
+          :key="a.id"
+          style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color)"
+        >
           <strong>{{ a.title }}</strong>
-          <p style="font-size:0.85rem;color:var(--text-muted)">{{ a.content }}</p>
+          <p style="font-size: 0.85rem; color: var(--text-muted)">{{ a.content }}</p>
         </div>
       </div>
 
       <div class="card">
         <h3>My Submissions</h3>
-        <div v-if="submissions.length === 0" style="color:var(--text-muted)">No submissions yet</div>
-        <div v-for="s in submissions" :key="s.id" style="padding:0.5rem 0;border-bottom:1px solid var(--border-color)">
+        <div v-if="submissions.length === 0" style="color: var(--text-muted)">
+          No submissions yet
+        </div>
+        <div
+          v-for="s in submissions"
+          :key="s.id"
+          style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color)"
+        >
           <strong>{{ s.worksheet_title }}</strong>
           <span v-if="s.score != null" class="badge">{{ s.score }}/{{ s.max_score }}</span>
-          <span v-else style="color:var(--warning);font-size:0.8rem">Not submitted</span>
+          <span v-else style="color: var(--warning); font-size: 0.8rem">Not submitted</span>
         </div>
       </div>
 
       <div class="card">
         <h3>Courses</h3>
-        <div v-if="courses.length === 0" style="color:var(--text-muted)">No courses assigned</div>
-        <div v-for="c in courses" :key="c.id" style="padding:0.5rem 0;border-bottom:1px solid var(--border-color)">
+        <div v-if="courses.length === 0" style="color: var(--text-muted)">No courses assigned</div>
+        <div
+          v-for="c in courses"
+          :key="c.id"
+          style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color)"
+        >
           <router-link :to="`/student/course/${c.id}`">{{ c.name }}</router-link>
         </div>
       </div>
 
-      <div class="card" v-if="gamification">
+      <div v-if="gamification" class="card">
         <h3>Progress</h3>
-        <p>XP: <strong>{{ gamification.xp }}</strong> | Level: <strong>{{ gamification.level }}</strong></p>
-        <p>Streak: <strong>{{ gamification.streak_days }}</strong> days</p>
-        <div v-if="gamification.badges.length" style="margin-top:0.5rem">
-          <span v-for="b in gamification.badges" :key="b" class="badge" style="margin-right:0.25rem">{{ b }}</span>
+        <p>
+          XP: <strong>{{ gamification.xp }}</strong> | Level:
+          <strong>{{ gamification.level }}</strong>
+        </p>
+        <p>
+          Streak: <strong>{{ gamification.streak_days }}</strong> days
+        </p>
+        <div v-if="gamification.badges.length" style="margin-top: 0.5rem">
+          <span
+            v-for="b in gamification.badges"
+            :key="b"
+            class="badge"
+            style="margin-right: 0.25rem"
+            >{{ b }}</span
+          >
         </div>
       </div>
 
       <div class="card">
         <h3>Mastery Map</h3>
-        <div v-for="m in masteryList" :key="m.id" style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0">
-          <span style="flex:1">{{ m.topic }}</span>
-          <div style="width:100px;height:8px;background:var(--border-color);border-radius:4px;overflow:hidden">
-            <div :style="{ width: m.mastery_level + '%', background: 'var(--primary)', height:'100%' }"></div>
+        <div
+          v-for="m in masteryList"
+          :key="m.id"
+          style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0"
+        >
+          <span style="flex: 1">{{ m.topic }}</span>
+          <div
+            style="
+              width: 100px;
+              height: 8px;
+              background: var(--border-color);
+              border-radius: 4px;
+              overflow: hidden;
+            "
+          >
+            <div
+              :style="{
+                width: m.mastery_level + '%',
+                background: 'var(--primary)',
+                height: '100%',
+              }"
+            ></div>
           </div>
-          <span style="font-size:0.8rem">{{ m.mastery_level }}%</span>
+          <span style="font-size: 0.8rem">{{ m.mastery_level }}%</span>
         </div>
       </div>
     </div>
@@ -115,7 +164,9 @@ onMounted(async () => {
 
     const courseData = await coursesStore.fetchStudentCourses().catch(() => ({ courses: [] }))
     courses.value = coursesStore.courses
-  } catch { /* */ }
+  } catch {
+    /* */
+  }
 })
 
 async function joinClass() {

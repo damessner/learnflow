@@ -1,15 +1,19 @@
 <template>
   <div>
-    <div v-for="(cat, ci) in (block.categories || [])" :key="ci" style="margin-bottom:0.5rem">
+    <div v-for="(cat, ci) in block.categories || []" :key="ci" style="margin-bottom: 0.5rem">
       <strong>{{ cat.name }}</strong>
-      <div style="display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.25rem">
+      <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem">
         <span
-          v-for="word in (cat.words || [])"
+          v-for="word in cat.words || []"
           :key="word"
           class="badge"
-          :style="{ background: selectedCat(ci, word) ? 'var(--primary)' : 'var(--text-muted)', cursor: readonly ? 'default' : 'pointer' }"
+          :style="{
+            background: selectedCat(ci, word) ? 'var(--primary)' : 'var(--text-muted)',
+            cursor: readonly ? 'default' : 'pointer',
+          }"
           @click="!readonly && toggleWord(ci, cat.name, word)"
-        >{{ word }}</span>
+          >{{ word }}</span
+        >
       </div>
     </div>
   </div>

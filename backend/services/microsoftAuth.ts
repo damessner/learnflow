@@ -22,7 +22,9 @@ export async function verifyMsToken(token: string): Promise<JwtPayload | null> {
     try {
       const decoded = jwt.decode(token) as JwtPayload
       if (decoded && decoded.sub) return decoded
-    } catch { /* */ }
+    } catch {
+      /* */
+    }
     return null
   }
 

@@ -50,7 +50,9 @@ router.get('/assignment/:id', requireAuth, async (req, res, next) => {
           })
         }
         worksheet.content = JSON.stringify(content)
-      } catch { /* keep original */ }
+      } catch {
+        /* keep original */
+      }
     }
 
     let peerReviews: unknown[] = []
@@ -105,9 +107,14 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
     try {
       const content = JSON.parse(worksheet.content)
       blocks = content.blocks || []
-    } catch { /* */ }
+    } catch {
+      /* */
+    }
 
-    const result = scoreAnswers(blocks as Array<{ id: string; type: string; points: number }>, answers)
+    const result = scoreAnswers(
+      blocks as Array<{ id: string; type: string; points: number }>,
+      answers,
+    )
 
     const attemptNumber = (await knex('submission_attempts')
       .where({ assignment_id: req.params.id, user_id: req.user!.userId })
@@ -137,9 +144,11 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
 
     const gam = await knex('learning_gamification').where({ user_id: req.user!.userId }).first()
     if (gam) {
-      await knex('learning_gamification').where({ user_id: req.user!.userId }).update({
-        xp: gam.xp + Math.round(result.score * 10),
-      })
+      await knex('learning_gamification')
+        .where({ user_id: req.user!.userId })
+        .update({
+          xp: gam.xp + Math.round(result.score * 10),
+        })
     } else {
       await knex('learning_gamification').insert({
         id: uuidv4(),
@@ -162,19 +171,24 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
   }
 })
 
-router.post('/:id/feedback', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    await knex('submissions').where({ id: req.params.id }).update({
-      feedback: req.body.feedback,
-      graded_by: req.user!.userId,
-      updated_at: knex.fn.now(),
-    })
-    res.json({ message: 'Feedback saved' })
-  } catch (err) {
-    next(err)
-  }
-})
+router.post(
+  '/:id/feedback',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      await knex('submissions').where({ id: req.params.id }).update({
+        feedback: req.body.feedback,
+        graded_by: req.user!.userId,
+        updated_at: knex.fn.now(),
+      })
+      res.json({ message: 'Feedback saved' })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
 router.get('/student/summary', requireAuth, async (req, res, next) => {
   try {

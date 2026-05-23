@@ -74,5 +74,24 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     return api.post('/worksheets/ai/generate', { prompt, provider })
   }
 
-  return { worksheets, templates, current, loading, fetchMyWorksheets, fetchWorksheet, createWorksheet, updateWorksheet, deleteWorksheet, duplicateWorksheet, fetchTemplates, cloneTemplate, createAssignment, fetchAssignments, deleteAssignment, fetchAssignmentResults, fetchAssignmentStats, aiGenerate }
+  return {
+    worksheets,
+    templates,
+    current,
+    loading,
+    fetchMyWorksheets,
+    fetchWorksheet,
+    createWorksheet,
+    updateWorksheet,
+    deleteWorksheet,
+    duplicateWorksheet,
+    fetchTemplates,
+    cloneTemplate,
+    createAssignment,
+    fetchAssignments,
+    deleteAssignment,
+    fetchAssignmentResults,
+    fetchAssignmentStats,
+    aiGenerate,
+  }
 })

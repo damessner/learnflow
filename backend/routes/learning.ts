@@ -48,14 +48,17 @@ router.post('/student/planner', requireAuth, async (req, res, next) => {
     const knex = getKnex()
     const id = req.body.id || uuidv4()
 
-    await knex('learning_planner').insert({
-      id,
-      user_id: req.user!.userId,
-      date: req.body.date,
-      worksheet_id: req.body.worksheet_id || null,
-      topic: req.body.topic || '',
-      completed: req.body.completed || 0,
-    }).onConflict('id').merge()
+    await knex('learning_planner')
+      .insert({
+        id,
+        user_id: req.user!.userId,
+        date: req.body.date,
+        worksheet_id: req.body.worksheet_id || null,
+        topic: req.body.topic || '',
+        completed: req.body.completed || 0,
+      })
+      .onConflict('id')
+      .merge()
 
     res.status(201).json({ message: 'Planner updated' })
   } catch (err) {
@@ -69,98 +72,133 @@ router.get('/student/gamification', requireAuth, async (req, res, next) => {
     let gam = await knex('learning_gamification').where({ user_id: req.user!.userId }).first()
     if (!gam) {
       const id = uuidv4()
-      await knex('learning_gamification').insert({ id, user_id: req.user!.userId, xp: 0, level: 1, badges: '[]', streak_days: 0 })
+      await knex('learning_gamification').insert({
+        id,
+        user_id: req.user!.userId,
+        xp: 0,
+        level: 1,
+        badges: '[]',
+        streak_days: 0,
+      })
       gam = await knex('learning_gamification').where({ id }).first()
     }
-    try { gam.badges = JSON.parse(gam.badges) } catch { gam.badges = [] }
+    try {
+      gam.badges = JSON.parse(gam.badges)
+    } catch {
+      gam.badges = []
+    }
     res.json({ gamification: gam })
   } catch (err) {
     next(err)
   }
 })
 
-router.get('/teacher/at-risk', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    const classes = await knex('classes').where({ teacher_id: req.user!.userId })
-    const classIds = classes.map((c: { id: string }) => c.id)
+router.get(
+  '/teacher/at-risk',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const classes = await knex('classes').where({ teacher_id: req.user!.userId })
+      const classIds = classes.map((c: { id: string }) => c.id)
 
-    const students = await knex('class_students')
-      .join('users', 'class_students.student_id', 'users.id')
-      .whereIn('class_students.class_id', classIds.length ? classIds : ['none'])
-      .select('users.id', 'users.name', 'users.username')
+      const students = await knex('class_students')
+        .join('users', 'class_students.student_id', 'users.id')
+        .whereIn('class_students.class_id', classIds.length ? classIds : ['none'])
+        .select('users.id', 'users.name', 'users.username')
 
-    const atRisk = []
-    for (const s of students) {
-      const submissions = await knex('submissions').where({ user_id: s.id })
-      const total = submissions.length
-      const completed = submissions.filter((sb: { submitted_at: unknown }) => sb.submitted_at).length
-      const avgScore = submissions.reduce(
-        (sum: number, sb: { score: number; max_score: number }) => sum + (sb.score || 0) / (sb.max_score || 1),
-        0,
-      ) / Math.max(total, 1)
+      const atRisk = []
+      for (const s of students) {
+        const submissions = await knex('submissions').where({ user_id: s.id })
+        const total = submissions.length
+        const completed = submissions.filter(
+          (sb: { submitted_at: unknown }) => sb.submitted_at,
+        ).length
+        const avgScore =
+          submissions.reduce(
+            (sum: number, sb: { score: number; max_score: number }) =>
+              sum + (sb.score || 0) / (sb.max_score || 1),
+            0,
+          ) / Math.max(total, 1)
 
-      if (completed < total * 0.5 || avgScore < 0.5) {
-        atRisk.push({ ...s, completed, total, avgScore: Math.round(avgScore * 100) })
+        if (completed < total * 0.5 || avgScore < 0.5) {
+          atRisk.push({ ...s, completed, total, avgScore: Math.round(avgScore * 100) })
+        }
       }
+
+      res.json({ atRisk })
+    } catch (err) {
+      next(err)
     }
+  },
+)
 
-    res.json({ atRisk })
-  } catch (err) {
-    next(err)
-  }
-})
+router.get(
+  '/teacher/interventions',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      res.json({
+        interventions: [
+          { type: 'review', description: 'Schedule a one-on-one review session' },
+          { type: 'simplify', description: 'Provide simplified versions of exercises' },
+          { type: 'retry', description: 'Enable retry policies on assignments' },
+          { type: 'gamification', description: 'Leverage gamification to boost engagement' },
+        ],
+      })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
-router.get('/teacher/interventions', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    res.json({
-      interventions: [
-        { type: 'review', description: 'Schedule a one-on-one review session' },
-        { type: 'simplify', description: 'Provide simplified versions of exercises' },
-        { type: 'retry', description: 'Enable retry policies on assignments' },
-        { type: 'gamification', description: 'Leverage gamification to boost engagement' },
-      ],
-    })
-  } catch (err) {
-    next(err)
-  }
-})
+router.get(
+  '/teacher/analytics',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const classes = await knex('classes').where({ teacher_id: req.user!.userId })
+      const classIds = classes.map((c: { id: string }) => c.id)
 
-router.get('/teacher/analytics', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    const classes = await knex('classes').where({ teacher_id: req.user!.userId })
-    const classIds = classes.map((c: { id: string }) => c.id)
-
-    const assignments = await knex('assignments').whereIn('class_id', classIds.length ? classIds : ['none'])
-
-    const totalAssignments = assignments.length
-    let totalSubmissions = 0
-    let totalCompleted = 0
-    let scoreSum = 0
-
-    for (const a of assignments) {
-      const subs = await knex('submissions').where({ assignment_id: a.id })
-      totalSubmissions += subs.length
-      totalCompleted += subs.filter((s: { submitted_at: unknown }) => s.submitted_at).length
-      scoreSum += subs.reduce(
-        (sum: number, s: { score: number; max_score: number }) => sum + (s.score || 0) / (s.max_score || 1),
-        0,
+      const assignments = await knex('assignments').whereIn(
+        'class_id',
+        classIds.length ? classIds : ['none'],
       )
-    }
 
-    res.json({
-      analytics: {
-        totalClasses: classes.length,
-        totalAssignments,
-        totalSubmissions,
-        completionRate: totalSubmissions > 0 ? Math.round((totalCompleted / totalSubmissions) * 100) : 0,
-        averageScore: totalSubmissions > 0 ? Math.round((scoreSum / totalSubmissions) * 100) : 0,
-      },
-    })
-  } catch (err) {
-    next(err)
-  }
-})
+      const totalAssignments = assignments.length
+      let totalSubmissions = 0
+      let totalCompleted = 0
+      let scoreSum = 0
+
+      for (const a of assignments) {
+        const subs = await knex('submissions').where({ assignment_id: a.id })
+        totalSubmissions += subs.length
+        totalCompleted += subs.filter((s: { submitted_at: unknown }) => s.submitted_at).length
+        scoreSum += subs.reduce(
+          (sum: number, s: { score: number; max_score: number }) =>
+            sum + (s.score || 0) / (s.max_score || 1),
+          0,
+        )
+      }
+
+      res.json({
+        analytics: {
+          totalClasses: classes.length,
+          totalAssignments,
+          totalSubmissions,
+          completionRate:
+            totalSubmissions > 0 ? Math.round((totalCompleted / totalSubmissions) * 100) : 0,
+          averageScore: totalSubmissions > 0 ? Math.round((scoreSum / totalSubmissions) * 100) : 0,
+        },
+      })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
 export default router

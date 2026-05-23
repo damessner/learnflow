@@ -1,12 +1,24 @@
 <template>
   <div class="page">
-    <div style="max-width:400px;margin:3rem auto">
-      <h1 style="text-align:center;color:var(--primary);margin-bottom:1.5rem">LearnFlow</h1>
+    <div style="max-width: 400px; margin: 3rem auto">
+      <h1 style="text-align: center; color: var(--primary); margin-bottom: 1.5rem">LearnFlow</h1>
 
-      <div class="card" style="margin-bottom:1rem">
-        <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
-          <button :class="{ 'btn-primary': mode === 'login' }" @click="mode = 'login'" style="flex:1">Login</button>
-          <button :class="{ 'btn-primary': mode === 'guest' }" @click="mode = 'guest'" style="flex:1">Guest</button>
+      <div class="card" style="margin-bottom: 1rem">
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem">
+          <button
+            :class="{ 'btn-primary': mode === 'login' }"
+            style="flex: 1"
+            @click="mode = 'login'"
+          >
+            Login
+          </button>
+          <button
+            :class="{ 'btn-primary': mode === 'guest' }"
+            style="flex: 1"
+            @click="mode = 'guest'"
+          >
+            Guest
+          </button>
         </div>
 
         <template v-if="mode === 'login'">
@@ -18,9 +30,13 @@
             <label>Password</label>
             <input v-model="loginForm.password" type="password" @keyup.enter="doLogin" />
           </div>
-          <div v-if="error" style="color:var(--danger);margin-bottom:0.5rem;font-size:0.85rem">{{ error }}</div>
-          <button class="btn-primary" style="width:100%" @click="doLogin" :disabled="loading">Login</button>
-          <div style="text-align:center;margin-top:0.75rem">
+          <div v-if="error" style="color: var(--danger); margin-bottom: 0.5rem; font-size: 0.85rem">
+            {{ error }}
+          </div>
+          <button class="btn-primary" style="width: 100%" :disabled="loading" @click="doLogin">
+            Login
+          </button>
+          <div style="text-align: center; margin-top: 0.75rem">
             <router-link to="/register-teacher">Register as Teacher</router-link>
           </div>
         </template>
@@ -34,13 +50,17 @@
             <label>Class Code</label>
             <input v-model="guestForm.classCode" placeholder="e.g. 5a1b-c3d4" />
           </div>
-          <div v-if="error" style="color:var(--danger);margin-bottom:0.5rem;font-size:0.85rem">{{ error }}</div>
-          <button class="btn-primary" style="width:100%" @click="doGuestLogin" :disabled="loading">Join</button>
+          <div v-if="error" style="color: var(--danger); margin-bottom: 0.5rem; font-size: 0.85rem">
+            {{ error }}
+          </div>
+          <button class="btn-primary" style="width: 100%" :disabled="loading" @click="doGuestLogin">
+            Join
+          </button>
         </template>
       </div>
 
       <div v-if="msEnabled" class="card">
-        <button style="width:100%" @click="doMicrosoftLogin">Sign in with Microsoft Teams</button>
+        <button style="width: 100%" @click="doMicrosoftLogin">Sign in with Microsoft Teams</button>
       </div>
     </div>
   </div>
@@ -68,7 +88,9 @@ onMounted(async () => {
   try {
     const config = await authStore.getAuthConfig()
     msEnabled.value = config.mode === 'microsoft'
-  } catch { /* */ }
+  } catch {
+    /* */
+  }
 })
 
 async function doLogin() {

@@ -1,14 +1,33 @@
 <template>
   <div>
     <div class="grid grid-2">
-      <div v-for="(pair, pi) in (block.pairs || [])" :key="pi" class="card" style="padding:0.5rem;cursor:pointer;text-align:center"
+      <div
+        v-for="(pair, pi) in block.pairs || []"
+        :key="pi"
+        class="card"
+        style="padding: 0.5rem; cursor: pointer; text-align: center"
         :style="{ background: selected.includes(pi) ? 'var(--primary-light)' : '' }"
-        @click="select(pi)">
+        @click="select(pi)"
+      >
         {{ showBack ? pair.b : pair.a }}
       </div>
     </div>
-    <button v-if="!readonly" class="btn-sm" style="margin-top:0.5rem" @click="showBack = !showBack">Flip</button>
-    <button v-if="!readonly" class="btn-sm" style="margin-top:0.5rem;margin-left:0.5rem" @click="$emit('update:modelValue', 'completed')">Completed</button>
+    <button
+      v-if="!readonly"
+      class="btn-sm"
+      style="margin-top: 0.5rem"
+      @click="showBack = !showBack"
+    >
+      Flip
+    </button>
+    <button
+      v-if="!readonly"
+      class="btn-sm"
+      style="margin-top: 0.5rem; margin-left: 0.5rem"
+      @click="$emit('update:modelValue', 'completed')"
+    >
+      Completed
+    </button>
   </div>
 </template>
 

@@ -12,7 +12,9 @@ router.get('/', requireAuth, async (req, res, next) => {
     if (req.user!.role === 'admin') {
       courses = await knex('courses').orderBy('created_at', 'desc')
     } else {
-      courses = await knex('courses').where({ teacher_id: req.user!.userId }).orderBy('created_at', 'desc')
+      courses = await knex('courses')
+        .where({ teacher_id: req.user!.userId })
+        .orderBy('created_at', 'desc')
     }
     res.json({ courses })
   } catch (err) {
@@ -83,76 +85,107 @@ router.delete('/:id', requireAuth, requireRole('teacher', 'admin'), async (req, 
   }
 })
 
-router.post('/:id/worksheets', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    const id = uuidv4()
-    const maxOrder = await knex('course_worksheets').where({ course_id: req.params.id }).max('order_index as max').first()
-    const orderIndex = ((maxOrder as { max: number })?.max || 0) + 1
+router.post(
+  '/:id/worksheets',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const id = uuidv4()
+      const maxOrder = await knex('course_worksheets')
+        .where({ course_id: req.params.id })
+        .max('order_index as max')
+        .first()
+      const orderIndex = ((maxOrder as { max: number })?.max || 0) + 1
 
-    await knex('course_worksheets').insert({
-      id,
-      course_id: req.params.id,
-      worksheet_id: req.body.worksheet_id,
-      order_index: orderIndex,
-    })
-    res.status(201).json({ message: 'Worksheet added to course' })
-  } catch (err) {
-    next(err)
-  }
-})
-
-router.delete('/:id/worksheets/:worksheetId', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    await knex('course_worksheets')
-      .where({ course_id: req.params.id, worksheet_id: req.params.worksheetId })
-      .del()
-    res.json({ message: 'Worksheet removed from course' })
-  } catch (err) {
-    next(err)
-  }
-})
-
-router.put('/:id/worksheets/reorder', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    const { worksheetIds } = req.body
-    for (let i = 0; i < worksheetIds.length; i++) {
-      await knex('course_worksheets')
-        .where({ course_id: req.params.id, worksheet_id: worksheetIds[i] })
-        .update({ order_index: i })
+      await knex('course_worksheets').insert({
+        id,
+        course_id: req.params.id,
+        worksheet_id: req.body.worksheet_id,
+        order_index: orderIndex,
+      })
+      res.status(201).json({ message: 'Worksheet added to course' })
+    } catch (err) {
+      next(err)
     }
-    res.json({ message: 'Worksheets reordered' })
-  } catch (err) {
-    next(err)
-  }
-})
+  },
+)
 
-router.post('/:id/students', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    await knex('course_students').insert({
-      course_id: req.params.id,
-      student_id: req.body.student_id,
-    }).onConflict(['course_id', 'student_id']).ignore()
-    res.status(201).json({ message: 'Student enrolled' })
-  } catch (err) {
-    next(err)
-  }
-})
+router.delete(
+  '/:id/worksheets/:worksheetId',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      await knex('course_worksheets')
+        .where({ course_id: req.params.id, worksheet_id: req.params.worksheetId })
+        .del()
+      res.json({ message: 'Worksheet removed from course' })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
-router.delete('/:id/students/:studentId', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    await knex('course_students')
-      .where({ course_id: req.params.id, student_id: req.params.studentId })
-      .del()
-    res.json({ message: 'Student unenrolled' })
-  } catch (err) {
-    next(err)
-  }
-})
+router.put(
+  '/:id/worksheets/reorder',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const { worksheetIds } = req.body
+      for (let i = 0; i < worksheetIds.length; i++) {
+        await knex('course_worksheets')
+          .where({ course_id: req.params.id, worksheet_id: worksheetIds[i] })
+          .update({ order_index: i })
+      }
+      res.json({ message: 'Worksheets reordered' })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
+
+router.post(
+  '/:id/students',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      await knex('course_students')
+        .insert({
+          course_id: req.params.id,
+          student_id: req.body.student_id,
+        })
+        .onConflict(['course_id', 'student_id'])
+        .ignore()
+      res.status(201).json({ message: 'Student enrolled' })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
+
+router.delete(
+  '/:id/students/:studentId',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      await knex('course_students')
+        .where({ course_id: req.params.id, student_id: req.params.studentId })
+        .del()
+      res.json({ message: 'Student unenrolled' })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
 router.get('/student/assigned', requireAuth, async (req, res, next) => {
   try {
@@ -192,7 +225,9 @@ router.get('/student/course/:id', requireAuth, async (req, res, next) => {
       .where('user_id', req.user!.userId)
       .whereIn('assignment_id', assignmentIds)
 
-    const completedCount = submissions.filter((s: { submitted_at: unknown }) => s.submitted_at).length
+    const completedCount = submissions.filter(
+      (s: { submitted_at: unknown }) => s.submitted_at,
+    ).length
 
     res.json({
       course,

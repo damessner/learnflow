@@ -1,16 +1,22 @@
 <template>
   <div class="page">
     <h2 v-if="worksheet">{{ worksheet.title }}</h2>
-    <p v-if="worksheet" style="color:var(--text-muted);margin-bottom:1rem">{{ worksheet.description }}</p>
+    <p v-if="worksheet" style="color: var(--text-muted); margin-bottom: 1rem">
+      {{ worksheet.description }}
+    </p>
 
-    <div v-if="submitted" class="card" style="background:var(--success);color:#fff;margin-bottom:1rem">
+    <div
+      v-if="submitted"
+      class="card"
+      style="background: var(--success); color: #fff; margin-bottom: 1rem"
+    >
       <h3>Submitted!</h3>
       <p>Score: {{ submitResult.score }} / {{ submitResult.maxScore }}</p>
       <p>{{ submitResult.feedback }}</p>
     </div>
 
-    <div v-for="block in blocks" :key="block.id" class="card" style="margin-bottom:0.5rem">
-      <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem">
+    <div v-for="block in blocks" :key="block.id" class="card" style="margin-bottom: 0.5rem">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem">
         <strong>{{ block.type.replace(/_/g, ' ') }}</strong>
         <span class="badge">{{ block.points }} pts</span>
       </div>
@@ -20,25 +26,29 @@
       </template>
 
       <template v-if="block.type === 'multiple_choice'">
-        <div v-for="(opt, oi) in (block.options || [])" :key="oi">
-          <label style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0">
-            <input type="checkbox" :value="oi" v-model="answers[block.id]" />
+        <div v-for="(opt, oi) in block.options || []" :key="oi">
+          <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0">
+            <input v-model="answers[block.id]" type="checkbox" :value="oi" />
             {{ opt }}
           </label>
         </div>
       </template>
 
       <template v-if="block.type === 'single_choice'">
-        <div v-for="(opt, oi) in (block.options || [])" :key="oi">
-          <label style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0">
-            <input type="radio" :value="oi" v-model="answers[block.id]" :name="block.id" />
+        <div v-for="(opt, oi) in block.options || []" :key="oi">
+          <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0">
+            <input v-model="answers[block.id]" type="radio" :value="oi" :name="block.id" />
             {{ opt }}
           </label>
         </div>
       </template>
 
       <template v-if="block.type === 'matching'">
-        <div v-for="(pair, pi) in (block.pairs || [])" :key="pi" style="display:flex;gap:0.5rem;margin-bottom:0.25rem">
+        <div
+          v-for="(pair, pi) in block.pairs || []"
+          :key="pi"
+          style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem"
+        >
           <span>{{ pair[0] }}</span>
           <input v-model="answers[block.id][pi]" :placeholder="'Match for ' + pair[0]" />
         </div>
@@ -49,20 +59,27 @@
       </template>
 
       <template v-if="block.type === 'text' || block.type === 'read_aloud'">
-        <div style="white-space:pre-wrap">{{ block.text }}</div>
+        <div style="white-space: pre-wrap">{{ block.text }}</div>
       </template>
 
       <template v-if="block.type === 'word_scramble'">
-        <div v-for="(w, wi) in (block.words || [])" :key="wi" style="display:flex;gap:0.5rem;margin-bottom:0.25rem">
-          <span style="font-family:monospace;letter-spacing:3px">{{ scramble(w.word) }}</span>
+        <div
+          v-for="(w, wi) in block.words || []"
+          :key="wi"
+          style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem"
+        >
+          <span style="font-family: monospace; letter-spacing: 3px">{{ scramble(w.word) }}</span>
           <input v-model="answers[block.id][wi]" placeholder="Unscramble" />
         </div>
       </template>
     </div>
 
-    <div v-if="!submitted" style="display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end">
-      <button @click="saveProgress" :disabled="saving">Save</button>
-      <button class="btn-primary" @click="submit" :disabled="submitting">Submit</button>
+    <div
+      v-if="!submitted"
+      style="display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end"
+    >
+      <button :disabled="saving" @click="saveProgress">Save</button>
+      <button class="btn-primary" :disabled="submitting" @click="submit">Submit</button>
     </div>
   </div>
 </template>
@@ -97,14 +114,18 @@ onMounted(async () => {
     try {
       const content = JSON.parse(data.worksheet.content)
       blocks.value = content.blocks || []
-    } catch { blocks.value = [] }
+    } catch {
+      blocks.value = []
+    }
 
     if (data.submission.answers) {
       try {
         const saved = JSON.parse(data.submission.answers)
         Object.assign(answers, saved)
         lastSavedAnswers = JSON.stringify(saved)
-      } catch { /* */ }
+      } catch {
+        /* */
+      }
     }
 
     if (blocks.value.length) {
@@ -120,7 +141,11 @@ onMounted(async () => {
 
     const local = localStorage.getItem(`answers_${route.params.id}`)
     if (local && !data.submission.submitted_at) {
-      try { Object.assign(answers, JSON.parse(local)) } catch { /* */ }
+      try {
+        Object.assign(answers, JSON.parse(local))
+      } catch {
+        /* */
+      }
     }
 
     autoSaveTimer = setInterval(saveProgress, 20000)
@@ -129,7 +154,9 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => { if (autoSaveTimer) clearInterval(autoSaveTimer) })
+onUnmounted(() => {
+  if (autoSaveTimer) clearInterval(autoSaveTimer)
+})
 
 function renderGaps(template, blockId) {
   if (!template) return ''
@@ -137,7 +164,7 @@ function renderGaps(template, blockId) {
   let html = template
   const gaps = []
   html = html.replace(/\(\((.*?)\)\)/g, (_, answer, idx) => {
-    const val = (answers[blockId] || {})
+    const val = answers[blockId] || {}
     const answerText = val[idx] || ''
     gaps.push(idx)
     return `<input type='text' value='${answerText}' oninput='window.__updateGap("${blockId}", ${idx}, this.value)' style='display:inline;width:auto;min-width:80px;padding:0.2rem 0.5rem;border:1px dashed var(--primary);border-radius:4px' />`
@@ -156,8 +183,8 @@ function renderGaps(template, blockId) {
 function scramble(word) {
   const arr = word.split('')
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]]
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
   return arr.join('')
 }
@@ -170,7 +197,9 @@ async function saveProgress() {
     localStorage.setItem(`answers_${route.params.id}`, current)
     await store.saveProgress(route.params.id, { ...answers })
     lastSavedAnswers = current
-  } catch { /* silent */ }
+  } catch {
+    /* silent */
+  }
   saving.value = false
 }
 

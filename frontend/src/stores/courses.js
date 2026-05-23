@@ -51,5 +51,19 @@ export const useCoursesStore = defineStore('courses', () => {
     return api.del(`/courses/${courseId}/students/${studentId}`)
   }
 
-  return { courses, currentCourse, loading, fetchCourses, fetchStudentCourses, fetchCourse, createCourse, deleteCourse, addWorksheetToCourse, removeWorksheetFromCourse, reorderWorksheets, enrollStudent, unenrollStudent }
+  return {
+    courses,
+    currentCourse,
+    loading,
+    fetchCourses,
+    fetchStudentCourses,
+    fetchCourse,
+    createCourse,
+    deleteCourse,
+    addWorksheetToCourse,
+    removeWorksheetFromCourse,
+    reorderWorksheets,
+    enrollStudent,
+    unenrollStudent,
+  }
 })

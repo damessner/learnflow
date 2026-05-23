@@ -116,10 +116,13 @@ router.post('/guest', async (req, res, next) => {
       role: 'student',
     })
 
-    await knex('class_students').insert({
-      class_id: classRow.id,
-      student_id: id,
-    }).onConflict(['class_id', 'student_id']).ignore()
+    await knex('class_students')
+      .insert({
+        class_id: classRow.id,
+        student_id: id,
+      })
+      .onConflict(['class_id', 'student_id'])
+      .ignore()
 
     const token = makeToken({
       userId: id,
@@ -138,12 +141,14 @@ router.post(
   '/register-teacher',
   requireAuth,
   requireRole('admin'),
-  validate(z.object({
-    username: z.string(),
-    email: z.string().email(),
-    name: z.string(),
-    password: z.string().min(6),
-  })),
+  validate(
+    z.object({
+      username: z.string(),
+      email: z.string().email(),
+      name: z.string(),
+      password: z.string().min(6),
+    }),
+  ),
   async (req, res, next) => {
     try {
       const knex = getKnex()
@@ -189,10 +194,12 @@ router.post('/change-password', requireAuth, async (req, res, next) => {
       return
     }
 
-    await knex('users').where({ id: req.user!.userId }).update({
-      password_hash: hashPassword(newPassword),
-      updated_at: knex.fn.now(),
-    })
+    await knex('users')
+      .where({ id: req.user!.userId })
+      .update({
+        password_hash: hashPassword(newPassword),
+        updated_at: knex.fn.now(),
+      })
 
     res.json({ message: 'Password changed' })
   } catch (err) {
@@ -213,7 +220,10 @@ router.get('/verify', async (req, res, next) => {
     }
 
     const token = authHeader.slice(7)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as Record<string, unknown>
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as Record<
+      string,
+      unknown
+    >
 
     const knex = getKnex()
     const user = await knex('users').where({ id: decoded.userId }).first()

@@ -13,7 +13,8 @@ async function getSettingsValue(key: string): Promise<string | null> {
 
 async function getOllamaSettings(): Promise<{ url: string; model: string }> {
   return {
-    url: (await getSettingsValue('ollama_url')) || process.env.OLLAMA_URL || 'http://localhost:11434',
+    url:
+      (await getSettingsValue('ollama_url')) || process.env.OLLAMA_URL || 'http://localhost:11434',
     model: (await getSettingsValue('ollama_model')) || process.env.OLLAMA_MODEL || 'llama3',
   }
 }
@@ -56,9 +57,16 @@ export async function generateWorksheetFromAI(req: AIRequest): Promise<Block[]> 
         const parsed = JSON.parse(data.response)
         blocks.push(...((parsed.blocks || []) as Block[]))
       } catch {
-        blocks.push({ id: uuidv4(), type: 'text', points: 0, text: 'AI generated: raw response received.' })
+        blocks.push({
+          id: uuidv4(),
+          type: 'text',
+          points: 0,
+          text: 'AI generated: raw response received.',
+        })
       }
-    } catch { /* offline, return placeholder */ }
+    } catch {
+      /* offline, return placeholder */
+    }
   } else if (req.provider === 'gemini') {
     const settings = await getGeminiSettings()
     if (!settings.apiKey) return blocks
@@ -70,11 +78,15 @@ export async function generateWorksheetFromAI(req: AIRequest): Promise<Block[]> 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `Generate a JSON array of interactive worksheet blocks from: "${req.prompt}". Each has: id(uuid), type(gap_fill|multiple_choice|single_choice|matching|drag_drop|short_answer|text), points(number), and type-specific fields. Return ONLY JSON.`,
-              }],
-            }],
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `Generate a JSON array of interactive worksheet blocks from: "${req.prompt}". Each has: id(uuid), type(gap_fill|multiple_choice|single_choice|matching|drag_drop|short_answer|text), points(number), and type-specific fields. Return ONLY JSON.`,
+                  },
+                ],
+              },
+            ],
           }),
         },
       )
@@ -82,7 +94,9 @@ export async function generateWorksheetFromAI(req: AIRequest): Promise<Block[]> 
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
       const jsonMatch = text.match(/\[[\s\S]*\]/)
       if (jsonMatch) blocks.push(...(JSON.parse(jsonMatch[0]) as Block[]))
-    } catch { /* */ }
+    } catch {
+      /* */
+    }
   }
 
   if (blocks.length === 0) {
@@ -98,16 +112,21 @@ export async function generateWorksheetFromAI(req: AIRequest): Promise<Block[]> 
 }
 
 export async function generateNeuroVocabCourse(rawList: string): Promise<Block[]> {
-  const words = rawList.split(/[\n,]+/).filter(Boolean).map((w) => w.trim())
+  const words = rawList
+    .split(/[\n,]+/)
+    .filter(Boolean)
+    .map((w) => w.trim())
 
-  return [{
-    id: uuidv4(),
-    type: 'vocabulary',
-    points: words.length * 2,
-    vocabulary: {
-      pairs: words.map((w) => ({ l: w, r: `[${w}]` })),
-      direction: 'l2r',
+  return [
+    {
+      id: uuidv4(),
+      type: 'vocabulary',
+      points: words.length * 2,
+      vocabulary: {
+        pairs: words.map((w) => ({ l: w, r: `[${w}]` })),
+        direction: 'l2r',
+      },
+      rawText: rawList,
     },
-    rawText: rawList,
-  }]
+  ]
 }

@@ -1,8 +1,8 @@
 <template>
   <div class="page">
-    <div style="max-width:400px;margin:3rem auto">
+    <div style="max-width: 400px; margin: 3rem auto">
       <div class="card">
-        <h2 style="margin-bottom:1rem">Register as Teacher</h2>
+        <h2 style="margin-bottom: 1rem">Register as Teacher</h2>
         <div class="form-group">
           <label>Name</label>
           <input v-model="form.name" />
@@ -19,9 +19,15 @@
           <label>Password (min 6 characters)</label>
           <input v-model="form.password" type="password" />
         </div>
-        <div v-if="errorMsg" style="color:var(--danger);margin-bottom:0.5rem">{{ errorMsg }}</div>
-        <button class="btn-primary" style="width:100%" @click="register" :disabled="loading">Register</button>
-        <p style="text-align:center;margin-top:0.75rem"><router-link to="/login">Back to Login</router-link></p>
+        <div v-if="errorMsg" style="color: var(--danger); margin-bottom: 0.5rem">
+          {{ errorMsg }}
+        </div>
+        <button class="btn-primary" style="width: 100%" :disabled="loading" @click="register">
+          Register
+        </button>
+        <p style="text-align: center; margin-top: 0.75rem">
+          <router-link to="/login">Back to Login</router-link>
+        </p>
       </div>
     </div>
   </div>

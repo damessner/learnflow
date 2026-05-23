@@ -1,12 +1,36 @@
 <template>
   <div>
-    <img v-if="block.src && isImage" :src="block.src" :alt="block.caption" style="max-width:100%;border-radius:var(--radius-sm)" />
-    <video v-else-if="block.src && isVideo" :src="block.src" controls style="max-width:100%;border-radius:var(--radius-sm)"></video>
-    <audio v-else-if="block.src && isAudio" :src="block.src" controls style="width:100%"></audio>
-    <div v-else style="padding:2rem;text-align:center;color:var(--text-muted);border:1px dashed var(--border-color);border-radius:var(--radius-sm)">
+    <img
+      v-if="block.src && isImage"
+      :src="block.src"
+      :alt="block.caption"
+      style="max-width: 100%; border-radius: var(--radius-sm)"
+    />
+    <video
+      v-else-if="block.src && isVideo"
+      :src="block.src"
+      controls
+      style="max-width: 100%; border-radius: var(--radius-sm)"
+    ></video>
+    <audio v-else-if="block.src && isAudio" :src="block.src" controls style="width: 100%"></audio>
+    <div
+      v-else
+      style="
+        padding: 2rem;
+        text-align: center;
+        color: var(--text-muted);
+        border: 1px dashed var(--border-color);
+        border-radius: var(--radius-sm);
+      "
+    >
       {{ block.caption || 'Media placeholder' }}
     </div>
-    <p v-if="block.caption" style="font-size:0.85rem;color:var(--text-muted);margin-top:0.25rem">{{ block.caption }}</p>
+    <p
+      v-if="block.caption"
+      style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem"
+    >
+      {{ block.caption }}
+    </p>
   </div>
 </template>
 

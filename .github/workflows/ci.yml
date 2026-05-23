@@ -8,6 +8,15 @@ on:
   workflow_call:
 
 jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npx prettier@3.5.0 --check .
+
   backend-lint:
     runs-on: ubuntu-latest
     defaults:

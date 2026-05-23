@@ -76,7 +76,11 @@ export async function up(knex: Knex): Promise<void> {
 
   await knex.schema.createTable('submissions', (t) => {
     t.text('id').primary()
-    t.text('assignment_id').notNullable().references('id').inTable('assignments').onDelete('CASCADE')
+    t.text('assignment_id')
+      .notNullable()
+      .references('id')
+      .inTable('assignments')
+      .onDelete('CASCADE')
     t.text('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE')
     t.text('answers')
     t.decimal('score')
@@ -91,7 +95,11 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('submission_attempts', (t) => {
     t.text('id').primary()
     t.text('submission_id').references('id').inTable('submissions').onDelete('CASCADE')
-    t.text('assignment_id').notNullable().references('id').inTable('assignments').onDelete('CASCADE')
+    t.text('assignment_id')
+      .notNullable()
+      .references('id')
+      .inTable('assignments')
+      .onDelete('CASCADE')
     t.text('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE')
     t.integer('attempt_number').notNullable()
     t.text('answers')
@@ -134,7 +142,11 @@ export async function up(knex: Knex): Promise<void> {
 
   await knex.schema.createTable('teams', (t) => {
     t.text('id').primary()
-    t.text('assignment_id').notNullable().references('id').inTable('assignments').onDelete('CASCADE')
+    t.text('assignment_id')
+      .notNullable()
+      .references('id')
+      .inTable('assignments')
+      .onDelete('CASCADE')
     t.text('name')
     t.timestamp('created_at').defaultTo(knex.fn.now())
   })
@@ -148,7 +160,11 @@ export async function up(knex: Knex): Promise<void> {
 
   await knex.schema.createTable('peer_reviews', (t) => {
     t.text('id').primary()
-    t.text('assignment_id').notNullable().references('id').inTable('assignments').onDelete('CASCADE')
+    t.text('assignment_id')
+      .notNullable()
+      .references('id')
+      .inTable('assignments')
+      .onDelete('CASCADE')
     t.text('reviewer_id').notNullable().references('id').inTable('users').onDelete('CASCADE')
     t.text('reviewee_id').notNullable().references('id').inTable('users').onDelete('CASCADE')
     t.decimal('score')
@@ -211,11 +227,27 @@ export async function up(knex: Knex): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   const tables = [
-    'learning_gamification', 'learning_queue', 'learning_planner', 'learning_mastery',
-    'settings', 'ratings', 'peer_reviews', 'team_members', 'teams',
-    'media_files', 'course_students', 'course_worksheets', 'courses',
-    'submission_attempts', 'submissions', 'assignments',
-    'class_announcements', 'class_students', 'worksheets', 'classes', 'users',
+    'learning_gamification',
+    'learning_queue',
+    'learning_planner',
+    'learning_mastery',
+    'settings',
+    'ratings',
+    'peer_reviews',
+    'team_members',
+    'teams',
+    'media_files',
+    'course_students',
+    'course_worksheets',
+    'courses',
+    'submission_attempts',
+    'submissions',
+    'assignments',
+    'class_announcements',
+    'class_students',
+    'worksheets',
+    'classes',
+    'users',
   ]
   for (const table of tables) {
     await knex.schema.dropTableIfExists(table)

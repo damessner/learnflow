@@ -2,17 +2,19 @@
   <div class="page">
     <div v-if="course">
       <h2>{{ course.name }}</h2>
-      <p style="color:var(--text-muted)">{{ course.description }}</p>
+      <p style="color: var(--text-muted)">{{ course.description }}</p>
 
-      <div v-if="progress" class="card" style="margin:1rem 0">
+      <div v-if="progress" class="card" style="margin: 1rem 0">
         <strong>Progress: {{ progress.completed }} / {{ progress.total }} worksheets</strong>
       </div>
 
-      <div v-for="ws in worksheets" :key="ws.id" class="card" style="margin-bottom:0.5rem">
-        <div style="display:flex;justify-content:space-between;align-items:center">
+      <div v-for="ws in worksheets" :key="ws.id" class="card" style="margin-bottom: 0.5rem">
+        <div style="display: flex; justify-content: space-between; align-items: center">
           <div>
             <strong>{{ ws.title }}</strong>
-            <span style="color:var(--text-muted);font-size:0.85rem;margin-left:0.5rem">{{ ws.subject }}</span>
+            <span style="color: var(--text-muted); font-size: 0.85rem; margin-left: 0.5rem">{{
+              ws.subject
+            }}</span>
           </div>
         </div>
       </div>
@@ -38,6 +40,8 @@ onMounted(async () => {
     course.value = courseData.course
     worksheets.value = courseData.worksheets || []
     progress.value = courseData.progress || null
-  } catch { /* */ }
+  } catch {
+    /* */
+  }
 })
 </script>

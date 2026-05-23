@@ -1,7 +1,17 @@
 <template>
   <div>
-    <label v-for="(opt, oi) in (block.options || [])" :key="oi" style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0">
-      <input type="checkbox" :value="oi" :checked="(modelValue || []).includes(oi)" @change="toggle(oi)" :disabled="readonly" />
+    <label
+      v-for="(opt, oi) in block.options || []"
+      :key="oi"
+      style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0"
+    >
+      <input
+        type="checkbox"
+        :value="oi"
+        :checked="(modelValue || []).includes(oi)"
+        :disabled="readonly"
+        @change="toggle(oi)"
+      />
       {{ opt }}
     </label>
   </div>

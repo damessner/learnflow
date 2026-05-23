@@ -15,7 +15,11 @@ export const useAuthStore = defineStore('auth', () => {
     const storedUser = localStorage.getItem('user')
     if (stored) token.value = stored
     if (storedUser) {
-      try { user.value = JSON.parse(storedUser) } catch { user.value = null }
+      try {
+        user.value = JSON.parse(storedUser)
+      } catch {
+        user.value = null
+      }
     }
   }
 
@@ -72,5 +76,20 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   loadFromStorage()
-  return { user, token, isAuthenticated, isGuest, role, login, loginWithMicrosoft, loginAsGuest, registerTeacher, getAuthConfig, changePassword, verifyToken, logout, loadFromStorage }
+  return {
+    user,
+    token,
+    isAuthenticated,
+    isGuest,
+    role,
+    login,
+    loginWithMicrosoft,
+    loginAsGuest,
+    registerTeacher,
+    getAuthConfig,
+    changePassword,
+    verifyToken,
+    logout,
+    loadFromStorage,
+  }
 })

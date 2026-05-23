@@ -28,7 +28,7 @@ jobs:
           npm run build
 
       - name: Deploy via rsync
-        uses: easingthemes/ssh-deploy@v5
+        uses: easingthemes/ssh-deploy@v5.1.1
         env:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           ARGS: '-rlgoDzvc -i'

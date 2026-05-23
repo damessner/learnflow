@@ -54,5 +54,22 @@ export const useLearningStore = defineStore('learning', () => {
     await Promise.all([fetchAtRisk(), fetchInterventions(), fetchAnalytics()])
   }
 
-  return { mastery, spacedQueue, planner, gamification, atRisk, interventions, analytics, fetchMastery, fetchSpacedQueue, fetchPlanner, updatePlanner, fetchGamification, fetchAtRisk, fetchInterventions, fetchAnalytics, fetchTeacherDashboard }
+  return {
+    mastery,
+    spacedQueue,
+    planner,
+    gamification,
+    atRisk,
+    interventions,
+    analytics,
+    fetchMastery,
+    fetchSpacedQueue,
+    fetchPlanner,
+    updatePlanner,
+    fetchGamification,
+    fetchAtRisk,
+    fetchInterventions,
+    fetchAnalytics,
+    fetchTeacherDashboard,
+  }
 })

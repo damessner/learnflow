@@ -1,13 +1,28 @@
 <template>
   <div>
-    <div v-for="(msg, mi) in (block.messages || [])" :key="mi" style="margin-bottom:0.5rem">
+    <div v-for="(msg, mi) in block.messages || []" :key="mi" style="margin-bottom: 0.5rem">
       <div v-if="!msg.isGap" :style="{ textAlign: mi % 2 === 0 ? 'left' : 'right' }">
-        <span style="background:var(--primary-light);color:#fff;padding:0.25rem 0.75rem;border-radius:8px;display:inline-block">{{ msg.text }}</span>
+        <span
+          style="
+            background: var(--primary-light);
+            color: #fff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+            display: inline-block;
+          "
+          >{{ msg.text }}</span
+        >
       </div>
       <div v-else>
-        <span style="color:var(--text-muted)">{{ msg.text }}</span>
-        <input v-if="!readonly" :value="(modelValue || {})[mi] || ''" @input="update(mi, $event.target.value)" placeholder="Your response..." style="margin-top:0.25rem" />
-        <span v-else style="color:var(--primary)">{{ (modelValue || {})[mi] || '___' }}</span>
+        <span style="color: var(--text-muted)">{{ msg.text }}</span>
+        <input
+          v-if="!readonly"
+          :value="(modelValue || {})[mi] || ''"
+          placeholder="Your response..."
+          style="margin-top: 0.25rem"
+          @input="update(mi, $event.target.value)"
+        />
+        <span v-else style="color: var(--primary)">{{ (modelValue || {})[mi] || '___' }}</span>
       </div>
     </div>
   </div>

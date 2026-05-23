@@ -1,7 +1,17 @@
 <template>
   <div>
-    <canvas ref="canvas" width="400" height="300" style="border:1px solid var(--border-color);border-radius:var(--radius-sm);cursor:crosshair;max-width:100%"></canvas>
-    <div style="margin-top:0.25rem">
+    <canvas
+      ref="canvas"
+      width="400"
+      height="300"
+      style="
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        cursor: crosshair;
+        max-width: 100%;
+      "
+    ></canvas>
+    <div style="margin-top: 0.25rem">
       <button class="btn-sm" @click="clear">Clear</button>
     </div>
   </div>
@@ -37,6 +47,10 @@ function draw(e) {
   ctx.stroke()
 }
 
-function stopDraw() { drawing = false }
-function clear() { if (ctx) ctx.clearRect(0, 0, 400, 300) }
+function stopDraw() {
+  drawing = false
+}
+function clear() {
+  if (ctx) ctx.clearRect(0, 0, 400, 300)
+}
 </script>

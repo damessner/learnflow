@@ -1,12 +1,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import logger from '../lib/logger'
 
-export function errorHandler(
-  err: Error,
-  req: Request,
-  res: Response,
-  _next: NextFunction,
-): void {
+export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction): void {
   logger.error({ err, requestId: req.id }, 'Unhandled error')
 
   const status = (err as { status?: number }).status || 500

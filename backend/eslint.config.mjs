@@ -16,7 +16,14 @@ export default tseslint.config(
       },
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
       'no-unused-vars': 'off',
       'no-undef': 'off',
       '@typescript-eslint/no-require-imports': 'off',
@@ -25,4 +32,3 @@ export default tseslint.config(
   },
   prettier,
 )
-

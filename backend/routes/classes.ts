@@ -14,7 +14,9 @@ router.get('/', requireAuth, async (req, res, next) => {
     if (req.user!.role === 'admin') {
       classes = await knex('classes').orderBy('created_at', 'desc')
     } else if (req.user!.role === 'teacher') {
-      classes = await knex('classes').where({ teacher_id: req.user!.userId }).orderBy('created_at', 'desc')
+      classes = await knex('classes')
+        .where({ teacher_id: req.user!.userId })
+        .orderBy('created_at', 'desc')
     } else {
       classes = await knex('classes')
         .join('class_students', 'classes.id', 'class_students.class_id')
@@ -91,10 +93,15 @@ router.get('/:id/progress', requireAuth, async (req, res, next) => {
     const progress = await Promise.all(
       students.map(async (student: { id: string; name: string; username: string }) => {
         const submissions = await knex('submissions')
-          .whereIn('assignment_id', assignments.map((a: { id: string }) => a.id))
+          .whereIn(
+            'assignment_id',
+            assignments.map((a: { id: string }) => a.id),
+          )
           .where('user_id', student.id)
 
-        const completed = submissions.filter((s: { submitted_at: unknown }) => s.submitted_at).length
+        const completed = submissions.filter(
+          (s: { submitted_at: unknown }) => s.submitted_at,
+        ).length
         return { student, completed, total: assignments.length }
       }),
     )
@@ -119,73 +126,96 @@ router.get('/:id/students', requireAuth, async (req, res, next) => {
   }
 })
 
-router.post('/:id/students', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    await knex('class_students').insert({
-      class_id: req.params.id,
-      student_id: req.body.studentId,
-    }).onConflict(['class_id', 'student_id']).ignore()
+router.post(
+  '/:id/students',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      await knex('class_students')
+        .insert({
+          class_id: req.params.id,
+          student_id: req.body.studentId,
+        })
+        .onConflict(['class_id', 'student_id'])
+        .ignore()
 
-    res.status(201).json({ message: 'Student added' })
-  } catch (err) {
-    next(err)
-  }
-})
+      res.status(201).json({ message: 'Student added' })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
-router.delete('/:id/students/:studentId', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    await knex('class_students')
-      .where({ class_id: req.params.id, student_id: req.params.studentId })
-      .del()
+router.delete(
+  '/:id/students/:studentId',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      await knex('class_students')
+        .where({ class_id: req.params.id, student_id: req.params.studentId })
+        .del()
 
-    res.json({ message: 'Student removed' })
-  } catch (err) {
-    next(err)
-  }
-})
+      res.json({ message: 'Student removed' })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
-router.post('/students/manual', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    const { name, email } = req.body
-    const id = uuidv4()
-    const username = `student_${Date.now()}`
+router.post(
+  '/students/manual',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const { name, email } = req.body
+      const id = uuidv4()
+      const username = `student_${Date.now()}`
 
-    await knex('users').insert({
-      id,
-      username,
-      email: email || `${username}@local`,
-      name,
-      role: 'student',
-    })
+      await knex('users').insert({
+        id,
+        username,
+        email: email || `${username}@local`,
+        name,
+        role: 'student',
+      })
 
-    const user = await knex('users').where({ id }).first()
-    res.status(201).json({ user })
-  } catch (err) {
-    next(err)
-  }
-})
+      const user = await knex('users').where({ id }).first()
+      res.status(201).json({ user })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
-router.post('/:id/announcements', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    const id = uuidv4()
-    await knex('class_announcements').insert({
-      id,
-      class_id: req.params.id,
-      title: req.body.title,
-      content: req.body.content,
-      created_by: req.user!.userId,
-    })
+router.post(
+  '/:id/announcements',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const id = uuidv4()
+      await knex('class_announcements').insert({
+        id,
+        class_id: req.params.id,
+        title: req.body.title,
+        content: req.body.content,
+        created_by: req.user!.userId,
+      })
 
-    const announcement = await knex('class_announcements').where({ id }).first()
-    res.status(201).json({ announcement })
-  } catch (err) {
-    next(err)
-  }
-})
+      const announcement = await knex('class_announcements').where({ id }).first()
+      res.status(201).json({ announcement })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
 router.get('/:id/announcements', requireAuth, async (req, res, next) => {
   try {
@@ -202,38 +232,46 @@ router.get('/:id/announcements', requireAuth, async (req, res, next) => {
   }
 })
 
-router.get('/:id/export-csv', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    const students = await knex('class_students')
-      .join('users', 'class_students.student_id', 'users.id')
-      .where('class_students.class_id', req.params.id)
-      .select('users.id', 'users.name')
+router.get(
+  '/:id/export-csv',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const students = await knex('class_students')
+        .join('users', 'class_students.student_id', 'users.id')
+        .where('class_students.class_id', req.params.id)
+        .select('users.id', 'users.name')
 
-    const assignments = await knex('assignments').where({ class_id: req.params.id })
+      const assignments = await knex('assignments').where({ class_id: req.params.id })
 
-    const rows: string[] = ['Name,' + assignments.map((a: { id: string }) => a.id).join(',')]
+      const rows: string[] = ['Name,' + assignments.map((a: { id: string }) => a.id).join(',')]
 
-    for (const s of students) {
-      const subs = await knex('submissions')
-        .whereIn('assignment_id', assignments.map((a: { id: string }) => a.id))
-        .where('user_id', s.id)
+      for (const s of students) {
+        const subs = await knex('submissions')
+          .whereIn(
+            'assignment_id',
+            assignments.map((a: { id: string }) => a.id),
+          )
+          .where('user_id', s.id)
 
-      const scores = assignments.map((a: { id: string }) => {
-        const sub = subs.find((sb: { assignment_id: string }) => sb.assignment_id === a.id)
-        return sub && sub.score != null ? String(sub.score) : ''
-      })
+        const scores = assignments.map((a: { id: string }) => {
+          const sub = subs.find((sb: { assignment_id: string }) => sb.assignment_id === a.id)
+          return sub && sub.score != null ? String(sub.score) : ''
+        })
 
-      rows.push(`${s.name},${scores.join(',')}`)
+        rows.push(`${s.name},${scores.join(',')}`)
+      }
+
+      res.setHeader('Content-Type', 'text/csv')
+      res.setHeader('Content-Disposition', 'attachment; filename=class-results.csv')
+      res.send(rows.join('\n'))
+    } catch (err) {
+      next(err)
     }
-
-    res.setHeader('Content-Type', 'text/csv')
-    res.setHeader('Content-Disposition', 'attachment; filename=class-results.csv')
-    res.send(rows.join('\n'))
-  } catch (err) {
-    next(err)
-  }
-})
+  },
+)
 
 router.post('/import-pdf', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
   try {
@@ -258,10 +296,13 @@ router.post('/join', requireAuth, async (req, res, next) => {
       return
     }
 
-    await knex('class_students').insert({
-      class_id: cls.id,
-      student_id: req.user!.userId,
-    }).onConflict(['class_id', 'student_id']).ignore()
+    await knex('class_students')
+      .insert({
+        class_id: cls.id,
+        student_id: req.user!.userId,
+      })
+      .onConflict(['class_id', 'student_id'])
+      .ignore()
 
     res.json({ message: 'Joined class', class: cls })
   } catch (err) {
