@@ -5,7 +5,6 @@ import { requireAuth, requireRole } from '../middleware/requireAuth'
 import { scoreAnswers } from './scoring'
 import { reviewKnowledgeComponent } from '../services/srs'
 import { Rating } from 'ts-fsrs'
-import logger from '../lib/logger'
 
 const router = Router()
 

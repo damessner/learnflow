@@ -15,8 +15,14 @@ export default [
       },
     },
     rules: {
-      'no-unused-vars': 'warn',
+      'no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
       'vue/multi-word-component-names': 'off',
+      'vue/require-default-prop': 'off',
+      'vue/no-v-html': 'off',
+      'vue/attributes-order': 'off',
     },
   },
   prettier,

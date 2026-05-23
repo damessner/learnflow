@@ -6,7 +6,6 @@ import { z } from 'zod'
 import { getKnex } from '../db/knex'
 import { requireAuth, requireRole } from '../middleware/requireAuth'
 import { validate } from '../middleware/validate'
-import logger from '../lib/logger'
 
 const router = Router()
 
@@ -20,7 +19,7 @@ function makeToken(payload: object): string {
 }
 
 function sanitizeUser(user: Record<string, unknown>) {
-  const { password_hash, ...rest } = user
+  const { password_hash: _password_hash, ...rest } = user
   return rest
 }
 
@@ -232,7 +231,7 @@ router.post('/logout', (_req, res) => {
   res.json({ message: 'Logged out' })
 })
 
-router.get('/verify', async (req, res, next) => {
+router.get('/verify', async (req, res, _next) => {
   try {
     const authHeader = req.headers.authorization
     const token =

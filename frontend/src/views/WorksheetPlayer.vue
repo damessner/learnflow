@@ -61,7 +61,7 @@
         <span class="badge">{{ block.points }} pts</span>
       </div>
 
-      <MermaidDiagram v-if="block.mermaid" :code="block.mermaid" :altText="block.alt_text" />
+      <MermaidDiagram v-if="block.mermaid" :code="block.mermaid" :alt-text="block.alt_text" />
 
       <template v-if="block.type === 'gap_fill'">
         <div v-html="renderGaps(block.template, block.id)"></div>
@@ -341,7 +341,7 @@ onMounted(async () => {
     } catch {
       gamXp.value = 0
     }
-  } catch (e) {
+  } catch (_e) {
     uiStore.showToast('Failed to load assignment', 'error')
   }
 })
@@ -478,7 +478,7 @@ async function sendToTutor() {
         }
       }
     }
-  } catch (err) {
+  } catch (_err) {
     tutorMessages.value[tutorReplyIndex].text = "I'm having trouble connecting right now."
   } finally {
     tutorLoading.value = false

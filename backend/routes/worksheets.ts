@@ -4,8 +4,6 @@ import { z } from 'zod'
 import { getKnex } from '../db/knex'
 import { requireAuth, requireRole } from '../middleware/requireAuth'
 import { validate } from '../middleware/validate'
-import { scoreAnswers } from './scoring'
-import logger from '../lib/logger'
 
 const router = Router()
 
