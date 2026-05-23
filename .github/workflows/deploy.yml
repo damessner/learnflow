@@ -21,13 +21,13 @@ jobs:
       - name: Build backend
         working-directory: backend
         run: |
-          npm ci
+          npm install
           npm run build
 
       - name: Build frontend
         working-directory: frontend
         run: |
-          npm ci
+          npm install
           npm run build
 
       - name: Deploy via rsync
@@ -49,5 +49,5 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             cd /var/www/learnflow/backend
-            npm ci --production
+            npm install --production
             pm2 reload ecosystem.config.js

@@ -32,7 +32,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npm run lint
 
   frontend-lint:
@@ -47,7 +47,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npm run lint
 
   backend-typecheck:
@@ -62,7 +62,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npx tsc --noEmit
 
   backend-test:
@@ -81,7 +81,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npx vitest run --passWithNoTests
 
   frontend-test:
@@ -96,7 +96,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npx vitest run --passWithNoTests
 
   backend-build:
@@ -111,7 +111,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npm run build
       - uses: actions/upload-artifact@v4
         with:
@@ -130,7 +130,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npm run build
       - uses: actions/upload-artifact@v4
         with:
