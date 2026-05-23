@@ -3,11 +3,19 @@ set -e
 
 echo "=== LearnFlow LXC Setup ==="
 
-apt-get update && apt-get install -y curl git nginx
+export DEBIAN_FRONTEND=noninteractive
+apt-get update && apt-get install -y locales
+sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen 2>/dev/null || true
+dpkg-reconfigure --frontend=noninteractive locales 2>/dev/null || true
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+apt-get install -y curl git nginx
 
 if ! command -v node &> /dev/null; then
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   apt-get install -y nodejs
+  npm install -g npm@latest
 fi
 
 npm install -g pm2
@@ -17,7 +25,7 @@ cd /var/www/learnflow
 echo "=== Backend Setup ==="
 cd backend
 cp .env.example .env
-npm install
+npm install --no-package-lock
 npm run build
 npx tsx server.ts &
 sleep 3
@@ -26,7 +34,7 @@ cd ..
 
 echo "=== Frontend Setup ==="
 cd frontend
-npm install
+npm install --no-package-lock
 npm run build
 cd ..
 

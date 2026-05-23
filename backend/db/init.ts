@@ -7,8 +7,13 @@ export async function initDB(): Promise<void> {
   logger.info('Initializing database...')
 
   try {
-    await up(knex)
-    logger.info('Database migration completed')
+    const hasUsers = await knex.schema.hasTable('users')
+    if (!hasUsers) {
+      await up(knex)
+      logger.info('Database migration completed')
+    } else {
+      logger.info('Database already initialized')
+    }
   } catch (err) {
     logger.error({ err }, 'Database migration failed')
     throw err
