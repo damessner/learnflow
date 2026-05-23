@@ -6,6 +6,7 @@ const router = Router()
 
 /**
  * Get all due reviews for the logged-in student.
+ * Supports ?interleave=true for round-robin subject shuffling.
  */
 router.get('/due', requireAuth, requireRole('student'), async (req, res, next) => {
   try {
@@ -24,7 +25,43 @@ router.get('/due', requireAuth, requireRole('student'), async (req, res, next) =
       )
       .orderBy('student_knowledge_state.due', 'asc')
 
-    res.json({ dueReviews })
+    const doInterleave = req.query.interleave === 'true'
+
+    if (doInterleave) {
+      const bySubject: Record<string, typeof dueReviews> = {}
+      for (const item of dueReviews) {
+        const subj = (item.subject as string) || 'General'
+        if (!bySubject[subj]) bySubject[subj] = []
+        bySubject[subj].push(item)
+      }
+
+      const interleaved: typeof dueReviews = []
+      const keys = Object.keys(bySubject)
+      let hasMore = true
+      let idx = 0
+      while (hasMore && interleaved.length < 10) {
+        hasMore = false
+        for (const key of keys) {
+          const group = bySubject[key]
+          if (idx < group.length) {
+            const item = { ...group[idx] }
+            if (interleaved.length > 0) {
+              const prev = interleaved[interleaved.length - 1]
+              ;(item as any).subject_switch = (prev as any).subject !== item.subject
+            } else {
+              ;(item as any).subject_switch = false
+            }
+            interleaved.push(item)
+            hasMore = true
+          }
+        }
+        idx++
+      }
+
+      res.json({ dueReviews: interleaved })
+    } else {
+      res.json({ dueReviews })
+    }
   } catch (err) {
     next(err)
   }

@@ -198,6 +198,56 @@ router.get('/student/gamification', requireAuth, async (req, res, next) => {
   }
 })
 
+router.get('/student/wager-history', requireAuth, async (req, res, next) => {
+  try {
+    const knex = getKnex()
+    const attempts = await knex('submission_attempts')
+      .where({ user_id: req.user!.userId })
+      .orderBy('created_at', 'desc')
+      .limit(50)
+      .select('answers', 'score', 'max_score', 'created_at')
+
+    let totalWagers = 0
+    let correctWagers = 0
+    let totalWageredXp = 0
+    let totalEarnedXp = 0
+
+    const byConfidence: Record<number, { total: number; correct: number }> = { 1: { total: 0, correct: 0 }, 3: { total: 0, correct: 0 }, 5: { total: 0, correct: 0 } }
+
+    for (const a of attempts) {
+      try {
+        const answers = JSON.parse(a.answers || '{}')
+        if (answers._wagers && answers._confidence) {
+          const wagers = answers._wagers
+          const confidence = answers._confidence
+          const ratio = a.max_score > 0 ? a.score / a.max_score : 0
+          for (const blockId of Object.keys(wagers)) {
+            const conf = confidence[blockId] || 3
+            const key = conf >= 4 ? 5 : conf >= 2 ? 3 : 1
+            byConfidence[key].total++
+            if (ratio >= 0.6) byConfidence[key].correct++
+            totalWagers++
+            if (ratio >= 0.6) correctWagers++
+            totalWageredXp += wagers[blockId] || 0
+          }
+        }
+      } catch { /* skip malformed */ }
+    }
+
+    const calibrationScore = totalWagers > 0 ? Math.round((correctWagers / totalWagers) * 100) : 0
+
+    res.json({
+      calibrationScore,
+      totalWagers,
+      correctWagers,
+      byConfidence,
+      accuracy: totalWagers > 0 ? Math.round((correctWagers / totalWagers) * 100) : 0,
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.get(
   '/teacher/at-risk',
   requireAuth,

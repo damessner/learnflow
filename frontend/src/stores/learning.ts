@@ -59,13 +59,12 @@ export const useLearningStore = defineStore('learning', () => {
 
   async function fetchDailyMix() {
     try {
-      const data = await api.get('/srs/due')
+      const data = await api.get('/srs/due?interleave=true')
       dailyMix.value = data.dueReviews.map((r: any) => ({
         ...r,
         topic: r.name,
       }))
     } catch {
-      // Fallback
       dailyMix.value = []
     }
   }
@@ -90,6 +89,11 @@ export const useLearningStore = defineStore('learning', () => {
     await Promise.all([fetchAtRisk(), fetchInterventions(), fetchAnalytics(), fetchMasteryMap()])
   }
 
+  async function fetchWagerHistory() {
+    const data = await api.get('/learning/student/wager-history')
+    return data
+  }
+
   return {
     mastery,
     spacedQueue,
@@ -112,5 +116,6 @@ export const useLearningStore = defineStore('learning', () => {
     fetchDailyMix,
     completeDailyMix,
     fetchTeacherDashboard,
+    fetchWagerHistory,
   }
 })

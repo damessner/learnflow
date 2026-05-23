@@ -145,22 +145,63 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
       })
 
     const gam = await knex('learning_gamification').where({ user_id: req.user!.userId }).first()
-    if (gam) {
-      await knex('learning_gamification')
-        .where({ user_id: req.user!.userId })
-        .update({
-          xp: gam.xp + Math.round(result.score * 10),
-        })
-    } else {
+    if (!gam) {
       await knex('learning_gamification').insert({
         id: uuidv4(),
         user_id: req.user!.userId,
-        xp: Math.round(result.score * 10),
+        xp: 0,
         level: 1,
         badges: '[]',
         streak_days: 0,
       })
     }
+
+    const wagers = (req.body.wagers || {}) as Record<string, number>
+    const perBlockConfidence = (req.body.per_block_confidence || {}) as Record<string, number>
+    let totalXpEarned = 0
+    let totalXpLost = 0
+    const wageringResults: Record<string, unknown>[] = []
+
+    // Process wagering per block
+    for (const blockScore of result.blockScores) {
+      const wagerAmount = wagers[blockScore.blockId]
+      if (!wagerAmount || wagerAmount <= 0) continue
+
+      const confidenceLevel = perBlockConfidence[blockScore.blockId] || 3
+      const confidenceNorm = Math.max(0.2, Math.min(1.0, confidenceLevel / 5))
+      const ratio = blockScore.maxScore > 0 ? blockScore.score / blockScore.maxScore : 0
+      const isCorrect = ratio >= 0.6
+
+      let xpDelta = 0
+      if (isCorrect) {
+        const multiplier = 1.0 + confidenceNorm * 2.0
+        xpDelta = Math.round(wagerAmount * multiplier)
+        totalXpEarned += xpDelta
+      } else {
+        xpDelta = -Math.round(wagerAmount * confidenceNorm * 0.8)
+        totalXpLost += Math.abs(xpDelta)
+      }
+
+      wageringResults.push({
+        blockId: blockScore.blockId,
+        wagered: wagerAmount,
+        confidence: confidenceLevel,
+        correct: isCorrect,
+        earned: xpDelta,
+      })
+    }
+
+    // Fallback: no wagers → flat XP
+    if (wageringResults.length === 0) {
+      const flatXp = Math.round(result.score * 10)
+      totalXpEarned = flatXp
+    }
+
+    const currentGam = await knex('learning_gamification').where({ user_id: req.user!.userId }).first()
+    const newXp = Math.max(0, (currentGam?.xp || 0) + totalXpEarned - totalXpLost)
+    await knex('learning_gamification')
+      .where({ user_id: req.user!.userId })
+      .update({ xp: newXp })
 
     // Update SRS and Mastery if confidence was provided
     const confidence = parseInt(req.body.confidence || '3')
@@ -237,6 +278,10 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
       maxScore: result.maxScore,
       feedback: result.feedback,
       submitted_at: new Date().toISOString(),
+      xpEarned: totalXpEarned,
+      xpLost: totalXpLost,
+      newXp,
+      wageringResults,
     })
   } catch (err) {
     next(err)

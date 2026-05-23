@@ -12,13 +12,25 @@
     >
       <h3>Submitted!</h3>
       <p>Score: {{ submitResult.score }} / {{ submitResult.maxScore }}</p>
+      <p v-if="submitResult.xpEarned">XP: +{{ submitResult.xpEarned }}</p>
+      <p v-if="submitResult.xpLost" style="color: var(--danger-light)">XP Lost: -{{ submitResult.xpLost }}</p>
+      <div v-if="submitResult.wageringResults?.length">
+        <p style="margin-top:0.5rem;font-size:0.9rem">Wagering Results:</p>
+        <div v-for="wr in submitResult.wageringResults" :key="wr.blockId" style="font-size:0.85rem;opacity:0.9">
+          {{ wr.correct ? 'Correct' : 'Missed' }} — wagered {{ wr.wagered }} XP → {{ wr.earned > 0 ? '+' + wr.earned : wr.earned }} XP
+        </div>
+      </div>
       <p>{{ submitResult.feedback }}</p>
     </div>
 
-    <div v-if="!submitted && blocks.length > 0" style="display: flex; justify-content: flex-end; margin-bottom: 1rem">
+    <div v-if="!submitted && blocks.length > 0" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
+      <div v-if="gamXp != null" style="display:flex;align-items:center;gap:0.5rem">
+        <span style="font-weight:600">Your XP:</span>
+        <span class="badge" style="background:var(--warning);color:#000">{{ gamXp }} XP</span>
+      </div>
       <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
         <input type="checkbox" v-model="progressiveMode" />
-        <span title="Reduces cognitive load by showing one question at a time">🧘 Focus Mode (Progressive Disclosure)</span>
+        <span title="Reduces cognitive load by showing one question at a time">🧘 Focus Mode</span>
       </label>
     </div>
 
@@ -86,20 +98,22 @@
         </div>
       </template>
 
+      <div v-if="!submitted" style="margin-top:0.75rem;padding-top:0.5rem;border-top:1px solid var(--border-color)">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem">
+          <label style="font-size:0.8rem;white-space:nowrap">Wager XP:</label>
+          <input type="range" v-model.number="wagers[block.id]" 
+                 :min="0" :max="gamXp || 100" step="10" style="flex:1" />
+          <span style="font-size:0.8rem;min-width:40px;text-align:right">{{ wagers[block.id] || 0 }} XP</span>
+        </div>
+        <div style="display:flex;gap:0.75rem;font-size:0.75rem;color:var(--text-muted)">
+          <label><input type="radio" v-model="blockConfidence[block.id]" value="1" /> Guessing</label>
+          <label><input type="radio" v-model="blockConfidence[block.id]" value="3" /> Unsure</label>
+          <label><input type="radio" v-model="blockConfidence[block.id]" value="5" /> Confident</label>
+        </div>
+      </div>
+
       <div v-if="progressiveMode && idx === currentBlockIndex && idx < blocks.length - 1" style="margin-top: 1rem; text-align: right;">
         <button class="btn-primary" @click="currentBlockIndex++">Next Question ↓</button>
-      </div>
-    </div>
-
-    <div v-if="!submitted" class="card" style="margin-top: 1rem; border-color: var(--primary)">
-      <h4>🧠 Metacognition Check</h4>
-      <p style="font-size: 0.9rem; color: var(--text-muted)">
-        Before submitting, how confident are you in your answers?
-      </p>
-      <div style="display: flex; gap: 1rem; margin-top: 0.5rem">
-        <label><input type="radio" v-model="confidence" value="1" /> Guessing (1)</label>
-        <label><input type="radio" v-model="confidence" value="3" /> Somewhat Sure (3)</label>
-        <label><input type="radio" v-model="confidence" value="5" /> Very Confident (5)</label>
       </div>
     </div>
 
@@ -115,7 +129,7 @@
         🤖 Ask Socratic Tutor
       </button>
       <button :disabled="saving" @click="saveProgress">Save</button>
-      <button class="btn-primary" :disabled="submitting || !confidence" @click="submit">
+      <button class="btn-primary" :disabled="submitting" @click="submit">
         Submit Assignment
       </button>
     </div>
@@ -208,11 +222,13 @@ import { useRoute } from 'vue-router'
 import { useSubmissionsStore } from '../stores/submissions'
 import { useUiStore } from '../stores/ui'
 import { useAuthStore } from '../stores/auth'
+import { useLearningStore } from '../stores/learning'
 
 const route = useRoute()
 const store = useSubmissionsStore()
 const uiStore = useUiStore()
 const authStore = useAuthStore()
+const learningStore = useLearningStore()
 
 const worksheet = ref(null)
 const blocks = ref([])
@@ -221,7 +237,10 @@ const submitted = ref(false)
 const submitResult = ref({ score: 0, maxScore: 0, feedback: '' })
 const saving = ref(false)
 const submitting = ref(false)
-const confidence = ref(null)
+
+const wagers = reactive({})
+const blockConfidence = reactive({})
+const gamXp = ref(null)
 
 const progressiveMode = ref(false)
 const currentBlockIndex = ref(0)
@@ -281,6 +300,11 @@ onMounted(async () => {
     }
 
     autoSaveTimer = setInterval(saveProgress, 20000)
+
+    try {
+      await learningStore.fetchGamification()
+      gamXp.value = learningStore.gamification?.xp || 0
+    } catch { gamXp.value = 0 }
   } catch (e) {
     uiStore.showToast('Failed to load assignment', 'error')
   }
@@ -334,7 +358,7 @@ async function saveProgress() {
   saving.value = true
   try {
     localStorage.setItem(`answers_${route.params.id}`, current)
-    await store.saveProgress(route.params.id, { ...answers })
+    await store.saveProgress(route.params.id, { ...answers, _wagers: { ...wagers }, _confidence: { ...blockConfidence } })
     lastSavedAnswers = current
   } catch {
     /* silent */
@@ -346,8 +370,9 @@ async function submit() {
   submitting.value = true
   try {
     const result = await store.submitAssignment(route.params.id, {
-      answers: answers,
-      confidence: confidence.value,
+      answers: { ...answers },
+      wagers: { ...wagers },
+      per_block_confidence: { ...blockConfidence },
     })
     submitResult.value = result
     submitted.value = true

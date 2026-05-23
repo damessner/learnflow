@@ -25,6 +25,9 @@
     <!-- Daily Mix active session UI -->
     <div v-if="mixing" class="card" style="margin: 1rem 0; border-color: var(--primary)">
       <h3>Daily Mix ({{ mixIndex + 1 }} / {{ dailyMix.length }})</h3>
+      <div v-if="currentMixItem?.subject_switch" class="subject-switch-banner">
+        Context Shift: switching to <strong>{{ currentMixItem.subject || 'a new subject' }}</strong>
+      </div>
       <div style="padding: 2rem 0; text-align: center; font-size: 1.2rem">
         Review Topic: <strong>{{ currentMixItem?.topic }}</strong>
       </div>
