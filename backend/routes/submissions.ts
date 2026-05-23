@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { getKnex } from '../db/knex'
 import { requireAuth, requireRole } from '../middleware/requireAuth'
 import { scoreAnswers } from './scoring'
+import { reviewKnowledgeComponent } from '../services/srs'
+import { Rating } from 'ts-fsrs'
 import logger from '../lib/logger'
 
 const router = Router()
@@ -210,6 +212,24 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
         topic,
         due_at: nextDue.toISOString(),
       })
+    }
+
+    // Process Spaced Repetition (FSRS) for all blocks with kc_ids
+    for (const blockScore of result.blockScores) {
+      const block = blocks.find((b: any) => b.id === blockScore.blockId) as any
+      if (block && block.kc_ids && Array.isArray(block.kc_ids)) {
+        // Map the score ratio to FSRS Rating (1=Again, 2=Hard, 3=Good, 4=Easy)
+        const ratio = blockScore.maxScore > 0 ? blockScore.score / blockScore.maxScore : 0
+        let rating = Rating.Again
+        if (ratio >= 1.0) rating = Rating.Easy
+        else if (ratio >= 0.8) rating = Rating.Good
+        else if (ratio >= 0.5) rating = Rating.Hard
+        else rating = Rating.Again
+
+        for (const kc_id of block.kc_ids) {
+          await reviewKnowledgeComponent(req.user!.userId, kc_id, rating)
+        }
+      }
     }
 
     res.json({

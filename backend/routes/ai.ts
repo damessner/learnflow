@@ -26,6 +26,7 @@ const BlockSchema = z.object({
   pairs: z.array(z.tuple([z.string(), z.string()])).optional(),
   words: z.array(z.object({ word: z.string() })).optional(),
   expected: z.array(z.string()).optional(),
+  kc_ids: z.array(z.string().uuid()).optional(),
 })
 
 const GenerationSchema = z.object({

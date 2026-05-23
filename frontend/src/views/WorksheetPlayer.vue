@@ -15,7 +15,20 @@
       <p>{{ submitResult.feedback }}</p>
     </div>
 
-    <div v-for="block in blocks" :key="block.id" class="card" style="margin-bottom: 0.5rem">
+    <div v-if="!submitted && blocks.length > 0" style="display: flex; justify-content: flex-end; margin-bottom: 1rem">
+      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+        <input type="checkbox" v-model="progressiveMode" />
+        <span title="Reduces cognitive load by showing one question at a time">🧘 Focus Mode (Progressive Disclosure)</span>
+      </label>
+    </div>
+
+    <div 
+      v-for="(block, idx) in blocks" 
+      :key="block.id" 
+      class="card block-item" 
+      :style="getProgressiveStyle(idx)"
+      style="margin-bottom: 0.5rem; transition: all 0.4s ease"
+    >
       <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem">
         <strong>{{ block.type.replace(/_/g, ' ') }}</strong>
         <span class="badge">{{ block.points }} pts</span>
@@ -72,6 +85,10 @@
           <input v-model="answers[block.id][wi]" placeholder="Unscramble" />
         </div>
       </template>
+
+      <div v-if="progressiveMode && idx === currentBlockIndex && idx < blocks.length - 1" style="margin-top: 1rem; text-align: right;">
+        <button class="btn-primary" @click="currentBlockIndex++">Next Question ↓</button>
+      </div>
     </div>
 
     <div v-if="!submitted" class="card" style="margin-top: 1rem; border-color: var(--primary)">
@@ -87,7 +104,7 @@
     </div>
 
     <div
-      v-if="!submitted"
+      v-if="!submitted && (!progressiveMode || currentBlockIndex === blocks.length - 1)"
       style="display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end"
     >
       <button
@@ -206,6 +223,9 @@ const saving = ref(false)
 const submitting = ref(false)
 const confidence = ref(null)
 
+const progressiveMode = ref(false)
+const currentBlockIndex = ref(0)
+
 const tutorOpen = ref(false)
 const tutorInput = ref('')
 const tutorMessages = ref([
@@ -299,6 +319,13 @@ function scramble(word) {
     ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
   return arr.join('')
+}
+
+function getProgressiveStyle(idx: number) {
+  if (!progressiveMode.value) return ''
+  if (idx === currentBlockIndex.value) return 'opacity: 1; filter: none; transform: scale(1);'
+  if (idx < currentBlockIndex.value) return 'opacity: 0.4; filter: blur(2px); pointer-events: none; transform: scale(0.98);'
+  return 'display: none;'
 }
 
 async function saveProgress() {

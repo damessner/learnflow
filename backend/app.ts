@@ -19,6 +19,7 @@ import teamRoutes from './routes/teams'
 import mediaRoutes from './routes/media'
 import libraryRoutes from './routes/library'
 import aiRoutes from './routes/ai'
+import srsRoutes from './routes/srs'
 
 export function createApp(): express.Application {
   const app = express()
@@ -69,6 +70,7 @@ export function createApp(): express.Application {
   app.use('/api/teams', teamRoutes)
   app.use('/api/library', libraryRoutes)
   app.use('/api/ai', aiRoutes)
+  app.use('/api/srs', srsRoutes)
 
   app.use((req, _res, next) => {
     logger.info({ method: req.method, url: req.url, requestId: req.id }, 'Request')

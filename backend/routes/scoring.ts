@@ -53,12 +53,13 @@ interface ScoreResult {
   score: number
   maxScore: number
   feedback: string
+  blockScores: { blockId: string; score: number; maxScore: number }[]
 }
 
 function scoreGapFill(
   block: Block,
   answer: { gaps?: string[]; answers?: Record<string, string> },
-): ScoreResult {
+): { score: number; maxScore: number; feedback: string } {
   if (!block.template) return { score: 0, maxScore: block.points, feedback: '' }
   const gapCount = (block.template.match(/\(\(.*?\)\)/g) || []).length
   let correct = 0
@@ -81,23 +82,25 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
   let totalScore = 0
   let totalMax = 0
   const feedback: string[] = []
+  const blockScores: { blockId: string; score: number; maxScore: number }[] = []
 
   for (const block of blocks) {
     const userAnswer = answers[block.id]
     totalMax += block.points
 
     try {
+      let earned = 0
       switch (block.type) {
         case 'gap_fill': {
           const r = scoreGapFill(block, (userAnswer || {}) as { gaps?: string[] })
-          totalScore += r.score
+          earned = r.score
           feedback.push(`Gap fill: ${r.feedback}`)
           break
         }
         case 'multiple_choice': {
           const ans = (userAnswer as number[]) || []
           if (block.correct && setsEqual(ans, block.correct as number[])) {
-            totalScore += block.points
+            earned = block.points
             feedback.push('Multiple choice: correct')
           } else {
             feedback.push('Multiple choice: incorrect')
@@ -106,7 +109,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
         }
         case 'single_choice': {
           if (userAnswer === block.correct) {
-            totalScore += block.points
+            earned = block.points
             feedback.push('Single choice: correct')
           } else {
             feedback.push('Single choice: incorrect')
@@ -123,9 +126,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
               matchCount++
             }
           }
-          const earned =
-            pairs.length > 0 ? Math.round((matchCount / pairs.length) * block.points) : 0
-          totalScore += earned
+          earned = pairs.length > 0 ? Math.round((matchCount / pairs.length) * block.points) : 0
           feedback.push(`Matching: ${matchCount}/${pairs.length}`)
           break
         }
@@ -137,8 +138,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           for (const slot of slots) {
             if (ans[slot]?.trim().toLowerCase() === expected[slot]?.trim().toLowerCase()) correct++
           }
-          const earned = slots.length > 0 ? Math.round((correct / slots.length) * block.points) : 0
-          totalScore += earned
+          earned = slots.length > 0 ? Math.round((correct / slots.length) * block.points) : 0
           feedback.push(`Drag-drop: ${correct}/${slots.length}`)
           break
         }
@@ -150,14 +150,14 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
             if (ans.toLowerCase().includes(kw) || isAcceptableVariant(ans, kw)) kwMatches++
           }
           const pass = kwMatches >= Math.ceil(keywords.length * 0.85)
-          totalScore += pass ? block.points : 0
+          earned = pass ? block.points : 0
           feedback.push(pass ? 'Short answer: correct' : 'Short answer: incorrect')
           break
         }
         case 'flashcards':
         case 'memory_match': {
           if (userAnswer === 'completed' || (userAnswer as Record<string, unknown>)?.completed) {
-            totalScore += block.points
+            earned = block.points
             feedback.push(`${block.type}: completed`)
           } else {
             feedback.push(`${block.type}: not completed`)
@@ -167,7 +167,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
         case 'flow_challenge': {
           const externalScore = Number(userAnswer) || 0
           const capped = Math.min(externalScore, block.points)
-          totalScore += capped
+          earned = capped
           feedback.push(`Flow challenge: ${capped}/${block.points}`)
           break
         }
@@ -178,8 +178,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           for (let i = 0; i < words.length; i++) {
             if (ans[i]?.trim().toLowerCase() === words[i].word.trim().toLowerCase()) correct++
           }
-          const earned = words.length > 0 ? Math.round((correct / words.length) * block.points) : 0
-          totalScore += earned
+          earned = words.length > 0 ? Math.round((correct / words.length) * block.points) : 0
           feedback.push(`Word scramble: ${correct}/${words.length}`)
           break
         }
@@ -196,8 +195,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
             }
             totalItems += cat.words.length
           }
-          const earned = totalItems > 0 ? Math.round((correct / totalItems) * block.points) : 0
-          totalScore += earned
+          earned = totalItems > 0 ? Math.round((correct / totalItems) * block.points) : 0
           feedback.push(`Semantic sorter: ${correct}/${totalItems}`)
           break
         }
@@ -216,9 +214,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
               correct++
             }
           }
-          const earned =
-            gapMsgs.length > 0 ? Math.round((correct / gapMsgs.length) * block.points) : 0
-          totalScore += earned
+          earned = gapMsgs.length > 0 ? Math.round((correct / gapMsgs.length) * block.points) : 0
           feedback.push(`Dialogue: ${correct}/${gapMsgs.length}`)
           break
         }
@@ -236,7 +232,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           }
           const ans = (userAnswer as Record<string, string>) || {}
           if (ans.completed === 'true') {
-            totalScore += block.points
+            earned = block.points
             feedback.push('Vocabulary: completed')
             break
           }
@@ -249,9 +245,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
                 : pairs[i].r.trim().toLowerCase()
             if (userVal === expected || isAcceptableVariant(userVal, expected)) pairCorrect++
           }
-          const earned =
-            pairs.length > 0 ? Math.round((pairCorrect / pairs.length) * block.points) : 0
-          totalScore += earned
+          earned = pairs.length > 0 ? Math.round((pairCorrect / pairs.length) * block.points) : 0
           feedback.push(`Vocabulary: ${pairCorrect}/${pairs.length}`)
           break
         }
@@ -260,7 +254,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
         case 'video':
         case 'audio':
         case 'read_aloud': {
-          totalScore += block.points
+          earned = block.points
           feedback.push(`${block.type}: auto`)
           break
         }
@@ -268,10 +262,13 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           feedback.push(`Unknown block type: ${block.type}`)
         }
       }
+      
+      totalScore += earned
+      blockScores.push({ blockId: block.id, score: earned, maxScore: block.points })
     } catch (err) {
       feedback.push(`Error scoring ${block.type}: ${String(err)}`)
     }
   }
 
-  return { score: totalScore, maxScore: totalMax, feedback: feedback.join('; ') }
+  return { score: totalScore, maxScore: totalMax, feedback: feedback.join('; '), blockScores }
 }

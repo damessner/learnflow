@@ -271,6 +271,7 @@ function startDailyMix() {
 
 async function answerMix(correct, confidence) {
   mixResults.value.push({
+    kc_id: currentMixItem.value.kc_id,
     topic: currentMixItem.value.topic,
     correct,
     confidence,
