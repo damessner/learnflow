@@ -1,0 +1,55 @@
+import { createRouter, createWebHistory } from 'vue-router'
+
+const Login = () => import('../views/Login.vue')
+const StudentDashboard = () => import('../views/StudentDashboard.vue')
+const TeacherDashboard = () => import('../views/TeacherDashboard.vue')
+const WorksheetPlayer = () => import('../views/WorksheetPlayer.vue')
+const WorksheetBuilder = () => import('../views/WorksheetBuilder.vue')
+const WorksheetPreview = () => import('../views/WorksheetPreview.vue')
+const CourseView = () => import('../views/CourseView.vue')
+const TeacherRegistration = () => import('../views/TeacherRegistration.vue')
+const AdminDashboard = () => import('../views/AdminDashboard.vue')
+
+const routes = [
+  { path: '/', redirect: '/login' },
+  { path: '/login', component: Login },
+  { path: '/register-teacher', component: TeacherRegistration },
+  { path: '/student', component: StudentDashboard, meta: { requiresAuth: true, role: 'student' } },
+  { path: '/student/course/:id', component: CourseView, meta: { requiresAuth: true, role: 'student' } },
+  { path: '/student/assignment/:id', component: WorksheetPlayer, meta: { requiresAuth: true, role: 'student' } },
+  { path: '/teacher', component: TeacherDashboard, meta: { requiresAuth: true, role: ['teacher', 'admin'] } },
+  { path: '/teacher/builder/:id?', component: WorksheetBuilder, meta: { requiresAuth: true, role: ['teacher', 'admin'] } },
+  { path: '/teacher/preview/:id', component: WorksheetPreview, meta: { requiresAuth: true, role: ['teacher', 'admin'] } },
+  { path: '/admin', component: AdminDashboard, meta: { requiresAuth: true, role: 'admin' } },
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+})
+
+router.beforeEach((to) => {
+  const token = localStorage.getItem('token')
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+
+  if (to.meta.requiresAuth && !token) return '/login'
+
+  if (token && user.role) {
+    if (to.path === '/login') {
+      if (user.role === 'student' || user.isGuest) return '/student'
+      if (user.role === 'admin') return '/admin'
+      return '/teacher'
+    }
+
+    if (to.meta.role) {
+      const allowed = Array.isArray(to.meta.role) ? to.meta.role : [to.meta.role]
+      if (!allowed.includes(user.role)) {
+        if (user.role === 'student') return '/student'
+        if (user.role === 'admin') return '/admin'
+        return '/teacher'
+      }
+    }
+  }
+})
+
+export default router
