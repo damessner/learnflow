@@ -9,7 +9,8 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@azure/msal-node": "^2.16.2",

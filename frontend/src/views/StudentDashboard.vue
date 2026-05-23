@@ -12,7 +12,7 @@
           </div>
         </div>
       </div>
-      
+
       <div style="flex: 1" class="card" v-if="dailyMix.length > 0 && !mixing">
         <h3 style="margin-top: 0">🧠 Your Daily Mix</h3>
         <p style="font-size: 0.9rem; color: var(--text-muted)">
@@ -28,21 +28,29 @@
       <div style="padding: 2rem 0; text-align: center; font-size: 1.2rem">
         Review Topic: <strong>{{ currentMixItem?.topic }}</strong>
       </div>
-      
+
       <div v-if="!showAnswer" style="text-align: center">
         <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem">
           Try to actively recall everything you know about this topic before revealing.
         </p>
         <button class="btn-primary" @click="showAnswer = true">I've got it / Show Details</button>
       </div>
-      
+
       <div v-else style="text-align: center">
         <h4>Metacognition Check</h4>
         <p>How well did you remember this concept?</p>
         <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem">
-          <button class="btn-sm btn-danger" @click="answerMix(false, 1)">Forgot entirely (1)</button>
+          <button class="btn-sm btn-danger" @click="answerMix(false, 1)">
+            Forgot entirely (1)
+          </button>
           <button class="btn-sm" @click="answerMix(true, 3)">Hard to recall (3)</button>
-          <button class="btn-sm" style="background: var(--success); color: white; border: none" @click="answerMix(true, 5)">Easy (5)</button>
+          <button
+            class="btn-sm"
+            style="background: var(--success); color: white; border: none"
+            @click="answerMix(true, 5)"
+          >
+            Easy (5)
+          </button>
         </div>
       </div>
     </div>
@@ -107,12 +115,32 @@
       <div v-if="gamification" class="card">
         <h3>🏆 Progress</h3>
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem">
-          <span>XP: <strong>{{ gamification.xp }}</strong></span>
-          <span>Level: <strong>{{ gamification.level }}</strong></span>
+          <span
+            >XP: <strong>{{ gamification.xp }}</strong></span
+          >
+          <span
+            >Level: <strong>{{ gamification.level }}</strong></span
+          >
         </div>
-        
-        <div style="width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-bottom: 1rem">
-           <div :style="{ width: (gamification.xp % 100) + '%', background: 'var(--primary)', height: '100%', transition: 'width 0.3s' }"></div>
+
+        <div
+          style="
+            width: 100%;
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+          "
+        >
+          <div
+            :style="{
+              width: (gamification.xp % 100) + '%',
+              background: 'var(--primary)',
+              height: '100%',
+              transition: 'width 0.3s',
+            }"
+          ></div>
         </div>
 
         <p>
@@ -245,9 +273,9 @@ async function answerMix(correct, confidence) {
   mixResults.value.push({
     topic: currentMixItem.value.topic,
     correct,
-    confidence
+    confidence,
   })
-  
+
   if (mixIndex.value < dailyMix.value.length - 1) {
     mixIndex.value++
     showAnswer.value = false

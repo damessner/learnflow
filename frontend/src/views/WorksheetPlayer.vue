@@ -74,13 +74,11 @@
       </template>
     </div>
 
-    <div
-      v-if="!submitted"
-      class="card"
-      style="margin-top: 1rem; border-color: var(--primary)"
-    >
+    <div v-if="!submitted" class="card" style="margin-top: 1rem; border-color: var(--primary)">
       <h4>🧠 Metacognition Check</h4>
-      <p style="font-size: 0.9rem; color: var(--text-muted)">Before submitting, how confident are you in your answers?</p>
+      <p style="font-size: 0.9rem; color: var(--text-muted)">
+        Before submitting, how confident are you in your answers?
+      </p>
       <div style="display: flex; gap: 1rem; margin-top: 0.5rem">
         <label><input type="radio" v-model="confidence" value="1" /> Guessing (1)</label>
         <label><input type="radio" v-model="confidence" value="3" /> Somewhat Sure (3)</label>
@@ -92,27 +90,95 @@
       v-if="!submitted"
       style="display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end"
     >
-      <button class="btn-primary" @click="openTutor" style="background: var(--info); border-color: var(--info);">🤖 Ask Socratic Tutor</button>
+      <button
+        class="btn-primary"
+        @click="openTutor"
+        style="background: var(--info); border-color: var(--info)"
+      >
+        🤖 Ask Socratic Tutor
+      </button>
       <button :disabled="saving" @click="saveProgress">Save</button>
-      <button class="btn-primary" :disabled="submitting || !confidence" @click="submit">Submit Assignment</button>
+      <button class="btn-primary" :disabled="submitting || !confidence" @click="submit">
+        Submit Assignment
+      </button>
     </div>
 
     <!-- Socratic Tutor Modal -->
-    <div v-if="tutorOpen" class="modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000">
-      <div class="card" style="width: 500px; max-width: 90%; background: var(--bg); display: flex; flex-direction: column; max-height: 80vh">
-        <div style="display:flex; justify-content:space-between; margin-bottom:1rem">
+    <div
+      v-if="tutorOpen"
+      class="modal"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      "
+    >
+      <div
+        class="card"
+        style="
+          width: 500px;
+          max-width: 90%;
+          background: var(--bg);
+          display: flex;
+          flex-direction: column;
+          max-height: 80vh;
+        "
+      >
+        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem">
           <h3>🤖 Socratic Tutor</h3>
-          <button @click="tutorOpen = false" style="background:none; border:none; font-size:1.5rem; cursor:pointer">&times;</button>
+          <button
+            @click="tutorOpen = false"
+            style="background: none; border: none; font-size: 1.5rem; cursor: pointer"
+          >
+            &times;
+          </button>
         </div>
-        <div style="flex:1; overflow-y:auto; border: 1px solid var(--border-color); padding: 1rem; margin-bottom: 1rem; border-radius: 4px; background: var(--surface)">
-           <div v-for="(msg, i) in tutorMessages" :key="i" :style="{ textAlign: msg.role === 'user' ? 'right' : 'left', marginBottom: '0.5rem' }">
-              <span :style="{ display: 'inline-block', padding: '0.5rem 1rem', borderRadius: '1rem', background: msg.role === 'user' ? 'var(--primary)' : 'var(--border-color)', color: msg.role === 'user' ? '#fff' : 'inherit' }">{{ msg.text }}</span>
-           </div>
-           <div v-if="tutorLoading" style="color: var(--text-muted); font-size: 0.9rem">Tutor is typing...</div>
+        <div
+          style="
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            background: var(--surface);
+          "
+        >
+          <div
+            v-for="(msg, i) in tutorMessages"
+            :key="i"
+            :style="{ textAlign: msg.role === 'user' ? 'right' : 'left', marginBottom: '0.5rem' }"
+          >
+            <span
+              :style="{
+                display: 'inline-block',
+                padding: '0.5rem 1rem',
+                borderRadius: '1rem',
+                background: msg.role === 'user' ? 'var(--primary)' : 'var(--border-color)',
+                color: msg.role === 'user' ? '#fff' : 'inherit',
+              }"
+              >{{ msg.text }}</span
+            >
+          </div>
+          <div v-if="tutorLoading" style="color: var(--text-muted); font-size: 0.9rem">
+            Tutor is typing...
+          </div>
         </div>
-        <div style="display:flex; gap: 0.5rem">
-           <input v-model="tutorInput" @keyup.enter="sendToTutor" placeholder="I'm stuck on..." style="flex:1" />
-           <button class="btn-primary" @click="sendToTutor" :disabled="tutorLoading">Ask</button>
+        <div style="display: flex; gap: 0.5rem">
+          <input
+            v-model="tutorInput"
+            @keyup.enter="sendToTutor"
+            placeholder="I'm stuck on..."
+            style="flex: 1"
+          />
+          <button class="btn-primary" @click="sendToTutor" :disabled="tutorLoading">Ask</button>
         </div>
       </div>
     </div>
@@ -142,7 +208,12 @@ const confidence = ref(null)
 
 const tutorOpen = ref(false)
 const tutorInput = ref('')
-const tutorMessages = ref<{role: string, text: string}[]>([{role: 'tutor', text: 'Hi! I am your Socratic Tutor. I will not give you the answers directly, but I will help you find them yourself. What are you stuck on?'}])
+const tutorMessages = ref([
+  {
+    role: 'tutor',
+    text: 'Hi! I am your Socratic Tutor. I will not give you the answers directly, but I will help you find them yourself. What are you stuck on?',
+  },
+])
 const tutorLoading = ref(false)
 
 let autoSaveTimer = null
@@ -247,7 +318,10 @@ async function saveProgress() {
 async function submit() {
   submitting.value = true
   try {
-    const result = await store.submitAssignment(route.params.id, { answers: answers, confidence: confidence.value })
+    const result = await store.submitAssignment(route.params.id, {
+      answers: answers,
+      confidence: confidence.value,
+    })
     submitResult.value = result
     submitted.value = true
     if (autoSaveTimer) clearInterval(autoSaveTimer)
@@ -265,7 +339,7 @@ function openTutor() {
 
 async function sendToTutor() {
   if (!tutorInput.value.trim() || tutorLoading.value) return
-  
+
   const question = tutorInput.value.trim()
   tutorMessages.value.push({ role: 'user', text: question })
   tutorInput.value = ''
@@ -276,16 +350,16 @@ async function sendToTutor() {
 
   try {
     const context = `Worksheet: ${worksheet.value?.title}. Description: ${worksheet.value?.description}. Exercises: ${JSON.stringify(blocks.value)}`
-    
+
     // Use raw fetch for SSE
     const response = await fetch('/api/ai/tutor', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(authStore.token ? { 'Authorization': `Bearer ${authStore.token}` } : {})
+        ...(authStore.token ? { Authorization: `Bearer ${authStore.token}` } : {}),
       },
       body: JSON.stringify({ question, context }),
-      credentials: 'include' // Since we use cookies now
+      credentials: 'include', // Since we use cookies now
     })
 
     const reader = response.body?.getReader()
@@ -295,10 +369,10 @@ async function sendToTutor() {
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
-      
+
       const chunk = decoder.decode(value)
-      const lines = chunk.split('\\n').filter(l => l.startsWith('data: '))
-      
+      const lines = chunk.split('\\n').filter((l) => l.startsWith('data: '))
+
       for (const line of lines) {
         if (line === 'data: [DONE]') {
           break
@@ -306,7 +380,9 @@ async function sendToTutor() {
         try {
           const json = JSON.parse(line.replace('data: ', ''))
           tutorMessages.value[tutorReplyIndex].text += json.text
-        } catch { /* ignore parse errors for partial chunks */ }
+        } catch {
+          /* ignore parse errors for partial chunks */
+        }
       }
     }
   } catch (err) {

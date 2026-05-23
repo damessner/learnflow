@@ -150,7 +150,9 @@
       <div class="grid grid-2" style="margin-top: 1rem">
         <div class="card">
           <h4>🚨 Needs Intervention</h4>
-          <p style="color: var(--text-muted); font-size: 0.85rem">Dynamic suggestions based on recent failures and low mastery.</p>
+          <p style="color: var(--text-muted); font-size: 0.85rem">
+            Dynamic suggestions based on recent failures and low mastery.
+          </p>
           <div v-if="learningStore.interventions.length === 0" style="color: var(--text-muted)">
             No critical interventions needed.
           </div>
@@ -166,8 +168,13 @@
 
         <div class="card">
           <h4>🧠 Class Mastery Map</h4>
-          <p style="color: var(--text-muted); font-size: 0.85rem">Weakest concepts across all your classes.</p>
-          <div v-if="learningStore.masteryMap && learningStore.masteryMap.length === 0" style="color: var(--text-muted)">
+          <p style="color: var(--text-muted); font-size: 0.85rem">
+            Weakest concepts across all your classes.
+          </p>
+          <div
+            v-if="learningStore.masteryMap && learningStore.masteryMap.length === 0"
+            style="color: var(--text-muted)"
+          >
             No mastery data yet.
           </div>
           <div
@@ -176,8 +183,22 @@
             style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0"
           >
             <span style="flex: 1">{{ m.topic }}</span>
-            <div style="width: 100px; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden;">
-              <div :style="{ width: m.averageMastery + '%', background: m.averageMastery < 50 ? 'var(--danger)' : 'var(--primary)', height: '100%' }"></div>
+            <div
+              style="
+                width: 100px;
+                height: 8px;
+                background: var(--border-color);
+                border-radius: 4px;
+                overflow: hidden;
+              "
+            >
+              <div
+                :style="{
+                  width: m.averageMastery + '%',
+                  background: m.averageMastery < 50 ? 'var(--danger)' : 'var(--primary)',
+                  height: '100%',
+                }"
+              ></div>
             </div>
             <span style="font-size: 0.8rem">{{ m.averageMastery }}%</span>
           </div>

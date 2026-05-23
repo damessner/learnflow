@@ -7,7 +7,16 @@ const router = Router()
 
 const BlockSchema = z.object({
   id: z.string().uuid().optional(),
-  type: z.enum(['text', 'read_aloud', 'gap_fill', 'multiple_choice', 'single_choice', 'matching', 'word_scramble', 'short_answer']),
+  type: z.enum([
+    'text',
+    'read_aloud',
+    'gap_fill',
+    'multiple_choice',
+    'single_choice',
+    'matching',
+    'word_scramble',
+    'short_answer',
+  ]),
   points: z.number().optional().default(1),
   text: z.string().optional(),
   template: z.string().optional(),
@@ -20,13 +29,13 @@ const BlockSchema = z.object({
 })
 
 const GenerationSchema = z.object({
-  blocks: z.array(BlockSchema)
+  blocks: z.array(BlockSchema),
 })
 
 router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
   try {
     const { prompt, provider } = req.body
-    const blocks: any[] = []
+    const blocks: z.infer<typeof BlockSchema>[] = []
 
     if (provider === 'ollama' && process.env.OLLAMA_URL) {
       const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
@@ -36,7 +45,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
           model: process.env.OLLAMA_MODEL || 'llama3',
           prompt: `Create an educational worksheet with interactive exercise blocks from this prompt: "${prompt}". Return ONLY valid JSON with a "blocks" array. Each block has id, type, points, and type-specific fields matching this schema.`,
           stream: false,
-          format: 'json'
+          format: 'json',
         }),
       })
       const data = await response.json()
@@ -70,10 +79,10 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
               },
             ],
             generationConfig: {
-               responseMimeType: "application/json"
-            }
+              responseMimeType: 'application/json',
+            },
           }),
-        }
+        },
       )
       const data = await response.json()
       try {
@@ -82,7 +91,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
         const validated = GenerationSchema.parse(parsed)
         blocks.push(...validated.blocks)
       } catch (e) {
-         console.error('Validation failed for Gemini:', e)
+        console.error('Validation failed for Gemini:', e)
       }
     }
 
@@ -96,7 +105,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
     }
 
     // Ensure IDs
-    blocks.forEach(b => {
+    blocks.forEach((b) => {
       if (!b.id) b.id = uuidv4()
     })
 
@@ -109,7 +118,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
 router.post('/tutor', requireAuth, async (req, res, next) => {
   try {
     const { question, context } = req.body
-    
+
     // Server-Sent Events (SSE) setup
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')
@@ -135,19 +144,19 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
           stream: true,
         }),
       })
-      
+
       const reader = ollamaRes.body?.getReader()
       if (reader) {
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
           const chunk = new TextDecoder().decode(value)
-          const lines = chunk.split('\\n').filter(l => l.trim())
+          const lines = chunk.split('\\n').filter((l) => l.trim())
           for (const line of lines) {
-             try {
-                const parsed = JSON.parse(line)
-                res.write(`data: ${JSON.stringify({ text: parsed.response })}\n\n`)
-             } catch {}
+            try {
+              const parsed = JSON.parse(line)
+              res.write(`data: ${JSON.stringify({ text: parsed.response })}\n\n`)
+            } catch {}
           }
         }
       }
@@ -160,9 +169,9 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
           body: JSON.stringify({
             contents: [{ parts: [{ text: systemPrompt }] }],
           }),
-        }
+        },
       )
-      
+
       const reader = geminiRes.body?.getReader()
       if (reader) {
         while (true) {
@@ -170,21 +179,21 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
           if (done) break
           const chunk = new TextDecoder().decode(value)
           // Gemini SSE sends `data: {"candidates": ...}`
-          const lines = chunk.split('\\n').filter(l => l.startsWith('data: '))
+          const lines = chunk.split('\\n').filter((l) => l.startsWith('data: '))
           for (const line of lines) {
-             try {
-                const json = line.replace('data: ', '')
-                const parsed = JSON.parse(json)
-                const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text
-                if (text) res.write(`data: ${JSON.stringify({ text })}\n\n`)
-             } catch {}
+            try {
+              const json = line.replace('data: ', '')
+              const parsed = JSON.parse(json)
+              const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text
+              if (text) res.write(`data: ${JSON.stringify({ text })}\n\n`)
+            } catch {}
           }
         }
       }
     } else {
-       res.write(`data: ${JSON.stringify({ text: 'AI is not configured. Ask your teacher!' })}\n\n`)
+      res.write(`data: ${JSON.stringify({ text: 'AI is not configured. Ask your teacher!' })}\n\n`)
     }
-    
+
     res.write('data: [DONE]\n\n')
     res.end()
   } catch (err) {

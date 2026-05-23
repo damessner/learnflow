@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import { Router, Response } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
@@ -24,12 +24,12 @@ function sanitizeUser(user: Record<string, unknown>) {
   return rest
 }
 
-function setTokenCookie(res: any, token: string) {
+function setTokenCookie(res: Response, token: string) {
   res.cookie('auth_token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   })
 }
 
@@ -141,7 +141,7 @@ router.post('/guest', async (req, res, next) => {
       isGuest: true,
       assignmentId: assignments.id,
     })
-    
+
     setTokenCookie(res, token)
     res.json({ user: { id, username, name, role: 'student' }, assignmentId: assignments.id })
   } catch (err) {
@@ -227,7 +227,7 @@ router.post('/logout', (_req, res) => {
   res.clearCookie('auth_token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
+    sameSite: 'strict',
   })
   res.json({ message: 'Logged out' })
 })
@@ -235,8 +235,10 @@ router.post('/logout', (_req, res) => {
 router.get('/verify', async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization
-    const token = req.cookies.auth_token || (authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null)
-    
+    const token =
+      req.cookies.auth_token ||
+      (authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null)
+
     if (!token) {
       res.status(401).json({ error: 'No token' })
       return
@@ -327,7 +329,7 @@ router.post('/teacher-token', requireAuth, requireRole('admin'), async (req, res
       process.env.JWT_SECRET || 'dev-secret',
       { expiresIn: '30d' },
     )
-    
+
     setTokenCookie(res, token)
     res.json({ teacherId: teacher.id })
   } catch (err) {

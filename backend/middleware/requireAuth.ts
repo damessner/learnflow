@@ -18,8 +18,10 @@ declare global {
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization
-  const token = req.cookies?.auth_token || (authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null)
-  
+  const token =
+    req.cookies?.auth_token ||
+    (authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null)
+
   if (!token) {
     res.status(401).json({ error: 'Unauthorized' })
     return

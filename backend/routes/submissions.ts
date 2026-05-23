@@ -162,32 +162,54 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
 
     // Update SRS and Mastery if confidence was provided
     const confidence = parseInt(req.body.confidence || '3')
-    const pass = (result.score / (result.maxScore || 1)) >= 0.6
-    
+    const pass = result.score / (result.maxScore || 1) >= 0.6
+
     // Attempt to extract a generic topic if the worksheet has one, otherwise use the worksheet subject or title
     const topic = worksheet.subject || worksheet.title || 'General'
 
     // Update Mastery
-    const existingMastery = await knex('learning_mastery').where({ user_id: req.user!.userId, topic }).first()
+    const existingMastery = await knex('learning_mastery')
+      .where({ user_id: req.user!.userId, topic })
+      .first()
     let newLevel = 50
     if (existingMastery) {
-       newLevel = pass ? Math.min(100, existingMastery.mastery_level + 10) : Math.max(0, existingMastery.mastery_level - 15)
-       await knex('learning_mastery').where({ id: existingMastery.id }).update({ mastery_level: newLevel, last_practiced_at: knex.fn.now() })
+      newLevel = pass
+        ? Math.min(100, existingMastery.mastery_level + 10)
+        : Math.max(0, existingMastery.mastery_level - 15)
+      await knex('learning_mastery')
+        .where({ id: existingMastery.id })
+        .update({ mastery_level: newLevel, last_practiced_at: knex.fn.now() })
     } else {
-       newLevel = pass ? 60 : 40
-       await knex('learning_mastery').insert({ id: uuidv4(), user_id: req.user!.userId, topic, mastery_level: newLevel, last_practiced_at: knex.fn.now() })
+      newLevel = pass ? 60 : 40
+      await knex('learning_mastery').insert({
+        id: uuidv4(),
+        user_id: req.user!.userId,
+        topic,
+        mastery_level: newLevel,
+        last_practiced_at: knex.fn.now(),
+      })
     }
 
     // Update Spaced Repetition Queue based on confidence
     const daysToAdd = pass ? confidence * 2 : 1
     const nextDue = new Date()
     nextDue.setDate(nextDue.getDate() + daysToAdd)
-    
-    const existingQueue = await knex('learning_queue').where({ user_id: req.user!.userId, topic }).first()
+
+    const existingQueue = await knex('learning_queue')
+      .where({ user_id: req.user!.userId, topic })
+      .first()
     if (existingQueue) {
-       await knex('learning_queue').where({ id: existingQueue.id }).update({ due_at: nextDue.toISOString() })
+      await knex('learning_queue')
+        .where({ id: existingQueue.id })
+        .update({ due_at: nextDue.toISOString() })
     } else {
-       await knex('learning_queue').insert({ id: uuidv4(), user_id: req.user!.userId, worksheet_id: worksheet.id, topic, due_at: nextDue.toISOString() })
+      await knex('learning_queue').insert({
+        id: uuidv4(),
+        user_id: req.user!.userId,
+        worksheet_id: worksheet.id,
+        topic,
+        due_at: nextDue.toISOString(),
+      })
     }
 
     res.json({

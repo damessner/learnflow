@@ -3,7 +3,7 @@ const BASE = '/api'
 const api = {
   async request(method, path, body = null) {
     const headers = { 'Content-Type': 'application/json' }
-    
+
     // We rely on cookies now, so we need to send credentials
     const opts = { method, headers, credentials: 'include' }
     if (body) opts.body = JSON.stringify(body)
@@ -29,8 +29,13 @@ const api = {
 
   async upload(path, formData) {
     const headers = {}
-    
-    const res = await fetch(`${BASE}${path}`, { method: 'POST', headers, body: formData, credentials: 'include' })
+
+    const res = await fetch(`${BASE}${path}`, {
+      method: 'POST',
+      headers,
+      body: formData,
+      credentials: 'include',
+    })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(data.error || 'Upload failed')
     return data
