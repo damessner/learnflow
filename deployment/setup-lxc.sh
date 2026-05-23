@@ -17,7 +17,6 @@ if ! command -v node &> /dev/null; then
   apt-get install -y nodejs
 fi
 
-npm install -g npm@latest
 npm config set fund false
 npm config set update-notifier false
 
