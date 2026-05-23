@@ -15,8 +15,11 @@ apt-get install -y curl git nginx
 if ! command -v node &> /dev/null; then
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   apt-get install -y nodejs
-  npm install -g npm@latest
 fi
+
+npm install -g npm@latest
+npm config set fund false
+npm config set update-notifier false
 
 npm install -g pm2
 
