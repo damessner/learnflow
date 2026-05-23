@@ -11,6 +11,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
 apt-get install -y curl git nginx
+apt-get dist-upgrade -y
 
 if ! command -v node &> /dev/null; then
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
