@@ -119,6 +119,12 @@
       <template v-if="block.type === 'text' || block.type === 'read_aloud'">
         <textarea v-model="block.text" rows="3" placeholder="Enter text content..."></textarea>
       </template>
+
+      <details style="margin-top:0.5rem;font-size:0.85rem">
+        <summary>+ Dual Coding (Mermaid Diagram)</summary>
+        <textarea v-model="block.mermaid" rows="4" placeholder="graph TD; A[Concept] --> B[Outcome]; ..." style="font-family:monospace;font-size:0.8rem;margin-top:0.25rem"></textarea>
+        <input v-model="block.alt_text" placeholder="Alt text for accessibility" style="margin-top:0.25rem" />
+      </details>
     </div>
 
     <div class="card" style="margin-top: 1rem">

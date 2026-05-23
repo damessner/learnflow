@@ -46,6 +46,8 @@
         <span class="badge">{{ block.points }} pts</span>
       </div>
 
+      <MermaidDiagram v-if="block.mermaid" :code="block.mermaid" :altText="block.alt_text" />
+
       <template v-if="block.type === 'gap_fill'">
         <div v-html="renderGaps(block.template, block.id)"></div>
       </template>
@@ -223,6 +225,7 @@ import { useSubmissionsStore } from '../stores/submissions'
 import { useUiStore } from '../stores/ui'
 import { useAuthStore } from '../stores/auth'
 import { useLearningStore } from '../stores/learning'
+import MermaidDiagram from '../components/exercises/MermaidDiagram.vue'
 
 const route = useRoute()
 const store = useSubmissionsStore()

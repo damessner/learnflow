@@ -186,6 +186,34 @@
             ></div>
           </div>
           <span style="font-size: 0.8rem">{{ m.mastery_level }}%</span>
+          <button
+            v-if="m.mastery_level >= 40 && m.mastery_level <= 80"
+            class="btn-sm"
+            style="background:var(--warning);color:#000;border:none;white-space:nowrap"
+            @click="startTeaching(m)"
+          >Teach It!</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="teaching" class="modal-overlay" @click.self="teaching = null">
+      <div class="modal" style="max-width:550px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:1rem">
+          <h3>Teach: {{ teaching?.topic }}</h3>
+          <button @click="teaching = null" style="background:none;border:none;font-size:1.5rem;cursor:pointer">&times;</button>
+        </div>
+        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">
+          A confused AI student needs your help! Explain this concept and correct their misconceptions.
+        </p>
+        <div style="border:1px solid var(--border-color);padding:1rem;border-radius:4px;max-height:300px;overflow-y:auto;margin-bottom:1rem">
+          <div v-for="(msg, i) in protegeMessages" :key="i" :style="{textAlign:msg.role==='user'?'right':'left',marginBottom:'0.5rem'}">
+            <span :style="{display:'inline-block',padding:'0.5rem 1rem',borderRadius:'1rem',background:msg.role==='user'?'var(--primary)':'var(--border-color)',color:msg.role==='user'?'#fff':'inherit',maxWidth:'85%'}">{{ msg.text }}</span>
+          </div>
+          <div v-if="protegeLoading" style="color:var(--text-muted);font-size:0.85rem">AI student is thinking...</div>
+        </div>
+        <div style="display:flex;gap:0.5rem">
+          <input v-model="protegeInput" @keyup.enter="sendToProtege" placeholder="Explain the concept..." style="flex:1" />
+          <button class="btn-primary" @click="sendToProtege" :disabled="protegeLoading">Teach</button>
         </div>
       </div>
     </div>
@@ -220,6 +248,11 @@ const mixing = ref(false)
 const mixIndex = ref(0)
 const showAnswer = ref(false)
 const mixResults = ref([])
+
+const teaching = ref(null)
+const protegeMessages = ref([])
+const protegeInput = ref('')
+const protegeLoading = ref(false)
 
 import { computed } from 'vue'
 const currentMixItem = computed(() => dailyMix.value[mixIndex.value])
@@ -296,5 +329,61 @@ async function answerMix(correct, confidence) {
       uiStore.showToast(e.message, 'error')
     }
   }
+}
+
+function startTeaching(kc) {
+  teaching.value = kc
+  protegeMessages.value = [{
+    role: 'tutor',
+    text: `Hi! I'm trying to learn about "${kc.topic}". I'm a bit confused about some things. Can you help me understand?`,
+  }]
+  protegeInput.value = ''
+}
+
+async function sendToProtege() {
+  if (!protegeInput.value.trim() || protegeLoading.value) return
+  const msg = protegeInput.value.trim()
+  protegeMessages.value.push({ role: 'user', text: msg })
+  protegeInput.value = ''
+  protegeLoading.value = true
+
+  const replyIdx = protegeMessages.value.length
+  protegeMessages.value.push({ role: 'tutor', text: '' })
+
+  try {
+    const response = await fetch('/api/ai/protege', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authStore.token ? { Authorization: `Bearer ${authStore.token}` } : {}),
+      },
+      body: JSON.stringify({
+        kcName: teaching.value.topic,
+        kcDescription: teaching.value.description || teaching.value.topic,
+        message: msg,
+      }),
+    })
+
+    const reader = response.body?.getReader()
+    if (!reader) throw new Error('No reader')
+
+    const decoder = new TextDecoder()
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      const chunk = decoder.decode(value)
+      const lines = chunk.split('\\n').filter((l) => l.startsWith('data: '))
+      for (const line of lines) {
+        if (line === 'data: [DONE]') break
+        try {
+          const json = JSON.parse(line.replace('data: ', ''))
+          protegeMessages.value[replyIdx].text += json.text
+        } catch {}
+      }
+    }
+  } catch {
+    protegeMessages.value[replyIdx].text = "I'm having trouble thinking right now..."
+  }
+  protegeLoading.value = false
 }
 </script>
