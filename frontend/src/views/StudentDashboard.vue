@@ -12,6 +12,39 @@
           </div>
         </div>
       </div>
+      
+      <div style="flex: 1" class="card" v-if="dailyMix.length > 0 && !mixing">
+        <h3 style="margin-top: 0">🧠 Your Daily Mix</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted)">
+          Spaced repetition & interleaving session ready! {{ dailyMix.length }} items to review.
+        </p>
+        <button class="btn-primary" @click="startDailyMix">Start Active Recall Session</button>
+      </div>
+    </div>
+
+    <!-- Daily Mix active session UI -->
+    <div v-if="mixing" class="card" style="margin: 1rem 0; border-color: var(--primary)">
+      <h3>Daily Mix ({{ mixIndex + 1 }} / {{ dailyMix.length }})</h3>
+      <div style="padding: 2rem 0; text-align: center; font-size: 1.2rem">
+        Review Topic: <strong>{{ currentMixItem?.topic }}</strong>
+      </div>
+      
+      <div v-if="!showAnswer" style="text-align: center">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem">
+          Try to actively recall everything you know about this topic before revealing.
+        </p>
+        <button class="btn-primary" @click="showAnswer = true">I've got it / Show Details</button>
+      </div>
+      
+      <div v-else style="text-align: center">
+        <h4>Metacognition Check</h4>
+        <p>How well did you remember this concept?</p>
+        <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem">
+          <button class="btn-sm btn-danger" @click="answerMix(false, 1)">Forgot entirely (1)</button>
+          <button class="btn-sm" @click="answerMix(true, 3)">Hard to recall (3)</button>
+          <button class="btn-sm" style="background: var(--success); color: white; border: none" @click="answerMix(true, 5)">Easy (5)</button>
+        </div>
+      </div>
     </div>
 
     <div class="grid grid-2" style="margin-top: 1rem">
@@ -72,13 +105,18 @@
       </div>
 
       <div v-if="gamification" class="card">
-        <h3>Progress</h3>
+        <h3>🏆 Progress</h3>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem">
+          <span>XP: <strong>{{ gamification.xp }}</strong></span>
+          <span>Level: <strong>{{ gamification.level }}</strong></span>
+        </div>
+        
+        <div style="width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-bottom: 1rem">
+           <div :style="{ width: (gamification.xp % 100) + '%', background: 'var(--primary)', height: '100%', transition: 'width 0.3s' }"></div>
+        </div>
+
         <p>
-          XP: <strong>{{ gamification.xp }}</strong> | Level:
-          <strong>{{ gamification.level }}</strong>
-        </p>
-        <p>
-          Streak: <strong>{{ gamification.streak_days }}</strong> days
+          🔥 Streak: <strong>{{ gamification.streak_days }}</strong> days
         </p>
         <div v-if="gamification.badges.length" style="margin-top: 0.5rem">
           <span
@@ -146,14 +184,24 @@ const masteryList = ref([])
 const classCode = ref('')
 const joining = ref(false)
 
+const dailyMix = ref([])
+const mixing = ref(false)
+const mixIndex = ref(0)
+const showAnswer = ref(false)
+const mixResults = ref([])
+
+import { computed } from 'vue'
+const currentMixItem = computed(() => dailyMix.value[mixIndex.value])
+
 onMounted(async () => {
   try {
-    const [status, ann, summ, gam, mast] = await Promise.all([
+    const [status, ann, summ, gam, mast, dm] = await Promise.all([
       classesStore.fetchStudentStatus().catch(() => ({ classes: [] })),
       classesStore.fetchAnnouncements().catch(() => []),
       submissionsStore.fetchStudentSummary().catch(() => []),
       learningStore.fetchGamification().catch(() => null),
       learningStore.fetchMastery().catch(() => []),
+      learningStore.fetchDailyMix().catch(() => []),
     ])
 
     myClasses.value = status.classes || []
@@ -161,6 +209,7 @@ onMounted(async () => {
     submissions.value = submissionsStore.summary
     gamification.value = learningStore.gamification
     masteryList.value = learningStore.mastery
+    dailyMix.value = learningStore.dailyMix || []
 
     const courseData = await coursesStore.fetchStudentCourses().catch(() => ({ courses: [] }))
     courses.value = coursesStore.courses
@@ -182,6 +231,38 @@ async function joinClass() {
     uiStore.showToast(e.message, 'error')
   } finally {
     joining.value = false
+  }
+}
+
+function startDailyMix() {
+  mixing.value = true
+  mixIndex.value = 0
+  showAnswer.value = false
+  mixResults.value = []
+}
+
+async function answerMix(correct, confidence) {
+  mixResults.value.push({
+    topic: currentMixItem.value.topic,
+    correct,
+    confidence
+  })
+  
+  if (mixIndex.value < dailyMix.value.length - 1) {
+    mixIndex.value++
+    showAnswer.value = false
+  } else {
+    // Finished mix
+    mixing.value = false
+    try {
+      const res = await learningStore.completeDailyMix(mixResults.value)
+      uiStore.showToast(`Daily Mix Complete! +${res.xpGained} XP`, 'success')
+      await learningStore.fetchGamification()
+      gamification.value = learningStore.gamification
+      dailyMix.value = []
+    } catch (e) {
+      uiStore.showToast(e.message, 'error')
+    }
   }
 }
 </script>

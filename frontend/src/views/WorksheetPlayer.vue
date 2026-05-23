@@ -76,10 +76,24 @@
 
     <div
       v-if="!submitted"
+      class="card"
+      style="margin-top: 1rem; border-color: var(--primary)"
+    >
+      <h4>🧠 Metacognition Check</h4>
+      <p style="font-size: 0.9rem; color: var(--text-muted)">Before submitting, how confident are you in your answers?</p>
+      <div style="display: flex; gap: 1rem; margin-top: 0.5rem">
+        <label><input type="radio" v-model="confidence" value="1" /> Guessing (1)</label>
+        <label><input type="radio" v-model="confidence" value="3" /> Somewhat Sure (3)</label>
+        <label><input type="radio" v-model="confidence" value="5" /> Very Confident (5)</label>
+      </div>
+    </div>
+
+    <div
+      v-if="!submitted"
       style="display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end"
     >
       <button :disabled="saving" @click="saveProgress">Save</button>
-      <button class="btn-primary" :disabled="submitting" @click="submit">Submit</button>
+      <button class="btn-primary" :disabled="submitting || !confidence" @click="submit">Submit Assignment</button>
     </div>
   </div>
 </template>
@@ -103,6 +117,7 @@ const submitted = ref(false)
 const submitResult = ref({ score: 0, maxScore: 0, feedback: '' })
 const saving = ref(false)
 const submitting = ref(false)
+const confidence = ref(null)
 
 let autoSaveTimer = null
 let lastSavedAnswers = ''
@@ -206,7 +221,7 @@ async function saveProgress() {
 async function submit() {
   submitting.value = true
   try {
-    const result = await store.submitAssignment(route.params.id, { ...answers })
+    const result = await store.submitAssignment(route.params.id, { answers: answers, confidence: confidence.value })
     submitResult.value = result
     submitted.value = true
     if (autoSaveTimer) clearInterval(autoSaveTimer)

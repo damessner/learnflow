@@ -10,6 +10,8 @@ export const useLearningStore = defineStore('learning', () => {
   const atRisk = ref([])
   const interventions = ref([])
   const analytics = ref(null)
+  const dailyMix = ref([])
+  const masteryMap = ref([])
 
   async function fetchMastery() {
     const data = await api.get('/learning/student/mastery')
@@ -50,8 +52,22 @@ export const useLearningStore = defineStore('learning', () => {
     analytics.value = data.analytics
   }
 
+  async function fetchMasteryMap() {
+    const data = await api.get('/learning/teacher/mastery-map')
+    masteryMap.value = data.masteryMap
+  }
+
+  async function fetchDailyMix() {
+    const data = await api.get('/learning/student/daily-mix')
+    dailyMix.value = data.dailyMix
+  }
+
+  async function completeDailyMix(itemsCompleted) {
+    return await api.post('/learning/student/daily-mix/complete', { itemsCompleted })
+  }
+
   async function fetchTeacherDashboard() {
-    await Promise.all([fetchAtRisk(), fetchInterventions(), fetchAnalytics()])
+    await Promise.all([fetchAtRisk(), fetchInterventions(), fetchAnalytics(), fetchMasteryMap()])
   }
 
   return {
@@ -62,6 +78,8 @@ export const useLearningStore = defineStore('learning', () => {
     atRisk,
     interventions,
     analytics,
+    dailyMix,
+    masteryMap,
     fetchMastery,
     fetchSpacedQueue,
     fetchPlanner,
@@ -70,6 +88,9 @@ export const useLearningStore = defineStore('learning', () => {
     fetchAtRisk,
     fetchInterventions,
     fetchAnalytics,
+    fetchMasteryMap,
+    fetchDailyMix,
+    completeDailyMix,
     fetchTeacherDashboard,
   }
 })

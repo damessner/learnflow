@@ -16,8 +16,8 @@ export const useSubmissionsStore = defineStore('submissions', () => {
     await api.post(`/submissions/assignment/${assignmentId}/save`, { answers })
   }
 
-  async function submitAssignment(assignmentId, answers) {
-    const data = await api.post(`/submissions/assignment/${assignmentId}/submit`, { answers })
+  async function submitAssignment(assignmentId, payload) {
+    const data = await api.post(`/submissions/assignment/${assignmentId}/submit`, payload)
     return data
   }
 

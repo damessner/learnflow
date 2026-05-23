@@ -147,20 +147,40 @@
         </div>
       </div>
 
-      <div class="card" style="margin-top: 1rem">
-        <h4>At-Risk Students</h4>
-        <div v-if="learningStore.atRisk.length === 0" style="color: var(--text-muted)">
-          No at-risk students
-        </div>
-        <div
-          v-for="s in learningStore.atRisk"
-          :key="s.id"
-          style="display: flex; justify-content: space-between; padding: 0.25rem 0"
-        >
-          <span>{{ s.name }}</span>
-          <span style="color: var(--danger)"
-            >{{ s.completed }}/{{ s.total }} completed ({{ s.avgScore }}%)</span
+      <div class="grid grid-2" style="margin-top: 1rem">
+        <div class="card">
+          <h4>🚨 Needs Intervention</h4>
+          <p style="color: var(--text-muted); font-size: 0.85rem">Dynamic suggestions based on recent failures and low mastery.</p>
+          <div v-if="learningStore.interventions.length === 0" style="color: var(--text-muted)">
+            No critical interventions needed.
+          </div>
+          <div
+            v-for="(inv, i) in learningStore.interventions"
+            :key="i"
+            style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color)"
           >
+            <strong>{{ inv.type }}</strong>
+            <p style="font-size: 0.9rem; margin-top: 0.25rem">{{ inv.description }}</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h4>🧠 Class Mastery Map</h4>
+          <p style="color: var(--text-muted); font-size: 0.85rem">Weakest concepts across all your classes.</p>
+          <div v-if="learningStore.masteryMap && learningStore.masteryMap.length === 0" style="color: var(--text-muted)">
+            No mastery data yet.
+          </div>
+          <div
+            v-for="m in learningStore.masteryMap?.slice(0, 5)"
+            :key="m.topic"
+            style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0"
+          >
+            <span style="flex: 1">{{ m.topic }}</span>
+            <div style="width: 100px; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden;">
+              <div :style="{ width: m.averageMastery + '%', background: m.averageMastery < 50 ? 'var(--danger)' : 'var(--primary)', height: '100%' }"></div>
+            </div>
+            <span style="font-size: 0.8rem">{{ m.averageMastery }}%</span>
+          </div>
         </div>
       </div>
     </template>
