@@ -1,7 +1,7 @@
-import { fsrs, Rating, Card, State } from 'ts-fsrs'
+import { fsrs, createEmptyCard, Rating, Card, State } from 'ts-fsrs'
+import type { Grade } from 'ts-fsrs'
 import { getKnex } from '../db/knex'
 
-// Initialize FSRS engine with default parameters
 const f = fsrs()
 
 export type StudentKnowledgeState = {
@@ -13,6 +13,7 @@ export type StudentKnowledgeState = {
   difficulty: number
   elapsed_days: number
   scheduled_days: number
+  learning_steps: number
   reps: number
   lapses: number
   last_review?: Date
@@ -38,12 +39,12 @@ export async function getKnowledgeState(user_id: string, kc_id: string): Promise
       scheduled_days: record.scheduled_days,
       reps: record.reps,
       lapses: record.lapses,
-      last_review: record.last_review ? new Date(record.last_review) : undefined
+      learning_steps: 0,
+      last_review: record.last_review ? new Date(record.last_review) : undefined,
     }
   }
 
-  // Create a new empty card if they haven't encountered it yet
-  return f.createEmptyCard()
+  return createEmptyCard()
 }
 
 /**
@@ -51,19 +52,17 @@ export async function getKnowledgeState(user_id: string, kc_id: string): Promise
  * Rating: 1 = Again (Failed), 2 = Hard, 3 = Good (Pass), 4 = Easy
  */
 export async function reviewKnowledgeComponent(
-  user_id: string, 
-  kc_id: string, 
+  user_id: string,
+  kc_id: string,
   rating: Rating,
-  reviewTime: Date = new Date()
+  reviewTime: Date = new Date(),
 ): Promise<void> {
   const knex = getKnex()
   const currentCard = await getKnowledgeState(user_id, kc_id)
 
   // Calculate the next card state using FSRS
   const schedulingCards = f.repeat(currentCard, reviewTime)
-  
-  // schedulingCards contains 4 properties (Again, Hard, Good, Easy), we extract the one corresponding to the rating
-  const nextRecord = schedulingCards[rating].card
+  const nextRecord = schedulingCards[rating as unknown as Grade].card
 
   const dbState: StudentKnowledgeState = {
     user_id,
@@ -74,14 +73,12 @@ export async function reviewKnowledgeComponent(
     difficulty: nextRecord.difficulty,
     elapsed_days: nextRecord.elapsed_days,
     scheduled_days: nextRecord.scheduled_days,
+    learning_steps: nextRecord.learning_steps,
     reps: nextRecord.reps,
     lapses: nextRecord.lapses,
-    last_review: nextRecord.last_review
+    last_review: nextRecord.last_review,
   }
 
   // Upsert the state into the database
-  await knex('student_knowledge_state')
-    .insert(dbState)
-    .onConflict(['user_id', 'kc_id'])
-    .merge()
+  await knex('student_knowledge_state').insert(dbState).onConflict(['user_id', 'kc_id']).merge()
 }

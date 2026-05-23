@@ -118,7 +118,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
   }
 })
 
-router.post('/tutor', requireAuth, async (req, res, next) => {
+router.post('/tutor', requireAuth, async (req, res, _next) => {
   try {
     const { question, context } = req.body
 
@@ -206,7 +206,7 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
   }
 })
 
-router.post('/protege', requireAuth, async (req, res, next) => {
+router.post('/protege', requireAuth, async (req, res, _next) => {
   try {
     const { kcName, kcDescription, message } = req.body
 
@@ -290,7 +290,9 @@ Student asks/explains: ${message}`
         }
       }
     } else {
-      res.write(`data: ${JSON.stringify({ text: 'Uh... I am confused about this too, but the AI tutor is not configured. Maybe you can write a short explanation for me?' })}\n\n`)
+      res.write(
+        `data: ${JSON.stringify({ text: 'Uh... I am confused about this too, but the AI tutor is not configured. Maybe you can write a short explanation for me?' })}\n\n`,
+      )
     }
 
     res.write('data: [DONE]\n\n')
@@ -304,30 +306,36 @@ Student asks/explains: ${message}`
 
 function getMisconceptions(kcName: string): string[] {
   const lower = kcName.toLowerCase()
-  if (lower.includes('fraction')) return [
-    'I think 1/2 is bigger than 3/4 because 2 is smaller than 4',
-    'I add fractions by adding tops and bottoms: 1/2 + 1/3 = 2/5',
-  ]
-  if (lower.includes('algebra') || lower.includes('variable')) return [
-    'I think x + 3 = 7 means x = 4 because I subtract 3 from 7',
-    'I get confused when there are variables on both sides of the equation',
-  ]
-  if (lower.includes('decimal')) return [
-    'I think 0.5 is smaller than 0.35 because 5 is smaller than 35',
-    "I'm not sure where to put the decimal point when multiplying",
-  ]
-  if (lower.includes('percent') || lower.includes('percentage')) return [
-    'I think 50% of 200 is 100, but 25% of 200 is also 100 because 25 > 50',
-    'I confuse percentage increase with percentage points',
-  ]
-  if (lower.includes('geometry') || lower.includes('angle')) return [
-    'I think all triangles have angles that add up to 180, but squares add up to 360 so they must be the same',
-    'I get acute and obtuse angles confused',
-  ]
-  if (lower.includes('grammar') || lower.includes('verb') || lower.includes('tense')) return [
-    'I keep mixing up past tense and past participle',
-    "I'm not sure when to use 'who' vs 'whom'",
-  ]
+  if (lower.includes('fraction'))
+    return [
+      'I think 1/2 is bigger than 3/4 because 2 is smaller than 4',
+      'I add fractions by adding tops and bottoms: 1/2 + 1/3 = 2/5',
+    ]
+  if (lower.includes('algebra') || lower.includes('variable'))
+    return [
+      'I think x + 3 = 7 means x = 4 because I subtract 3 from 7',
+      'I get confused when there are variables on both sides of the equation',
+    ]
+  if (lower.includes('decimal'))
+    return [
+      'I think 0.5 is smaller than 0.35 because 5 is smaller than 35',
+      "I'm not sure where to put the decimal point when multiplying",
+    ]
+  if (lower.includes('percent') || lower.includes('percentage'))
+    return [
+      'I think 50% of 200 is 100, but 25% of 200 is also 100 because 25 > 50',
+      'I confuse percentage increase with percentage points',
+    ]
+  if (lower.includes('geometry') || lower.includes('angle'))
+    return [
+      'I think all triangles have angles that add up to 180, but squares add up to 360 so they must be the same',
+      'I get acute and obtuse angles confused',
+    ]
+  if (lower.includes('grammar') || lower.includes('verb') || lower.includes('tense'))
+    return [
+      'I keep mixing up past tense and past participle',
+      "I'm not sure when to use 'who' vs 'whom'",
+    ]
   return [
     `I'm not sure I understand ${kcName} at all. Can you explain it from the beginning?`,
     `I keep mixing up the steps. Is it step A first, then B, or B first then A?`,

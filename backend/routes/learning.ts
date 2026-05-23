@@ -209,10 +209,12 @@ router.get('/student/wager-history', requireAuth, async (req, res, next) => {
 
     let totalWagers = 0
     let correctWagers = 0
-    let totalWageredXp = 0
-    let totalEarnedXp = 0
 
-    const byConfidence: Record<number, { total: number; correct: number }> = { 1: { total: 0, correct: 0 }, 3: { total: 0, correct: 0 }, 5: { total: 0, correct: 0 } }
+    const byConfidence: Record<number, { total: number; correct: number }> = {
+      1: { total: 0, correct: 0 },
+      3: { total: 0, correct: 0 },
+      5: { total: 0, correct: 0 },
+    }
 
     for (const a of attempts) {
       try {
@@ -228,10 +230,11 @@ router.get('/student/wager-history', requireAuth, async (req, res, next) => {
             if (ratio >= 0.6) byConfidence[key].correct++
             totalWagers++
             if (ratio >= 0.6) correctWagers++
-            totalWageredXp += wagers[blockId] || 0
           }
         }
-      } catch { /* skip malformed */ }
+      } catch {
+        /* skip malformed */
+      }
     }
 
     const calibrationScore = totalWagers > 0 ? Math.round((correctWagers / totalWagers) * 100) : 0

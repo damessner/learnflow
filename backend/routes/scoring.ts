@@ -262,7 +262,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           feedback.push(`Unknown block type: ${block.type}`)
         }
       }
-      
+
       totalScore += earned
       blockScores.push({ blockId: block.id, score: earned, maxScore: block.points })
     } catch (err) {

@@ -11,8 +11,12 @@ export async function up(knex: Knex): Promise<void> {
 
   await knex.schema.createTable('student_knowledge_state', (t) => {
     t.text('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE')
-    t.text('kc_id').notNullable().references('id').inTable('knowledge_components').onDelete('CASCADE')
-    
+    t.text('kc_id')
+      .notNullable()
+      .references('id')
+      .inTable('knowledge_components')
+      .onDelete('CASCADE')
+
     // FSRS State Parameters
     t.integer('state').notNullable().defaultTo(0) // 0=New, 1=Learning, 2=Review, 3=Relearning
     t.timestamp('due').notNullable().defaultTo(knex.fn.now())
@@ -22,6 +26,7 @@ export async function up(knex: Knex): Promise<void> {
     t.integer('scheduled_days').notNullable().defaultTo(0)
     t.integer('reps').notNullable().defaultTo(0)
     t.integer('lapses').notNullable().defaultTo(0)
+    t.integer('learning_steps').notNullable().defaultTo(0)
     t.timestamp('last_review')
 
     t.primary(['user_id', 'kc_id'])

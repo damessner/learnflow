@@ -7,7 +7,13 @@ export default [
   },
   ...pluginVue.configs['flat/recommended'],
   {
-    files: ['**/*.js', '**/*.vue'],
+    files: ['**/*.js', '**/*.ts', '**/*.vue'],
+    languageOptions: {
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
+      },
+    },
     rules: {
       'no-unused-vars': 'warn',
       'vue/multi-word-component-names': 'off',

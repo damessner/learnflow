@@ -35,7 +35,7 @@ const progress = ref(null)
 
 onMounted(async () => {
   try {
-    const data = await store.fetchCourse(route.params.id)
+    const _data = await store.fetchCourse(route.params.id)
     const courseData = store.currentCourse
     course.value = courseData.course
     worksheets.value = courseData.worksheets || []

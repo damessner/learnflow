@@ -1,11 +1,28 @@
 <template>
   <div class="mermaid-wrapper">
     <div v-if="error" class="mermaid-error">
-      <p style="color:var(--danger);font-size:0.85rem;margin-bottom:0.25rem">Diagram failed to render</p>
-      <pre style="font-size:0.75rem;opacity:0.7;padding:0.5rem;background:var(--bg-main);border-radius:4px;overflow-x:auto">{{ code }}</pre>
+      <p style="color: var(--danger); font-size: 0.85rem; margin-bottom: 0.25rem">
+        Diagram failed to render
+      </p>
+      <pre
+        style="
+          font-size: 0.75rem;
+          opacity: 0.7;
+          padding: 0.5rem;
+          background: var(--bg-main);
+          border-radius: 4px;
+          overflow-x: auto;
+        "
+        >{{ code }}</pre
+      >
     </div>
-    <div ref="diagramEl" v-show="!error" style="display:flex;justify-content:center"></div>
-    <p v-if="altText" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem;text-align:center">{{ altText }}</p>
+    <div ref="diagramEl" v-show="!error" style="display: flex; justify-content: center"></div>
+    <p
+      v-if="altText"
+      style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; text-align: center"
+    >
+      {{ altText }}
+    </p>
   </div>
 </template>
 
@@ -19,7 +36,10 @@ mermaid.initialize({
   securityLevel: 'strict',
 })
 
-const props = defineProps({ code: String, altText: String })
+const props = defineProps({
+  code: { type: String, default: '' },
+  altText: { type: String, default: '' },
+})
 const diagramEl = ref(null)
 const error = ref(false)
 

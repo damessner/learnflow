@@ -1,7 +1,7 @@
 import type { Knex } from 'knex'
 
 export async function up(knex: Knex): Promise<void> {
-  const hasUuid = knex.client.config.client === 'pg'
+  const _hasUuid = knex.client.config.client === 'pg'
 
   await knex.schema.createTable('users', (t) => {
     t.text('id').primary()

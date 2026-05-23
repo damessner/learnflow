@@ -60,7 +60,7 @@ export const useLearningStore = defineStore('learning', () => {
   async function fetchDailyMix() {
     try {
       const data = await api.get('/srs/due?interleave=true')
-      dailyMix.value = data.dueReviews.map((r: any) => ({
+      dailyMix.value = data.dueReviews.map((r) => ({
         ...r,
         topic: r.name,
       }))
@@ -69,17 +69,17 @@ export const useLearningStore = defineStore('learning', () => {
     }
   }
 
-  async function completeDailyMix(itemsCompleted: any[]) {
+  async function completeDailyMix(itemsCompleted) {
     // itemsCompleted is array of { kc_id, confidence } where confidence is 1 (Again), 3 (Hard), 5 (Easy)
     // Map confidence to FSRS Rating: 1=Again, 3=Hard, 5=Easy, 4=Good (Wait, FSRS: 1=Again, 2=Hard, 3=Good, 4=Easy)
     // We map 1 -> 1 (Again), 3 -> 2 (Hard), 5 -> 4 (Easy)
-    const reviews = itemsCompleted.map(i => {
+    const reviews = itemsCompleted.map((i) => {
       let rating = 1
       if (i.confidence === 3) rating = 2
       if (i.confidence === 5) rating = 4
       return { kc_id: i.kc_id, rating }
     })
-    
+
     await api.post('/srs/review', { reviews })
     // give them some XP just for finishing
     return { xpGained: reviews.length * 10 }

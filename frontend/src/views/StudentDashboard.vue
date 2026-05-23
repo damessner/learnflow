@@ -189,38 +189,78 @@
           <button
             v-if="m.mastery_level >= 40 && m.mastery_level <= 80"
             class="btn-sm"
-            style="background:var(--warning);color:#000;border:none;white-space:nowrap"
+            style="background: var(--warning); color: #000; border: none; white-space: nowrap"
             @click="startTeaching(m)"
-          >Teach It!</button>
+          >
+            Teach It!
+          </button>
         </div>
       </div>
     </div>
 
     <div v-if="teaching" class="modal-overlay" @click.self="teaching = null">
-      <div class="modal" style="max-width:550px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:1rem">
+      <div class="modal" style="max-width: 550px">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem">
           <h3>Teach: {{ teaching?.topic }}</h3>
-          <button @click="teaching = null" style="background:none;border:none;font-size:1.5rem;cursor:pointer">&times;</button>
+          <button
+            @click="teaching = null"
+            style="background: none; border: none; font-size: 1.5rem; cursor: pointer"
+          >
+            &times;
+          </button>
         </div>
-        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">
-          A confused AI student needs your help! Explain this concept and correct their misconceptions.
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem">
+          A confused AI student needs your help! Explain this concept and correct their
+          misconceptions.
         </p>
-        <div style="border:1px solid var(--border-color);padding:1rem;border-radius:4px;max-height:300px;overflow-y:auto;margin-bottom:1rem">
-          <div v-for="(msg, i) in protegeMessages" :key="i" :style="{textAlign:msg.role==='user'?'right':'left',marginBottom:'0.5rem'}">
-            <span :style="{display:'inline-block',padding:'0.5rem 1rem',borderRadius:'1rem',background:msg.role==='user'?'var(--primary)':'var(--border-color)',color:msg.role==='user'?'#fff':'inherit',maxWidth:'85%'}">{{ msg.text }}</span>
+        <div
+          style="
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+          "
+        >
+          <div
+            v-for="(msg, i) in protegeMessages"
+            :key="i"
+            :style="{ textAlign: msg.role === 'user' ? 'right' : 'left', marginBottom: '0.5rem' }"
+          >
+            <span
+              :style="{
+                display: 'inline-block',
+                padding: '0.5rem 1rem',
+                borderRadius: '1rem',
+                background: msg.role === 'user' ? 'var(--primary)' : 'var(--border-color)',
+                color: msg.role === 'user' ? '#fff' : 'inherit',
+                maxWidth: '85%',
+              }"
+              >{{ msg.text }}</span
+            >
           </div>
-          <div v-if="protegeLoading" style="color:var(--text-muted);font-size:0.85rem">AI student is thinking...</div>
+          <div v-if="protegeLoading" style="color: var(--text-muted); font-size: 0.85rem">
+            AI student is thinking...
+          </div>
         </div>
-        <div style="display:flex;gap:0.5rem">
-          <input v-model="protegeInput" @keyup.enter="sendToProtege" placeholder="Explain the concept..." style="flex:1" />
-          <button class="btn-primary" @click="sendToProtege" :disabled="protegeLoading">Teach</button>
+        <div style="display: flex; gap: 0.5rem">
+          <input
+            v-model="protegeInput"
+            @keyup.enter="sendToProtege"
+            placeholder="Explain the concept..."
+            style="flex: 1"
+          />
+          <button class="btn-primary" @click="sendToProtege" :disabled="protegeLoading">
+            Teach
+          </button>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted } from 'vue'
 import { useClassesStore } from '../stores/classes'
 import { useSubmissionsStore } from '../stores/submissions'
@@ -259,7 +299,7 @@ const currentMixItem = computed(() => dailyMix.value[mixIndex.value])
 
 onMounted(async () => {
   try {
-    const [status, ann, summ, gam, mast, dm] = await Promise.all([
+    const [status, ann, _summ, _gam, _mast, _dm] = await Promise.all([
       classesStore.fetchStudentStatus().catch(() => ({ classes: [] })),
       classesStore.fetchAnnouncements().catch(() => []),
       submissionsStore.fetchStudentSummary().catch(() => []),
@@ -275,7 +315,7 @@ onMounted(async () => {
     masteryList.value = learningStore.mastery
     dailyMix.value = learningStore.dailyMix || []
 
-    const courseData = await coursesStore.fetchStudentCourses().catch(() => ({ courses: [] }))
+    const _courseData = await coursesStore.fetchStudentCourses().catch(() => ({ courses: [] }))
     courses.value = coursesStore.courses
   } catch {
     /* */
@@ -333,10 +373,12 @@ async function answerMix(correct, confidence) {
 
 function startTeaching(kc) {
   teaching.value = kc
-  protegeMessages.value = [{
-    role: 'tutor',
-    text: `Hi! I'm trying to learn about "${kc.topic}". I'm a bit confused about some things. Can you help me understand?`,
-  }]
+  protegeMessages.value = [
+    {
+      role: 'tutor',
+      text: `Hi! I'm trying to learn about "${kc.topic}". I'm a bit confused about some things. Can you help me understand?`,
+    },
+  ]
   protegeInput.value = ''
 }
 

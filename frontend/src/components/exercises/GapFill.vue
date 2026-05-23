@@ -12,7 +12,7 @@ const emit = defineEmits(['update:modelValue'])
 function renderGaps() {
   let html = props.block.template || ''
   let idx = 0
-  html = html.replace(/\(\((.*?)\)\)/g, (_, answer) => {
+  html = html.replace(/\(\((.*?)\)\)/g, () => {
     const val = (props.modelValue || {})[idx] || ''
     const i = idx++
     return `<input type='text' value='${val}' oninput='window.__gf_${props.block.id}_update(${i}, this.value)' style='display:inline;width:auto;min-width:80px;padding:0.2rem 0.5rem;border:1px dashed var(--primary);border-radius:4px' />`

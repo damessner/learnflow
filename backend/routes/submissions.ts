@@ -197,11 +197,11 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
       totalXpEarned = flatXp
     }
 
-    const currentGam = await knex('learning_gamification').where({ user_id: req.user!.userId }).first()
-    const newXp = Math.max(0, (currentGam?.xp || 0) + totalXpEarned - totalXpLost)
-    await knex('learning_gamification')
+    const currentGam = await knex('learning_gamification')
       .where({ user_id: req.user!.userId })
-      .update({ xp: newXp })
+      .first()
+    const newXp = Math.max(0, (currentGam?.xp || 0) + totalXpEarned - totalXpLost)
+    await knex('learning_gamification').where({ user_id: req.user!.userId }).update({ xp: newXp })
 
     // Update SRS and Mastery if confidence was provided
     const confidence = parseInt(req.body.confidence || '3')
@@ -257,7 +257,9 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
 
     // Process Spaced Repetition (FSRS) for all blocks with kc_ids
     for (const blockScore of result.blockScores) {
-      const block = blocks.find((b: any) => b.id === blockScore.blockId) as any
+      const block = blocks.find(
+        (b: unknown) => (b as Record<string, unknown>).id === blockScore.blockId,
+      ) as Record<string, unknown> | undefined
       if (block && block.kc_ids && Array.isArray(block.kc_ids)) {
         // Map the score ratio to FSRS Rating (1=Again, 2=Hard, 3=Good, 4=Easy)
         const ratio = blockScore.maxScore > 0 ? blockScore.score / blockScore.maxScore : 0

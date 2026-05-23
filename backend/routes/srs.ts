@@ -21,7 +21,7 @@ router.get('/due', requireAuth, requireRole('student'), async (req, res, next) =
         'student_knowledge_state.*',
         'knowledge_components.name',
         'knowledge_components.subject',
-        'knowledge_components.description'
+        'knowledge_components.description',
       )
       .orderBy('student_knowledge_state.due', 'asc')
 
@@ -44,12 +44,12 @@ router.get('/due', requireAuth, requireRole('student'), async (req, res, next) =
         for (const key of keys) {
           const group = bySubject[key]
           if (idx < group.length) {
-            const item = { ...group[idx] }
+            const item = { ...group[idx] } as Record<string, unknown>
             if (interleaved.length > 0) {
-              const prev = interleaved[interleaved.length - 1]
-              ;(item as any).subject_switch = (prev as any).subject !== item.subject
+              const prev = interleaved[interleaved.length - 1] as Record<string, unknown>
+              item.subject_switch = prev.subject !== item.subject
             } else {
-              ;(item as any).subject_switch = false
+              item.subject_switch = false
             }
             interleaved.push(item)
             hasMore = true
@@ -97,7 +97,7 @@ router.post('/kcs', requireAuth, requireRole('teacher', 'admin'), async (req, re
       id,
       name,
       subject,
-      description
+      description,
     })
 
     res.json({ message: 'Knowledge Component created successfully' })
