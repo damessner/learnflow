@@ -228,7 +228,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWorksheetsStore } from '../stores/worksheets'
 import { useUiStore } from '../stores/ui'
@@ -239,14 +239,66 @@ const router = useRouter()
 const store = useWorksheetsStore()
 const uiStore = useUiStore()
 
+const emptyForm = () => ({ title: '', subject: '', grade_level: '', description: '' })
+
 const isEditing = ref(false)
 const blocks = ref([])
-const form = ref({ title: '', subject: '', grade_level: '', description: '' })
+const form = ref(emptyForm())
 const subjects = ref([])
 const gradeLevels = ref([])
 const aiPrompt = ref('')
 const aiProvider = ref('ollama')
 const aiLoading = ref(false)
+
+function getRouteWorksheetId() {
+  if (!route.params.id) return null
+  return Array.isArray(route.params.id) ? route.params.id[0] : route.params.id
+}
+
+function mapLoadedBlocks(rawBlocks) {
+  return (rawBlocks || []).map((block) => {
+    const loaded = { ...block }
+    if (loaded.type === 'short_answer') {
+      loaded.keywordsStr = loaded.keywords ? loaded.keywords.join(', ') : ''
+    }
+    if (loaded.type === 'graph_plot') {
+      loaded.pointsStr = JSON.stringify(loaded.points_to_plot || [])
+    }
+    return loaded
+  })
+}
+
+async function syncBuilderToRoute() {
+  const worksheetId = getRouteWorksheetId()
+  if (!worksheetId) {
+    isEditing.value = false
+    form.value = emptyForm()
+    blocks.value = []
+    return
+  }
+
+  isEditing.value = true
+  await store.fetchWorksheet(worksheetId)
+  if (!store.current) {
+    form.value = emptyForm()
+    blocks.value = []
+    return
+  }
+
+  form.value = {
+    title: store.current.title || '',
+    subject: store.current.subject || '',
+    grade_level: store.current.grade_level || '',
+    description: store.current.description || '',
+  }
+
+  try {
+    const content = JSON.parse(store.current.content || '{}')
+    blocks.value = mapLoadedBlocks(content.blocks)
+  } catch {
+    blocks.value = []
+  }
+}
 
 onMounted(async () => {
   try {
@@ -257,32 +309,9 @@ onMounted(async () => {
     subjects.value = subData.subjects || []
     gradeLevels.value = gradeData.gradeLevels || []
   } catch { /* */ }
-
-  if (route.params.id) {
-    isEditing.value = true
-    await store.fetchWorksheet(route.params.id)
-    if (store.current) {
-      form.value = {
-        title: store.current.title,
-        subject: store.current.subject,
-        grade_level: store.current.grade_level,
-        description: store.current.description,
-      }
-      try {
-        const content = JSON.parse(store.current.content)
-        const loadedBlocks = content.blocks || []
-        loadedBlocks.forEach((b) => {
-          if (b.type === 'short_answer') {
-            b.keywordsStr = b.keywords ? b.keywords.join(', ') : ''
-          }
-        })
-        blocks.value = loadedBlocks
-      } catch {
-        blocks.value = []
-      }
-    }
-  }
 })
+
+watch(() => route.params.id, syncBuilderToRoute, { immediate: true })
 
 function genId() {
   return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)
@@ -329,6 +358,7 @@ function moveBlock(idx, delta) {
 }
 
 async function save() {
+  const worksheetId = getRouteWorksheetId()
   const mappedBlocks = blocks.value.map((b) => {
     const copy = { ...b }
     if (copy.type === 'short_answer') {
@@ -344,8 +374,8 @@ async function save() {
   const payload = { ...form.value, content, total_points: totalPoints }
 
   try {
-    if (isEditing.value) {
-      await store.updateWorksheet(route.params.id, payload)
+    if (isEditing.value && worksheetId) {
+      await store.updateWorksheet(worksheetId, payload)
     } else {
       const ws = await store.createWorksheet(payload)
       router.push(`/teacher/builder/${ws.id}`)

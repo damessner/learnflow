@@ -54,9 +54,20 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
+function getStoredUser() {
   const userStr = localStorage.getItem('user')
-  const user = userStr ? JSON.parse(userStr) : {}
+  if (!userStr) return {}
+
+  try {
+    return JSON.parse(userStr)
+  } catch {
+    localStorage.removeItem('user')
+    return {}
+  }
+}
+
+router.beforeEach((to) => {
+  const user = getStoredUser()
   const isAuthenticated = !!user.role
 
   if (to.meta.requiresAuth && !isAuthenticated) return '/login'
