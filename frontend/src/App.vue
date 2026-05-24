@@ -6,9 +6,7 @@
       </router-link>
       <nav class="header-nav">
         <template v-if="authStore.isAuthenticated">
-          <router-link v-if="authStore.role === 'student'" :to="authStore.isGuest ? '' : '/student'"
-            >Dashboard</router-link
-          >
+          <router-link v-if="authStore.role === 'student'" to="/student">Dashboard</router-link>
           <router-link
             v-if="authStore.role === 'teacher' || authStore.role === 'admin'"
             to="/teacher"
