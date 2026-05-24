@@ -9,17 +9,17 @@
     <div class="login-container">
       <!-- Brand -->
       <div class="login-brand">
-        <div class="login-logo"> LearnFlow</div>
+        <div class="login-logo">LearnFlow</div>
         <p class="login-tagline">The adaptive learning platform built for every student</p>
       </div>
 
       <div class="login-card">
         <div class="tab-switcher">
           <button :class="['tab-btn', { active: mode === 'login' }]" @click="mode = 'login'">
-             Sign In
+            Sign In
           </button>
           <button :class="['tab-btn', { active: mode === 'guest' }]" @click="mode = 'guest'">
-             Join as Guest
+            Join as Guest
           </button>
         </div>
 

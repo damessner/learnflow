@@ -1,7 +1,7 @@
 <template>
   <div class="page">
     <div style="display: flex; justify-content: space-between; align-items: center">
-      <h2> Teacher Dashboard</h2>
+      <h2>Teacher Dashboard</h2>
       <div style="display: flex; gap: 0.5rem">
         <router-link to="/teacher/stories" class="btn-primary"> Stories</router-link>
         <router-link to="/teacher/builder" class="btn-primary"> Create</router-link>
@@ -10,19 +10,19 @@
 
     <div style="display: flex; gap: 0.5rem; margin: 1rem 0">
       <button :class="{ 'btn-primary': tab === 'worksheets' }" @click="tab = 'worksheets'">
-         Worksheets
+        Worksheets
       </button>
       <button :class="{ 'btn-primary': tab === 'classes' }" @click="tab = 'classes'">
-         Classes
+        Classes
       </button>
       <button :class="{ 'btn-primary': tab === 'courses' }" @click="tab = 'courses'">
-         Courses
+        Courses
       </button>
       <button :class="{ 'btn-primary': tab === 'results' }" @click="tab = 'results'">
-         Results
+        Results
       </button>
       <button :class="{ 'btn-primary': tab === 'analytics' }" @click="tab = 'analytics'">
-         Analytics
+        Analytics
       </button>
       <button :class="{ 'btn-primary': tab === 'reports' }" @click="tab = 'reports'">
         📊 Reports

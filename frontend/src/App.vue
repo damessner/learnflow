@@ -4,12 +4,24 @@
       <router-link to="/login" class="header-logo">LearnFlow</router-link>
       <nav class="header-nav">
         <template v-if="authStore.isAuthenticated">
-          <router-link v-if="authStore.role === 'student'" :to="authStore.isGuest ? '' : '/student'"> Dashboard</router-link>
-          <router-link v-if="authStore.role === 'teacher' || authStore.role === 'admin'" to="/teacher"> Dashboard</router-link>
+          <router-link
+            v-if="authStore.role === 'student'"
+            :to="authStore.isGuest ? '' : '/student'"
+          >
+            Dashboard</router-link
+          >
+          <router-link
+            v-if="authStore.role === 'teacher' || authStore.role === 'admin'"
+            to="/teacher"
+          >
+            Dashboard</router-link
+          >
           <router-link v-if="authStore.role === 'admin'" to="/admin"> Admin</router-link>
-          <button @click="uiStore.toggleTheme()" class="btn-sm">{{ uiStore.isDark ? 'Light' : 'Dark' }}</button>
-          <button @click="showChangePassword = true" class="btn-sm"> Password</button>
-          <button @click="authStore.logout()" class="btn-sm btn-danger"> Logout</button>
+          <button @click="uiStore.toggleTheme()" class="btn-sm">
+            {{ uiStore.isDark ? 'Light' : 'Dark' }}
+          </button>
+          <button @click="showChangePassword = true" class="btn-sm">Password</button>
+          <button @click="authStore.logout()" class="btn-sm btn-danger">Logout</button>
         </template>
       </nav>
     </header>
