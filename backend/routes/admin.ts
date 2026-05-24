@@ -171,7 +171,7 @@ router.get('/settings', requireAuth, requireRole('admin'), async (_req, res, nex
   try {
     const knex = getKnex()
     const rows = await knex('settings').select('key', 'value')
-    const settings = {}
+    const settings: Record<string, string> = {}
     rows.forEach((r) => { settings[r.key] = r.value })
     res.json({ settings })
   } catch (err) { next(err) }
