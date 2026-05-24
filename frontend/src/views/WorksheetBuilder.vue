@@ -210,31 +210,28 @@
             <div
               v-for="(opt, oi) in block.options || []"
               :key="oi"
-              style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem"
+              style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem"
             >
+              <input
+                v-if="block.type === 'multiple_choice'"
+                v-model="block.correct"
+                type="checkbox"
+                :value="oi"
+                style="width: auto; flex-shrink: 0"
+              />
+              <input
+                v-else
+                v-model="block.correct"
+                type="radio"
+                :value="oi"
+                name="correct"
+                style="width: auto; flex-shrink: 0"
+              />
               <input
                 v-model="block.options[oi]"
                 :placeholder="`Option ${oi + 1}`"
                 style="flex: 1"
               />
-              <label
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 0.25rem;
-                  white-space: nowrap;
-                  margin: 0;
-                "
-              >
-                <input
-                  v-if="block.type === 'multiple_choice'"
-                  v-model="block.correct"
-                  type="checkbox"
-                  :value="oi"
-                />
-                <input v-else v-model="block.correct" type="radio" :value="oi" name="correct" />
-                Correct
-              </label>
               <button class="btn-sm btn-danger" @click="block.options.splice(oi, 1)">×</button>
             </div>
             <button class="btn-sm" @click="block.options = [...(block.options || []), '']">
@@ -270,16 +267,32 @@
           </template>
 
           <template v-if="block.type === 'word_scramble'">
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 0.25rem;
+                font-size: 0.8rem;
+              "
+            >
+              <input type="checkbox" v-model="block.sentence_mode" /> Sentence mode (scramble word
+              order)
+            </label>
             <div
               v-for="(w, wi) in block.words || []"
               :key="wi"
               style="display: flex; gap: 0.25rem; margin-bottom: 0.25rem"
             >
-              <input v-model="block.words[wi].word" placeholder="Word" style="flex: 1" />
+              <input
+                v-model="block.words[wi].word"
+                :placeholder="block.sentence_mode ? 'Sentence' : 'Word'"
+                style="flex: 1"
+              />
               <button class="btn-sm btn-danger" @click="block.words.splice(wi, 1)">×</button>
             </div>
             <button class="btn-sm" @click="block.words = [...(block.words || []), { word: '' }]">
-              + Word
+              + {{ block.sentence_mode ? 'Sentence' : 'Word' }}
             </button>
           </template>
 
