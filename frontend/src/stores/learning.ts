@@ -76,7 +76,7 @@ export const useLearningStore = defineStore('learning', () => {
       if (i.confidence === 5) rating = 4
       return { kc_id: i.kc_id, rating }
     })
-    
+
     const data = await api.post('/srs/review', { reviews })
     return {
       xpGained: data.xpGained || reviews.length * 10,

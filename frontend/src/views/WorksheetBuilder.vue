@@ -134,42 +134,86 @@
       </template>
 
       <template v-if="block.type === 'number_line'">
-        <div style="display:flex;gap:0.5rem">
-          <input v-model.number="block.min_value" type="number" placeholder="Min" style="width:80px" />
-          <input v-model.number="block.max_value" type="number" placeholder="Max" style="width:80px" />
-          <input v-model="block.markers[0]" type="number" placeholder="Correct value" style="width:100px" />
+        <div style="display: flex; gap: 0.5rem">
+          <input
+            v-model.number="block.min_value"
+            type="number"
+            placeholder="Min"
+            style="width: 80px"
+          />
+          <input
+            v-model.number="block.max_value"
+            type="number"
+            placeholder="Max"
+            style="width: 80px"
+          />
+          <input
+            v-model="block.markers[0]"
+            type="number"
+            placeholder="Correct value"
+            style="width: 100px"
+          />
         </div>
       </template>
 
       <template v-if="block.type === 'equation_entry'">
         <input v-model="block.equation" placeholder="Equation (e.g. 3*x + 5 = 14)" />
-        <input v-model="block.final_answer" placeholder="Expected answer" style="margin-top:0.25rem" />
+        <input
+          v-model="block.final_answer"
+          placeholder="Expected answer"
+          style="margin-top: 0.25rem"
+        />
       </template>
 
       <template v-if="block.type === 'fraction_input'">
-        <div style="display:flex;gap:0.5rem">
-          <input v-model.number="block.numerator" type="number" placeholder="Numerator" style="width:100px" />
+        <div style="display: flex; gap: 0.5rem">
+          <input
+            v-model.number="block.numerator"
+            type="number"
+            placeholder="Numerator"
+            style="width: 100px"
+          />
           <span>/</span>
-          <input v-model.number="block.denominator" type="number" placeholder="Denominator" style="width:100px" />
+          <input
+            v-model.number="block.denominator"
+            type="number"
+            placeholder="Denominator"
+            style="width: 100px"
+          />
         </div>
       </template>
 
       <template v-if="block.type === 'arithmetic_grid'">
-        <div style="display:flex;gap:0.5rem">
-          <input v-model.number="block.operand1" type="number" placeholder="Operand 1" style="width:100px" />
-          <select v-model="block.operation" style="width:80px">
+        <div style="display: flex; gap: 0.5rem">
+          <input
+            v-model.number="block.operand1"
+            type="number"
+            placeholder="Operand 1"
+            style="width: 100px"
+          />
+          <select v-model="block.operation" style="width: 80px">
             <option value="add">+</option>
             <option value="subtract">-</option>
             <option value="multiply">x</option>
             <option value="divide">/</option>
           </select>
-          <input v-model.number="block.operand2" type="number" placeholder="Operand 2" style="width:100px" />
+          <input
+            v-model.number="block.operand2"
+            type="number"
+            placeholder="Operand 2"
+            style="width: 100px"
+          />
         </div>
       </template>
 
       <template v-if="block.type === 'graph_plot'">
-        <p style="font-size:0.8rem">Points to plot (x,y pairs in [[x,y],[x,y]] format):</p>
-        <textarea v-model="block.pointsStr" rows="2" placeholder="[[1,2],[3,4]]" @blur="tryParsePoints(block)"></textarea>
+        <p style="font-size: 0.8rem">Points to plot (x,y pairs in [[x,y],[x,y]] format):</p>
+        <textarea
+          v-model="block.pointsStr"
+          rows="2"
+          placeholder="[[1,2],[3,4]]"
+          @blur="tryParsePoints(block)"
+        ></textarea>
       </template>
 
       <template v-if="block.type === 'geometry_shape'">
@@ -182,14 +226,32 @@
       </template>
 
       <template v-if="block.type === 'word_problem'">
-        <textarea v-model="block.problem_text" rows="2" placeholder="Problem description..."></textarea>
-        <div v-for="(step, si) in (block.steps || [])" :key="si" style="display:flex;gap:0.25rem;margin-top:0.25rem">
-          <input v-model="step.description" placeholder="Step description" style="flex:1" />
-          <input v-model="step.expected" placeholder="Expected answer" style="flex:1" />
+        <textarea
+          v-model="block.problem_text"
+          rows="2"
+          placeholder="Problem description..."
+        ></textarea>
+        <div
+          v-for="(step, si) in block.steps || []"
+          :key="si"
+          style="display: flex; gap: 0.25rem; margin-top: 0.25rem"
+        >
+          <input v-model="step.description" placeholder="Step description" style="flex: 1" />
+          <input v-model="step.expected" placeholder="Expected answer" style="flex: 1" />
           <button class="btn-sm btn-danger" @click="block.steps.splice(si, 1)">X</button>
         </div>
-        <button class="btn-sm" @click="block.steps = [...(block.steps||[]), { description: '', expected: '' }]" style="margin-top:0.25rem">Add Step</button>
-        <input v-model="block.final_answer" placeholder="Final answer" style="margin-top:0.25rem" />
+        <button
+          class="btn-sm"
+          @click="block.steps = [...(block.steps || []), { description: '', expected: '' }]"
+          style="margin-top: 0.25rem"
+        >
+          Add Step
+        </button>
+        <input
+          v-model="block.final_answer"
+          placeholder="Final answer"
+          style="margin-top: 0.25rem"
+        />
       </template>
 
       <details style="margin-top: 0.5rem; font-size: 0.85rem">
@@ -291,7 +353,10 @@ function mapLoadedBlocks(rawBlocks) {
       loaded.final_answer = loaded.final_answer || ''
     }
     if (loaded.type === 'matching') {
-      loaded.pairs = loaded.pairs || [['', ''], ['', '']]
+      loaded.pairs = loaded.pairs || [
+        ['', ''],
+        ['', ''],
+      ]
     }
     if (loaded.type === 'multiple_choice' || loaded.type === 'single_choice') {
       loaded.options = loaded.options || ['', '', '']
@@ -350,7 +415,9 @@ onMounted(async () => {
     ])
     subjects.value = subData.subjects || []
     gradeLevels.value = gradeData.gradeLevels || []
-  } catch { /* */ }
+  } catch {
+    /* */
+  }
 })
 
 watch(() => route.params.id, syncBuilderToRoute, { immediate: true })
@@ -360,7 +427,11 @@ function genId() {
 }
 
 function tryParsePoints(block) {
-  try { block.points_to_plot = JSON.parse(block.pointsStr) } catch { /* */ }
+  try {
+    block.points_to_plot = JSON.parse(block.pointsStr)
+  } catch {
+    /* */
+  }
 }
 
 function addBlock(type) {
@@ -380,16 +451,36 @@ function addBlock(type) {
     block.keywordsStr = ''
   }
   if (type === 'text' || type === 'read_aloud') block.text = ''
-  if (type === 'number_line') { block.min_value = 0; block.max_value = 100; block.markers = [50] }
-  if (type === 'equation_entry') { block.equation = ''; block.final_answer = '' }
-  if (type === 'fraction_input') { block.numerator = 1; block.denominator = 2 }
-  if (type === 'arithmetic_grid') { block.operand1 = 23; block.operand2 = 15; block.operation = 'add' }
+  if (type === 'number_line') {
+    block.min_value = 0
+    block.max_value = 100
+    block.markers = [50]
+  }
+  if (type === 'equation_entry') {
+    block.equation = ''
+    block.final_answer = ''
+  }
+  if (type === 'fraction_input') {
+    block.numerator = 1
+    block.denominator = 2
+  }
+  if (type === 'arithmetic_grid') {
+    block.operand1 = 23
+    block.operand2 = 15
+    block.operation = 'add'
+  }
   if (type === 'graph_plot') {
     block.points_to_plot = [[0, 0]]
     block.pointsStr = '[[0,0]]'
   }
-  if (type === 'geometry_shape') { block.shape_type = 'triangle' }
-  if (type === 'word_problem') { block.problem_text = ''; block.steps = [{ description: '', expected: '' }]; block.final_answer = '' }
+  if (type === 'geometry_shape') {
+    block.shape_type = 'triangle'
+  }
+  if (type === 'word_problem') {
+    block.problem_text = ''
+    block.steps = [{ description: '', expected: '' }]
+    block.final_answer = ''
+  }
   blocks.value.push(block)
 }
 

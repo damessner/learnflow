@@ -12,7 +12,23 @@
     >
       <h3>Submitted!</h3>
       <p>Score: {{ submitResult.score }} / {{ submitResult.maxScore }}</p>
-      <div v-if="submitResult.gritBonusAwarded" style="background: rgba(253, 224, 71, 0.2); border: 1px solid #fde047; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-weight: 700; color: #fef08a; display: inline-flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0; width: 100%; box-sizing: border-box;">
+      <div
+        v-if="submitResult.gritBonusAwarded"
+        style="
+          background: rgba(253, 224, 71, 0.2);
+          border: 1px solid #fde047;
+          padding: 0.5rem 1rem;
+          border-radius: var(--radius-md);
+          font-weight: 700;
+          color: #fef08a;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin: 0.5rem 0;
+          width: 100%;
+          box-sizing: border-box;
+        "
+      >
         🔥 Grit Boost! +150 XP for Retake Improvement!
       </div>
       <p v-if="submitResult.xpEarned">XP: +{{ submitResult.xpEarned }}</p>
@@ -305,6 +321,7 @@ const worksheet = ref(null)
 const blocks = ref([])
 const answers = reactive({})
 const submitted = ref(false)
+const readonly = ref(false)
 const submitResult = ref({ score: 0, maxScore: 0, feedback: '' })
 const saving = ref(false)
 const submitting = ref(false)
@@ -464,6 +481,7 @@ async function submit() {
     })
     submitResult.value = result
     submitted.value = true
+    readonly.value = true
     if (autoSaveTimer) clearInterval(autoSaveTimer)
     localStorage.removeItem(`answers_${route.params.id}`)
     if (result.gritBonusAwarded) {

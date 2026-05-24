@@ -51,6 +51,20 @@ router.post('/', requireAuth, requireRole('teacher', 'admin'), async (req, res, 
   }
 })
 
+router.get('/:id', requireAuth, async (req, res, next) => {
+  try {
+    const knex = getKnex()
+    const cls = await knex('classes').where({ id: req.params.id }).first()
+    if (!cls) {
+      res.status(404).json({ error: 'Class not found' })
+      return
+    }
+    res.json({ class: cls })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.delete('/:id', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
   try {
     const knex = getKnex()
@@ -91,7 +105,7 @@ router.get('/:id/progress', requireAuth, async (req, res, next) => {
         'users.name',
         'users.username',
         'users.character_emoji',
-        'learning_gamification.streak_days as streak_days'
+        'learning_gamification.streak_days as streak_days',
       )
 
     const assignments = await knex('assignments').where({ class_id: req.params.id })
@@ -124,7 +138,14 @@ router.get('/:id/students', requireAuth, async (req, res, next) => {
     const students = await knex('class_students')
       .join('users', 'class_students.student_id', 'users.id')
       .where('class_students.class_id', req.params.id)
-      .select('users.id', 'users.name', 'users.username', 'users.email', 'class_students.joined_at', 'users.character_emoji')
+      .select(
+        'users.id',
+        'users.name',
+        'users.username',
+        'users.email',
+        'class_students.joined_at',
+        'users.character_emoji',
+      )
 
     res.json({ students })
   } catch (err) {

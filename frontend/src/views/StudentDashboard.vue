@@ -1,31 +1,84 @@
 <template>
   <div class="page">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+      "
+    >
       <div>
-        <h2 style="font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0;">
+        <h2
+          style="
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+          "
+        >
           Student Dashboard
         </h2>
-        <p style="color: var(--text-muted); margin-top: 0.25rem;">
-          Welcome back, <strong>{{ authStore.user?.name || 'Student' }}</strong>!
+        <p style="color: var(--text-muted); margin-top: 0.25rem">
+          Welcome back, <strong>{{ authStore.user?.name || 'Student' }}</strong
+          >!
         </p>
       </div>
 
       <!-- Glowing Emoji Bubble & Sound Toggle -->
-      <div style="display: flex; align-items: center; gap: 0.75rem; background: var(--bg-card); padding: 0.5rem 1.25rem; border-radius: 50px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
-        <div @click="openEmojiModal" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-          <span 
+      <div
+        style="
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          background: var(--bg-card);
+          padding: 0.5rem 1.25rem;
+          border-radius: 50px;
+          border: 1px solid var(--border-color);
+          box-shadow: var(--shadow-sm);
+        "
+      >
+        <div
+          @click="openEmojiModal"
+          style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer"
+        >
+          <span
             class="streak-aura"
             :class="streakLevel > 0 ? `streak-level-${streakLevel}` : ''"
-            style="font-size: 2rem; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center;"
+            style="
+              font-size: 2rem;
+              width: 44px;
+              height: 44px;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+            "
           >
             {{ authStore.user?.character_emoji || '👤' }}
           </span>
-          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Choose Avatar</span>
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted)"
+            >Choose Avatar</span
+          >
         </div>
-        <div style="width: 1px; height: 24px; background: var(--border-color); margin: 0 0.25rem;"></div>
-        <button 
+        <div
+          style="width: 1px; height: 24px; background: var(--border-color); margin: 0 0.25rem"
+        ></div>
+        <button
           @click="toggleMute"
-          style="background: transparent; border: none; font-size: 1.2rem; cursor: pointer; padding: 0.25rem; display: flex; align-items: center; justify-content: center;"
+          style="
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
           :title="soundMuted ? 'Unmute victory music' : 'Mute victory music'"
         >
           {{ soundMuted ? '🔇' : '🔊' }}
@@ -65,7 +118,14 @@
 
       <div v-if="!showAnswer">
         <div class="form-group" style="margin-top: 1rem">
-          <label style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; display: block;">
+          <label
+            style="
+              font-size: 0.9rem;
+              color: var(--text-muted);
+              margin-bottom: 0.5rem;
+              display: block;
+            "
+          >
             Type out what you remember about this concept (Active Recall):
           </label>
           <textarea
@@ -82,20 +142,49 @@
 
       <div v-else>
         <!-- Active Recall Comparison -->
-        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; text-align: left; flex-wrap: wrap;">
-          <div style="flex: 1; min-width: 250px; padding: 1rem; background: var(--border-color); border-radius: 6px">
-            <h5 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--text-muted)">Your Recall:</h5>
-            <p style="white-space: pre-wrap; font-size: 0.95rem">{{ recallInput || '(Nothing written)' }}</p>
+        <div
+          style="display: flex; gap: 1rem; margin-bottom: 1.5rem; text-align: left; flex-wrap: wrap"
+        >
+          <div
+            style="
+              flex: 1;
+              min-width: 250px;
+              padding: 1rem;
+              background: var(--border-color);
+              border-radius: 6px;
+            "
+          >
+            <h5 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--text-muted)">
+              Your Recall:
+            </h5>
+            <p style="white-space: pre-wrap; font-size: 0.95rem">
+              {{ recallInput || '(Nothing written)' }}
+            </p>
           </div>
-          <div style="flex: 1; min-width: 250px; padding: 1rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px">
-            <h5 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary)">Correct Explanation:</h5>
-            <p style="font-size: 0.95rem">{{ currentMixItem?.description || 'No description available.' }}</p>
+          <div
+            style="
+              flex: 1;
+              min-width: 250px;
+              padding: 1rem;
+              background: var(--bg-main);
+              border: 1px solid var(--border-color);
+              border-radius: 6px;
+            "
+          >
+            <h5 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary)">
+              Correct Explanation:
+            </h5>
+            <p style="font-size: 0.95rem">
+              {{ currentMixItem?.description || 'No description available.' }}
+            </p>
           </div>
         </div>
 
         <div style="text-align: center">
           <h4>Metacognition Check</h4>
-          <p style="color: var(--text-muted); font-size: 0.9rem">Compare your recall above and rate your accuracy:</p>
+          <p style="color: var(--text-muted); font-size: 0.9rem">
+            Compare your recall above and rate your accuracy:
+          </p>
           <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem">
             <button class="btn-sm btn-danger" @click="answerMix(false, 1)">
               Forgot entirely (1)
@@ -150,14 +239,22 @@
         <div
           v-for="s in submissions"
           :key="s.id"
-          style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;"
+          style="
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
         >
           <router-link :to="`/student/assignment/${s.assignment_id}`" style="font-weight: 600">
             {{ s.worksheet_title }}
           </router-link>
           <div>
             <span v-if="s.score != null" class="badge">{{ s.score }}/{{ s.max_score }}</span>
-            <span v-else style="color: var(--warning); font-size: 0.85rem; font-weight: 500">Not submitted</span>
+            <span v-else style="color: var(--warning); font-size: 0.85rem; font-weight: 500"
+              >Not submitted</span
+            >
           </div>
         </div>
       </div>
@@ -177,8 +274,12 @@
       <div v-if="gamification" class="card">
         <h3>🏆 Progress</h3>
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem">
-          <span>Level: <strong>{{ gamification.level }}</strong></span>
-          <span>XP: <strong>{{ gamification.xp }}</strong></span>
+          <span
+            >Level: <strong>{{ gamification.level }}</strong></span
+          >
+          <span
+            >XP: <strong>{{ gamification.xp }}</strong></span
+          >
         </div>
 
         <div
@@ -200,15 +301,23 @@
             }"
           ></div>
         </div>
-        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem">
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem">
           {{ gamification.xp }} / {{ xpForNext }} XP to Level {{ gamification.level + 1 }}
         </div>
 
-        <p>🔥 Streak: <strong>{{ gamification.streak_days }}</strong> days</p>
+        <p>
+          🔥 Streak: <strong>{{ gamification.streak_days }}</strong> days
+        </p>
         <div v-if="gamification.badges && gamification.badges.length" style="margin-top: 0.5rem">
-          <span v-for="b in gamification.badges" :key="b" class="badge" style="margin-right:0.25rem;margin-bottom:0.25rem;display:inline-block">{{ b }}</span>
+          <span
+            v-for="b in gamification.badges"
+            :key="b"
+            class="badge"
+            style="margin-right: 0.25rem; margin-bottom: 0.25rem; display: inline-block"
+            >{{ b }}</span
+          >
         </div>
-        <div v-else style="color:var(--text-muted);font-size:0.8rem;margin-top:0.5rem">
+        <div v-else style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem">
           No badges yet — complete activities to earn them!
         </div>
       </div>
@@ -314,22 +423,36 @@
 
   <!-- Emoji Selector Modal -->
   <div v-if="emojiModalOpen" class="modal-overlay" @click.self="emojiModalOpen = false">
-    <div class="modal" style="max-width: 450px; text-align: center;">
-      <h3 style="margin-bottom: 0.5rem;">Choose Your Character Emoji</h3>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+    <div class="modal" style="max-width: 450px; text-align: center">
+      <h3 style="margin-bottom: 0.5rem">Choose Your Character Emoji</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem">
         Select an emoji avatar to represent yourself in your classes!
       </p>
-      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem; margin-bottom: 1.5rem;">
+      <div
+        style="
+          display: grid;
+          grid-template-columns: repeat(6, 1fr);
+          gap: 0.75rem;
+          margin-bottom: 1.5rem;
+        "
+      >
         <button
           v-for="em in emojiList"
           :key="em"
-          style="font-size: 2rem; padding: 0.5rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: all 0.2s;"
+          style="
+            font-size: 2rem;
+            padding: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            transition: all 0.2s;
+          "
           @click="selectEmoji(em)"
         >
           {{ em }}
         </button>
       </div>
-      <button class="btn-primary" style="width: 100%;" @click="emojiModalOpen = false">Close</button>
+      <button class="btn-primary" style="width: 100%" @click="emojiModalOpen = false">Close</button>
     </div>
   </div>
 </template>
@@ -376,7 +499,32 @@ const classCode = ref('')
 const joining = ref(false)
 
 const emojiModalOpen = ref(false)
-const emojiList = ['🚀', '🤖', '🦁', '🦄', '⚡', '🍕', '🎯', '🐱', '🐶', '🦊', '🐼', '🐨', '🦖', '🐉', '👾', '👑', '🌈', '🧙', '🥷', '👽', '🧠', '🧪', '🎨', '🎸']
+const emojiList = [
+  '🚀',
+  '🤖',
+  '🦁',
+  '🦄',
+  '⚡',
+  '🍕',
+  '🎯',
+  '🐱',
+  '🐶',
+  '🦊',
+  '🐼',
+  '🐨',
+  '🦖',
+  '🐉',
+  '👾',
+  '👑',
+  '🌈',
+  '🧙',
+  '🥷',
+  '👽',
+  '🧠',
+  '🧪',
+  '🎨',
+  '🎸',
+]
 
 async function selectEmoji(em) {
   try {

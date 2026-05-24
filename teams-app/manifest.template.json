@@ -29,16 +29,9 @@
       "name": "LearnFlow",
       "contentUrl": "{{LEARNFLOW_URL}}/",
       "websiteUrl": "{{LEARNFLOW_URL}}/",
-      "scopes": [
-        "personal"
-      ]
+      "scopes": ["personal"]
     }
   ],
-  "permissions": [
-    "identity",
-    "messageTeamMembers"
-  ],
-  "validDomains": [
-    "{{LEARNFLOW_DOMAIN}}"
-  ]
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": ["{{LEARNFLOW_DOMAIN}}"]
 }

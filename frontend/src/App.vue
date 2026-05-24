@@ -14,7 +14,11 @@
           >
           <router-link v-if="authStore.role === 'admin'" to="/admin">Admin</router-link>
           <div class="nav-divider"></div>
-          <button class="btn-icon" :title="uiStore.isDark ? 'Light mode' : 'Dark mode'" @click="uiStore.toggleTheme()">
+          <button
+            class="btn-icon"
+            :title="uiStore.isDark ? 'Light mode' : 'Dark mode'"
+            @click="uiStore.toggleTheme()"
+          >
             {{ uiStore.isDark ? '☀️' : '🌙' }}
           </button>
           <button class="btn-sm" @click="showChangePassword = true">Password</button>
@@ -42,11 +46,24 @@
 
     <div v-if="showChangePassword" class="modal-overlay" @click.self="showChangePassword = false">
       <div class="modal">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+          "
+        >
           <h3 style="font-size: 1.1rem; font-weight: 700">Change Password</h3>
           <button
             @click="showChangePassword = false"
-            style="background: none; border: none; font-size: 1.4rem; color: var(--text-muted); padding: 0"
+            style="
+              background: none;
+              border: none;
+              font-size: 1.4rem;
+              color: var(--text-muted);
+              padding: 0;
+            "
           >
             &times;
           </button>

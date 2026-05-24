@@ -3,7 +3,13 @@ import prettier from 'eslint-config-prettier'
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'src/views/AdminDashboard.vue', 'src/views/TeacherDashboard.vue'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'coverage/**',
+      'src/views/AdminDashboard.vue',
+      'src/views/TeacherDashboard.vue',
+    ],
   },
   ...pluginVue.configs['flat/recommended'],
   {

@@ -26,7 +26,11 @@
         <template v-if="mode === 'login'">
           <div class="form-group">
             <label>Username</label>
-            <input v-model="loginForm.username" placeholder="your username" @keyup.enter="doLogin" />
+            <input
+              v-model="loginForm.username"
+              placeholder="your username"
+              @keyup.enter="doLogin"
+            />
           </div>
           <div class="form-group">
             <label>Password</label>
@@ -54,11 +58,7 @@
             <input v-model="guestForm.classCode" placeholder="e.g. 5a1b-c3d4" />
           </div>
           <div v-if="error" class="login-error">{{ error }}</div>
-          <button
-            class="btn-primary login-submit"
-            :disabled="loading"
-            @click="doGuestLogin"
-          >
+          <button class="btn-primary login-submit" :disabled="loading" @click="doGuestLogin">
             <span v-if="!loading">Join Class →</span>
             <span v-else>Joining…</span>
           </button>
@@ -67,7 +67,19 @@
 
       <div v-if="msEnabled" class="ms-card">
         <button class="ms-btn" @click="doMicrosoftLogin">
-          <svg width="18" height="18" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect x="1" y="1" width="9" height="9" fill="#f35325"/><rect x="11" y="1" width="9" height="9" fill="#81bc06"/><rect x="1" y="11" width="9" height="9" fill="#05a6f0"/><rect x="11" y="11" width="9" height="9" fill="#ffba08"/></svg>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 21 21"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            style="flex-shrink: 0"
+          >
+            <rect x="1" y="1" width="9" height="9" fill="#f35325" />
+            <rect x="11" y="1" width="9" height="9" fill="#81bc06" />
+            <rect x="1" y="11" width="9" height="9" fill="#05a6f0" />
+            <rect x="11" y="11" width="9" height="9" fill="#ffba08" />
+          </svg>
           Sign in with Microsoft Teams
         </button>
       </div>

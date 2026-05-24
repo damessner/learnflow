@@ -201,7 +201,7 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
 
     const newRatio = result.maxScore > 0 ? result.score / result.maxScore : 0
     let gritBonusAwarded = false
-    if (prevScore !== null && (newRatio - prevRatio >= 0.3)) {
+    if (prevScore !== null && newRatio - prevRatio >= 0.3) {
       gritBonusAwarded = true
     }
 

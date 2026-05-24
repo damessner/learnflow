@@ -283,8 +283,12 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           break
         }
         case 'equation_entry': {
-          const ans = String(userAnswer || '').replace(/\s/g, '').toLowerCase()
-          const expected = String(block.final_answer || block.equation || '').replace(/\s/g, '').toLowerCase()
+          const ans = String(userAnswer || '')
+            .replace(/\s/g, '')
+            .toLowerCase()
+          const expected = String(block.final_answer || block.equation || '')
+            .replace(/\s/g, '')
+            .toLowerCase()
           earned = ans === expected ? block.points : 0
           feedback.push(`Equation: ${earned > 0 ? 'correct' : 'incorrect'}`)
           break
@@ -326,15 +330,18 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
               }
             }
           }
-          earned = expectedPoints.length > 0
-            ? Math.round((correct / expectedPoints.length) * block.points)
-            : 0
+          earned =
+            expectedPoints.length > 0
+              ? Math.round((correct / expectedPoints.length) * block.points)
+              : 0
           feedback.push(`Graph: ${correct}/${expectedPoints.length} points`)
           break
         }
         case 'geometry_shape': {
           const ans = (userAnswer as Record<string, unknown>) || {}
-          const nameMatch = String(ans.shape_name || '').toLowerCase() === String(block.shape_type || '').toLowerCase()
+          const nameMatch =
+            String(ans.shape_name || '').toLowerCase() ===
+            String(block.shape_type || '').toLowerCase()
           earned = nameMatch ? block.points : 0
           feedback.push(`Geometry: ${earned > 0 ? 'correct' : 'incorrect'}`)
           break
@@ -344,12 +351,19 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           const userSteps = (userAnswer as Record<string, string>) || {}
           let correct = 0
           for (let i = 0; i < steps.length; i++) {
-            const userVal = String(userSteps[i] || userSteps[String(i)] || '').trim().toLowerCase()
+            const userVal = String(userSteps[i] || userSteps[String(i)] || '')
+              .trim()
+              .toLowerCase()
             const expVal = steps[i].expected.trim().toLowerCase()
             if (userVal === expVal || checkSTEMMatch(userVal, expVal)) correct++
           }
-          const finalAnsMatch = String(userSteps.final_answer || '').trim().toLowerCase() ===
-            String(block.final_answer || '').trim().toLowerCase()
+          const finalAnsMatch =
+            String(userSteps.final_answer || '')
+              .trim()
+              .toLowerCase() ===
+            String(block.final_answer || '')
+              .trim()
+              .toLowerCase()
           if (finalAnsMatch) correct++
           const totalItems = steps.length + 1
           earned = totalItems > 0 ? Math.round((correct / totalItems) * block.points) : 0

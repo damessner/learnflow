@@ -387,26 +387,30 @@ function getMisconceptions(kcName: string): string[] {
   ]
 }
 
-router.post('/generate-story', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const {
-      topic,
-      gradeLevel,
-      grammarFocus,
-      vocabulary,
-      questionCount,
-      includeVocab,
-      includeGrammar,
-    } = req.body
+router.post(
+  '/generate-story',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const {
+        topic,
+        gradeLevel,
+        grammarFocus,
+        vocabulary,
+        questionCount,
+        includeVocab,
+        includeGrammar,
+      } = req.body
 
-    if (!topic) {
-      res.status(400).json({ error: 'Topic required' })
-      return
-    }
+      if (!topic) {
+        res.status(400).json({ error: 'Topic required' })
+        return
+      }
 
-    const blocks: z.infer<typeof BlockSchema>[] = []
+      const blocks: z.infer<typeof BlockSchema>[] = []
 
-    const storyPrompt = `Generate a complete educational story worksheet for grade ${gradeLevel || '2'} in German.
+      const storyPrompt = `Generate a complete educational story worksheet for grade ${gradeLevel || '2'} in German.
 
 Topic: "${topic}"
 ${grammarFocus ? `Grammar focus: ${grammarFocus}` : ''}
@@ -434,7 +438,9 @@ Return ONLY valid JSON with this structure:
       "options": ["correct answer", "wrong 1", "wrong 2", "wrong 3"],
       "correct": [0]
     }
-    ${includeVocab ? `,
+    ${
+      includeVocab
+        ? `,
     {
       "id": "uuid-string",
       "type": "gap_fill",
@@ -449,75 +455,94 @@ Return ONLY valid JSON with this structure:
         "pairs": [{"l": "German word", "r": "definition or translation"}],
         "direction": "l2r"
       }
-    }` : ''}
-    ${includeGrammar ? `,
+    }`
+        : ''
+    }
+    ${
+      includeGrammar
+        ? `,
     {
       "id": "uuid-string", 
       "type": "gap_fill",
       "points": 5,
       "template": "sentence with grammar-based ((gap)) focused on ${grammarFocus || 'the grammar topic'}"
-    }` : ''}
+    }`
+        : ''
+    }
   ]
 }
 
 Mix reading comprehension, vocabulary, and grammar exercises. All content in German.`
 
-    if (process.env.OLLAMA_URL) {
-      const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: process.env.OLLAMA_MODEL || 'llama3',
-          prompt: storyPrompt,
-          stream: false,
-          format: 'json',
-        }),
-      })
-      const data = await response.json()
-      try {
-        const parsed = JSON.parse(data.response)
-        if (parsed.blocks) {
-          for (const b of parsed.blocks) {
-            if (!b.id) b.id = uuidv4()
-          }
-          blocks.push(...parsed.blocks)
-        }
-      } catch {
-        blocks.push({ id: uuidv4(), type: 'text', points: 0, text: 'Story generation failed to parse.' })
-      }
-    } else if (process.env.GEMINI_API_KEY) {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-        {
+      if (process.env.OLLAMA_URL) {
+        const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: storyPrompt }] }],
-            generationConfig: { responseMimeType: 'application/json' },
+            model: process.env.OLLAMA_MODEL || 'llama3',
+            prompt: storyPrompt,
+            stream: false,
+            format: 'json',
           }),
-        },
-      )
-      const data = await response.json()
-      try {
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
-        const parsed = JSON.parse(text)
-        if (parsed.blocks) {
-          for (const b of parsed.blocks) {
-            if (!b.id) b.id = uuidv4()
+        })
+        const data = await response.json()
+        try {
+          const parsed = JSON.parse(data.response)
+          if (parsed.blocks) {
+            for (const b of parsed.blocks) {
+              if (!b.id) b.id = uuidv4()
+            }
+            blocks.push(...parsed.blocks)
           }
-          blocks.push(...parsed.blocks)
+        } catch {
+          blocks.push({
+            id: uuidv4(),
+            type: 'text',
+            points: 0,
+            text: 'Story generation failed to parse.',
+          })
         }
-      } catch { /* */ }
-    }
+      } else if (process.env.GEMINI_API_KEY) {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: storyPrompt }] }],
+              generationConfig: { responseMimeType: 'application/json' },
+            }),
+          },
+        )
+        const data = await response.json()
+        try {
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
+          const parsed = JSON.parse(text)
+          if (parsed.blocks) {
+            for (const b of parsed.blocks) {
+              if (!b.id) b.id = uuidv4()
+            }
+            blocks.push(...parsed.blocks)
+          }
+        } catch {
+          /* */
+        }
+      }
 
-    if (blocks.length === 0) {
-      blocks.push({ id: uuidv4(), type: 'text', points: 0, text: `Story: "${topic}" — AI generation unavailable.` })
-    }
+      if (blocks.length === 0) {
+        blocks.push({
+          id: uuidv4(),
+          type: 'text',
+          points: 0,
+          text: `Story: "${topic}" — AI generation unavailable.`,
+        })
+      }
 
-    res.json({ blocks })
-  } catch (err) {
-    next(err)
-  }
-})
+      res.json({ blocks })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
 export default router

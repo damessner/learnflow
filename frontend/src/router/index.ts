@@ -14,7 +14,11 @@ const StoryGenerator = () => import('../views/StoryGenerator.vue')
 const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: Login },
-  { path: '/register-teacher', component: TeacherRegistration, meta: { requiresAuth: true, role: 'admin' } },
+  {
+    path: '/register-teacher',
+    component: TeacherRegistration,
+    meta: { requiresAuth: true, role: 'admin' },
+  },
   { path: '/student', component: StudentDashboard, meta: { requiresAuth: true, role: 'student' } },
   {
     path: '/student/course/:id',

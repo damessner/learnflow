@@ -2,7 +2,7 @@
   <div class="page">
     <div style="display: flex; justify-content: space-between; align-items: center">
       <h2>Teacher Dashboard</h2>
-      <div style="display:flex;gap:0.5rem">
+      <div style="display: flex; gap: 0.5rem">
         <router-link to="/teacher/stories" class="btn-primary">Stories Generator</router-link>
         <router-link to="/teacher/builder" class="btn-primary">Create Worksheet</router-link>
       </div>
@@ -30,14 +30,23 @@
     </div>
 
     <template v-if="tab === 'worksheets'">
-      <div class="card" style="margin-bottom: 1rem; padding: 0.75rem 1.25rem;">
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-          <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">Search:</label>
-          <input v-model="searchQuery" placeholder="Filter worksheets by title, subject, or grade..." style="flex: 1; padding: 0.4rem 0.75rem;" />
+      <div class="card" style="margin-bottom: 1rem; padding: 0.75rem 1.25rem">
+        <div style="display: flex; gap: 0.5rem; align-items: center">
+          <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted)"
+            >Search:</label
+          >
+          <input
+            v-model="searchQuery"
+            placeholder="Filter worksheets by title, subject, or grade..."
+            style="flex: 1; padding: 0.4rem 0.75rem"
+          />
         </div>
       </div>
 
-      <div v-if="filteredWorksheets.length === 0" style="color: var(--text-muted); text-align: center; padding: 2rem;">
+      <div
+        v-if="filteredWorksheets.length === 0"
+        style="color: var(--text-muted); text-align: center; padding: 2rem"
+      >
         No matching worksheets found
       </div>
       <div v-for="ws in filteredWorksheets" :key="ws.id" class="card" style="margin-bottom: 0.5rem">
@@ -88,11 +97,28 @@
 
     <template v-if="tab === 'classes'">
       <div v-if="classesList.length === 0" style="color: var(--text-muted)">No classes yet</div>
-      <div v-for="c in classesList" :key="c.id" class="card" style="margin-bottom: 1.5rem; border-top: 3px solid var(--primary);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+      <div
+        v-for="c in classesList"
+        :key="c.id"
+        class="card"
+        style="margin-bottom: 1.5rem; border-top: 3px solid var(--primary)"
+      >
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+          "
+        >
           <div>
-            <strong style="font-size: 1.2rem;">{{ c.name }}</strong>
-            <span class="badge" style="margin-left: 0.5rem; background: rgba(79, 70, 229, 0.1); color: var(--primary);">Code: {{ c.class_code }}</span>
+            <strong style="font-size: 1.2rem">{{ c.name }}</strong>
+            <span
+              class="badge"
+              style="margin-left: 0.5rem; background: rgba(79, 70, 229, 0.1); color: var(--primary)"
+              >Code: {{ c.class_code }}</span
+            >
           </div>
           <div style="display: flex; gap: 0.25rem">
             <button class="btn-primary btn-sm" @click="viewClassProgress(c.id)">
@@ -102,9 +128,12 @@
             <button class="btn-sm btn-danger" @click="deleteClass(c.id)">Delete</button>
           </div>
         </div>
-        
-        <div v-if="selectedClass === c.id" style="margin-top: 1rem;">
-          <div v-if="classProgress.length === 0" style="color: var(--text-muted); font-size: 0.9rem; padding: 1rem 0;">
+
+        <div v-if="selectedClass === c.id" style="margin-top: 1rem">
+          <div
+            v-if="classProgress.length === 0"
+            style="color: var(--text-muted); font-size: 0.9rem; padding: 1rem 0"
+          >
             No students enrolled in this class yet.
           </div>
           <div v-else class="student-grid">
@@ -112,25 +141,50 @@
               v-for="p in classProgress"
               :key="p.student.id"
               class="student-progress-card"
-              :class="{ 'at-risk': p.total > 0 && (p.completed / p.total) < 0.5 }"
+              :class="{ 'at-risk': p.total > 0 && p.completed / p.total < 0.5 }"
             >
-              <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-                <span 
+              <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem">
+                <span
                   class="student-emoji streak-aura"
-                  :class="p.student.streak_days >= 7 ? 'streak-level-3' : (p.student.streak_days >= 3 ? 'streak-level-2' : (p.student.streak_days >= 1 ? 'streak-level-1' : ''))"
+                  :class="
+                    p.student.streak_days >= 7
+                      ? 'streak-level-3'
+                      : p.student.streak_days >= 3
+                        ? 'streak-level-2'
+                        : p.student.streak_days >= 1
+                          ? 'streak-level-1'
+                          : ''
+                  "
                 >
                   {{ p.student.character_emoji || '👤' }}
                 </span>
-                <div style="flex: 1; min-width: 0;">
-                  <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <div style="flex: 1; min-width: 0">
+                  <h4
+                    style="
+                      margin: 0;
+                      font-size: 0.95rem;
+                      font-weight: 700;
+                      white-space: nowrap;
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                    "
+                  >
                     {{ p.student.name }}
                   </h4>
-                  <div style="font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <div
+                    style="
+                      font-size: 0.75rem;
+                      color: var(--text-muted);
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                      white-space: nowrap;
+                    "
+                  >
                     @{{ p.student.username }}
                   </div>
                 </div>
                 <span
-                  v-if="p.total > 0 && (p.completed / p.total) < 0.5"
+                  v-if="p.total > 0 && p.completed / p.total < 0.5"
                   class="status-badge risk-badge"
                 >
                   ⚠️ At Risk
@@ -141,23 +195,30 @@
                 >
                   ✅ Done
                 </span>
-                <span
-                  v-else
-                  class="status-badge track-badge"
-                >
-                  On Track
-                </span>
+                <span v-else class="status-badge track-badge"> On Track </span>
               </div>
-              <div style="font-size: 0.8rem; display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
-                <span style="color: var(--text-muted);">Completed:</span>
-                <span style="font-weight: 700; color: var(--text-main);">{{ p.completed }} / {{ p.total }}</span>
+              <div
+                style="
+                  font-size: 0.8rem;
+                  display: flex;
+                  justify-content: space-between;
+                  margin-bottom: 0.35rem;
+                "
+              >
+                <span style="color: var(--text-muted)">Completed:</span>
+                <span style="font-weight: 700; color: var(--text-main)"
+                  >{{ p.completed }} / {{ p.total }}</span
+                >
               </div>
               <div class="progress-bar-container">
                 <div
                   class="progress-bar"
                   :style="{
                     width: (p.total > 0 ? (p.completed / p.total) * 100 : 0) + '%',
-                    background: p.total > 0 && (p.completed / p.total) < 0.5 ? 'var(--danger)' : 'var(--success)'
+                    background:
+                      p.total > 0 && p.completed / p.total < 0.5
+                        ? 'var(--danger)'
+                        : 'var(--success)',
                   }"
                 ></div>
               </div>
@@ -282,35 +343,106 @@
     </template>
 
     <template v-if="tab === 'courses'">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1.5rem;
+        "
+      >
         <h3>My Courses</h3>
         <button class="btn-primary" @click="openCreateCourseModal">Create Course</button>
       </div>
 
-      <div v-if="coursesStore.courses.length === 0" style="color: var(--text-muted); text-align: center; padding: 3rem 1rem;" class="card">
-        No courses created yet. Create a course to sequence learning modules with score thresholds and badges!
+      <div
+        v-if="coursesStore.courses.length === 0"
+        style="color: var(--text-muted); text-align: center; padding: 3rem 1rem"
+        class="card"
+      >
+        No courses created yet. Create a course to sequence learning modules with score thresholds
+        and badges!
       </div>
 
       <div v-else class="grid grid-2">
-        <div v-for="course in coursesStore.courses" :key="course.id" class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid var(--primary); min-height: 200px;">
+        <div
+          v-for="course in coursesStore.courses"
+          :key="course.id"
+          class="card"
+          style="
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-top: 4px solid var(--primary);
+            min-height: 200px;
+          "
+        >
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; gap: 0.5rem;">
-              <h4 style="margin: 0; font-size: 1.25rem;">{{ course.name }}</h4>
-              <span v-if="course.badge_name" class="badge" style="background: rgba(234, 179, 8, 0.15); color: #ca8a04; border: 1px solid rgba(234, 179, 8, 0.3); font-weight: 700; font-size: 0.8rem; white-space: nowrap;">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 0.5rem;
+                gap: 0.5rem;
+              "
+            >
+              <h4 style="margin: 0; font-size: 1.25rem">{{ course.name }}</h4>
+              <span
+                v-if="course.badge_name"
+                class="badge"
+                style="
+                  background: rgba(234, 179, 8, 0.15);
+                  color: #ca8a04;
+                  border: 1px solid rgba(234, 179, 8, 0.3);
+                  font-weight: 700;
+                  font-size: 0.8rem;
+                  white-space: nowrap;
+                "
+              >
                 🏆 {{ course.badge_name }}
               </span>
             </div>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.4;">
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                margin-bottom: 1rem;
+                line-height: 1.4;
+              "
+            >
               {{ course.description || 'No description provided.' }}
             </p>
 
-            <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-              <span v-if="course.deadline">📅 Deadline: <strong>{{ new Date(course.deadline).toLocaleDateString() }}</strong></span>
-              <span>🎯 Pass Threshold: <strong>{{ course.unlock_threshold }}%</strong></span>
+            <div
+              style="
+                font-size: 0.8rem;
+                color: var(--text-muted);
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1rem;
+                margin-bottom: 1rem;
+              "
+            >
+              <span v-if="course.deadline"
+                >📅 Deadline:
+                <strong>{{ new Date(course.deadline).toLocaleDateString() }}</strong></span
+              >
+              <span
+                >🎯 Pass Threshold: <strong>{{ course.unlock_threshold }}%</strong></span
+              >
             </div>
           </div>
 
-          <div style="display: flex; gap: 0.5rem; margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+          <div
+            style="
+              display: flex;
+              gap: 0.5rem;
+              margin-top: auto;
+              border-top: 1px solid var(--border-color);
+              padding-top: 0.75rem;
+            "
+          >
             <button class="btn-sm" @click="manageCourse(course)">Manage & Edit</button>
             <button class="btn-sm btn-danger" @click="deleteCourse(course.id)">Delete</button>
           </div>
@@ -321,7 +453,6 @@
     <!-- ─── REPORTS TAB ─────────────────────────────────────────────────── -->
     <template v-if="tab === 'reports'">
       <div class="reports-layout">
-
         <!-- Left panel: Assignments list -->
         <div class="reports-sidebar">
           <h4 class="reports-section-title">📝 Worksheet Assignments</h4>
@@ -330,15 +461,20 @@
             v-for="a in reportAssignments"
             :key="a.id"
             class="report-item"
-            :class="{ 'report-item-active': selectedReport?.id === a.id && selectedReport?.type === 'assignment' }"
+            :class="{
+              'report-item-active':
+                selectedReport?.id === a.id && selectedReport?.type === 'assignment',
+            }"
             @click="loadAssignmentReport(a)"
           >
             <div class="report-item-name">{{ a.worksheet_title }}</div>
-            <div class="report-item-meta">{{ a.class_name }} · {{ a.due_date ? new Date(a.due_date).toLocaleDateString() : 'No deadline' }}</div>
-            <span
-              v-if="a.due_date && new Date(a.due_date) < new Date()"
-              class="report-ready-badge"
-            >📢 REPORT READY</span>
+            <div class="report-item-meta">
+              {{ a.class_name }} ·
+              {{ a.due_date ? new Date(a.due_date).toLocaleDateString() : 'No deadline' }}
+            </div>
+            <span v-if="a.due_date && new Date(a.due_date) < new Date()" class="report-ready-badge"
+              >📢 REPORT READY</span
+            >
           </div>
 
           <h4 class="reports-section-title" style="margin-top: 1.5rem">🎓 Courses</h4>
@@ -347,28 +483,39 @@
             v-for="c in reportCourses"
             :key="c.id"
             class="report-item"
-            :class="{ 'report-item-active': selectedReport?.id === c.id && selectedReport?.type === 'course' }"
+            :class="{
+              'report-item-active':
+                selectedReport?.id === c.id && selectedReport?.type === 'course',
+            }"
             @click="loadCourseReport(c)"
           >
             <div class="report-item-name">{{ c.name }}</div>
-            <div class="report-item-meta">{{ c.deadline ? new Date(c.deadline).toLocaleDateString() : 'No deadline' }}</div>
-            <span
-              v-if="c.deadline && new Date(c.deadline) < new Date()"
-              class="report-ready-badge"
-            >📢 REPORT READY</span>
+            <div class="report-item-meta">
+              {{ c.deadline ? new Date(c.deadline).toLocaleDateString() : 'No deadline' }}
+            </div>
+            <span v-if="c.deadline && new Date(c.deadline) < new Date()" class="report-ready-badge"
+              >📢 REPORT READY</span
+            >
           </div>
         </div>
 
         <!-- Right panel: Report view -->
         <div class="reports-main">
-          <div v-if="reportLoading" style="text-align:center; padding: 3rem; color: var(--text-muted)">
+          <div
+            v-if="reportLoading"
+            style="text-align: center; padding: 3rem; color: var(--text-muted)"
+          >
             ⏳ Loading report data...
           </div>
 
           <div v-else-if="!reportData" class="reports-placeholder">
             <div style="font-size: 3rem; margin-bottom: 1rem">📊</div>
-            <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem">Select an assignment or course</div>
-            <div style="color: var(--text-muted); font-size: 0.9rem">Items marked with 📢 REPORT READY have passed their deadline.</div>
+            <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem">
+              Select an assignment or course
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.9rem">
+              Items marked with 📢 REPORT READY have passed their deadline.
+            </div>
           </div>
 
           <div v-else>
@@ -376,23 +523,38 @@
             <div class="report-header-row">
               <div>
                 <h3 style="margin: 0 0 0.25rem">
-                  {{ selectedReport?.type === 'course' ? reportData.course?.name : reportData.assignment?.worksheet_title }}
+                  {{
+                    selectedReport?.type === 'course'
+                      ? reportData.course?.name
+                      : reportData.assignment?.worksheet_title
+                  }}
                 </h3>
                 <div style="font-size: 0.85rem; color: var(--text-muted)">
                   <span v-if="selectedReport?.type === 'assignment'">
-                    Class: <strong>{{ reportData.assignment?.class_name }}</strong> ·
-                    Subject: <strong>{{ reportData.assignment?.subject || '—' }}</strong> ·
-                    Due: <strong>{{ reportData.assignment?.due_date ? new Date(reportData.assignment.due_date).toLocaleDateString() : '—' }}</strong>
+                    Class: <strong>{{ reportData.assignment?.class_name }}</strong> · Subject:
+                    <strong>{{ reportData.assignment?.subject || '—' }}</strong> · Due:
+                    <strong>{{
+                      reportData.assignment?.due_date
+                        ? new Date(reportData.assignment.due_date).toLocaleDateString()
+                        : '—'
+                    }}</strong>
                   </span>
                   <span v-else>
-                    Deadline: <strong>{{ reportData.course?.deadline ? new Date(reportData.course.deadline).toLocaleDateString() : '—' }}</strong> ·
-                    Badge: <strong>{{ reportData.course?.badge_name || '—' }}</strong>
+                    Deadline:
+                    <strong>{{
+                      reportData.course?.deadline
+                        ? new Date(reportData.course.deadline).toLocaleDateString()
+                        : '—'
+                    }}</strong>
+                    · Badge: <strong>{{ reportData.course?.badge_name || '—' }}</strong>
                   </span>
                 </div>
               </div>
               <div style="display: flex; gap: 0.5rem">
                 <button class="btn-sm" @click="printList">📄 Print List</button>
-                <button class="btn-sm btn-primary" @click="printCards">📇 Print Student Cards</button>
+                <button class="btn-sm btn-primary" @click="printCards">
+                  📇 Print Student Cards
+                </button>
               </div>
             </div>
 
@@ -415,43 +577,76 @@
                 <tr
                   v-for="(student, idx) in reportData.students"
                   :key="student.student_id"
-                  :class="{ 'row-submitted': student.submitted || student.completion_pct === 100, 'row-pending': !student.submitted && student.completion_pct !== 100 }"
+                  :class="{
+                    'row-submitted': student.submitted || student.completion_pct === 100,
+                    'row-pending': !student.submitted && student.completion_pct !== 100,
+                  }"
                 >
                   <td style="color: var(--text-muted); font-size: 0.8rem">{{ idx + 1 }}</td>
                   <td>
                     <div style="display: flex; align-items: center; gap: 0.5rem">
                       <span>{{ student.character_emoji }}</span>
                       <div>
-                        <div style="font-weight: 600; font-size: 0.9rem">{{ student.student_name }}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted)">@{{ student.student_username }}</div>
+                        <div style="font-weight: 600; font-size: 0.9rem">
+                          {{ student.student_name }}
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted)">
+                          @{{ student.student_username }}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td v-if="selectedReport?.type === 'assignment'">
-                    <span v-if="student.submitted" class="status-chip chip-done">✅ {{ new Date(student.submitted_at).toLocaleDateString() }}</span>
+                    <span v-if="student.submitted" class="status-chip chip-done"
+                      >✅ {{ new Date(student.submitted_at).toLocaleDateString() }}</span
+                    >
                     <span v-else class="status-chip chip-pending">⏳ Pending</span>
                   </td>
                   <td v-if="selectedReport?.type === 'assignment'">
-                    <span v-if="student.score !== null" class="score-pill" :class="student.score_pct >= 60 ? 'score-pass' : 'score-fail'">
+                    <span
+                      v-if="student.score !== null"
+                      class="score-pill"
+                      :class="student.score_pct >= 60 ? 'score-pass' : 'score-fail'"
+                    >
                       {{ student.score }}/{{ student.max_score }} ({{ student.score_pct }}%)
                     </span>
                     <span v-else style="color: var(--text-muted)">—</span>
                   </td>
                   <td v-if="selectedReport?.type === 'course'">
                     <div style="display: flex; align-items: center; gap: 0.5rem">
-                      <div class="mini-bar"><div class="mini-bar-fill" :style="{ width: student.completion_pct + '%', background: student.completion_pct === 100 ? 'var(--success)' : 'var(--primary)' }"></div></div>
-                      <span style="font-size: 0.8rem; font-weight: 700">{{ student.completion_pct }}%</span>
+                      <div class="mini-bar">
+                        <div
+                          class="mini-bar-fill"
+                          :style="{
+                            width: student.completion_pct + '%',
+                            background:
+                              student.completion_pct === 100 ? 'var(--success)' : 'var(--primary)',
+                          }"
+                        ></div>
+                      </div>
+                      <span style="font-size: 0.8rem; font-weight: 700"
+                        >{{ student.completion_pct }}%</span
+                      >
                     </div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted)">{{ student.completed_worksheets }}/{{ student.total_worksheets }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted)">
+                      {{ student.completed_worksheets }}/{{ student.total_worksheets }}
+                    </div>
                   </td>
                   <td v-if="selectedReport?.type === 'course'">
-                    <span v-if="student.average_score_pct !== null" class="score-pill" :class="student.average_score_pct >= 60 ? 'score-pass' : 'score-fail'">{{ student.average_score_pct }}%</span>
+                    <span
+                      v-if="student.average_score_pct !== null"
+                      class="score-pill"
+                      :class="student.average_score_pct >= 60 ? 'score-pass' : 'score-fail'"
+                      >{{ student.average_score_pct }}%</span
+                    >
                     <span v-else style="color: var(--text-muted)">—</span>
                   </td>
                   <td style="font-size: 0.85rem">⚡ {{ student.xp }} / Lv {{ student.level }}</td>
                   <td style="font-size: 0.85rem">🔥 {{ student.streak_days }}d</td>
                   <td v-if="selectedReport?.type === 'course'">
-                    <span v-if="student.course_badge_earned" style="color: #ca8a04">🏆 {{ reportData.course?.badge_name }}</span>
+                    <span v-if="student.course_badge_earned" style="color: #ca8a04"
+                      >🏆 {{ reportData.course?.badge_name }}</span
+                    >
                     <span v-else style="color: var(--text-muted)">—</span>
                   </td>
                 </tr>
@@ -468,15 +663,30 @@
     <!-- List Print -->
     <div v-if="printMode === 'list' && reportData" class="print-list">
       <div class="print-header">
-        <h1>{{ selectedReport?.type === 'course' ? reportData.course?.name : reportData.assignment?.worksheet_title }}</h1>
+        <h1>
+          {{
+            selectedReport?.type === 'course'
+              ? reportData.course?.name
+              : reportData.assignment?.worksheet_title
+          }}
+        </h1>
         <p>
           <span v-if="selectedReport?.type === 'assignment'">
-            Class: {{ reportData.assignment?.class_name }} ·
-            Subject: {{ reportData.assignment?.subject || '—' }} ·
-            Due: {{ reportData.assignment?.due_date ? new Date(reportData.assignment.due_date).toLocaleDateString() : '—' }}
+            Class: {{ reportData.assignment?.class_name }} · Subject:
+            {{ reportData.assignment?.subject || '—' }} · Due:
+            {{
+              reportData.assignment?.due_date
+                ? new Date(reportData.assignment.due_date).toLocaleDateString()
+                : '—'
+            }}
           </span>
           <span v-else>
-            Course Deadline: {{ reportData.course?.deadline ? new Date(reportData.course.deadline).toLocaleDateString() : '—' }}
+            Course Deadline:
+            {{
+              reportData.course?.deadline
+                ? new Date(reportData.course.deadline).toLocaleDateString()
+                : '—'
+            }}
           </span>
           · Generated: {{ new Date().toLocaleString() }}
         </p>
@@ -499,10 +709,18 @@
           <tr v-for="(s, idx) in reportData.students" :key="s.student_id">
             <td>{{ idx + 1 }}</td>
             <td>{{ s.character_emoji }} {{ s.student_name }}</td>
-            <td v-if="selectedReport?.type === 'assignment'">{{ s.submitted ? new Date(s.submitted_at).toLocaleDateString() : 'Pending' }}</td>
-            <td v-if="selectedReport?.type === 'assignment'">{{ s.score !== null ? s.score + '/' + s.max_score + ' (' + s.score_pct + '%)' : '—' }}</td>
-            <td v-if="selectedReport?.type === 'course'">{{ s.completed_worksheets }}/{{ s.total_worksheets }} ({{ s.completion_pct }}%)</td>
-            <td v-if="selectedReport?.type === 'course'">{{ s.average_score_pct !== null ? s.average_score_pct + '%' : '—' }}</td>
+            <td v-if="selectedReport?.type === 'assignment'">
+              {{ s.submitted ? new Date(s.submitted_at).toLocaleDateString() : 'Pending' }}
+            </td>
+            <td v-if="selectedReport?.type === 'assignment'">
+              {{ s.score !== null ? s.score + '/' + s.max_score + ' (' + s.score_pct + '%)' : '—' }}
+            </td>
+            <td v-if="selectedReport?.type === 'course'">
+              {{ s.completed_worksheets }}/{{ s.total_worksheets }} ({{ s.completion_pct }}%)
+            </td>
+            <td v-if="selectedReport?.type === 'course'">
+              {{ s.average_score_pct !== null ? s.average_score_pct + '%' : '—' }}
+            </td>
             <td>{{ s.xp }}</td>
             <td>{{ s.level }}</td>
             <td>{{ s.streak_days }}d</td>
@@ -514,15 +732,17 @@
     <!-- Cards Print (2 per A4 page) -->
     <div v-if="printMode === 'cards' && reportData" class="print-cards">
       <div class="print-header">
-        <h1>{{ selectedReport?.type === 'course' ? reportData.course?.name : reportData.assignment?.worksheet_title }}</h1>
+        <h1>
+          {{
+            selectedReport?.type === 'course'
+              ? reportData.course?.name
+              : reportData.assignment?.worksheet_title
+          }}
+        </h1>
         <p>Student Progress Report · {{ new Date().toLocaleString() }}</p>
       </div>
       <div class="print-cards-grid">
-        <div
-          v-for="s in reportData.students"
-          :key="s.student_id"
-          class="print-student-card"
-        >
+        <div v-for="s in reportData.students" :key="s.student_id" class="print-student-card">
           <div class="psc-header">
             <span class="psc-emoji">{{ s.character_emoji }}</span>
             <div>
@@ -531,9 +751,18 @@
             </div>
           </div>
           <div class="psc-stats">
-            <div class="psc-stat"><div class="psc-stat-label">XP</div><div class="psc-stat-val">⚡ {{ s.xp }}</div></div>
-            <div class="psc-stat"><div class="psc-stat-label">Level</div><div class="psc-stat-val">{{ s.level }}</div></div>
-            <div class="psc-stat"><div class="psc-stat-label">Streak</div><div class="psc-stat-val">🔥 {{ s.streak_days }}d</div></div>
+            <div class="psc-stat">
+              <div class="psc-stat-label">XP</div>
+              <div class="psc-stat-val">⚡ {{ s.xp }}</div>
+            </div>
+            <div class="psc-stat">
+              <div class="psc-stat-label">Level</div>
+              <div class="psc-stat-val">{{ s.level }}</div>
+            </div>
+            <div class="psc-stat">
+              <div class="psc-stat-label">Streak</div>
+              <div class="psc-stat-val">🔥 {{ s.streak_days }}d</div>
+            </div>
             <div v-if="selectedReport?.type === 'assignment'" class="psc-stat">
               <div class="psc-stat-label">Score</div>
               <div class="psc-stat-val">{{ s.score !== null ? s.score_pct + '%' : '—' }}</div>
@@ -544,11 +773,21 @@
             </div>
             <div v-if="selectedReport?.type === 'course'" class="psc-stat">
               <div class="psc-stat-label">Avg Score</div>
-              <div class="psc-stat-val">{{ s.average_score_pct !== null ? s.average_score_pct + '%' : '—' }}</div>
+              <div class="psc-stat-val">
+                {{ s.average_score_pct !== null ? s.average_score_pct + '%' : '—' }}
+              </div>
             </div>
           </div>
-          <div v-if="selectedReport?.type === 'assignment'" class="psc-status" :class="s.submitted ? 'psc-done' : 'psc-pending'">
-            {{ s.submitted ? '✅ Submitted ' + new Date(s.submitted_at).toLocaleDateString() : '⏳ Not submitted' }}
+          <div
+            v-if="selectedReport?.type === 'assignment'"
+            class="psc-status"
+            :class="s.submitted ? 'psc-done' : 'psc-pending'"
+          >
+            {{
+              s.submitted
+                ? '✅ Submitted ' + new Date(s.submitted_at).toLocaleDateString()
+                : '⏳ Not submitted'
+            }}
           </div>
           <div v-if="selectedReport?.type === 'course' && s.course_badge_earned" class="psc-badge">
             🏆 {{ reportData.course?.badge_name }}
@@ -556,7 +795,9 @@
           <div v-if="selectedReport?.type === 'course'" class="psc-progress-bar">
             <div class="psc-progress-fill" :style="{ width: s.completion_pct + '%' }"></div>
           </div>
-          <div style="font-size: 0.65rem; margin-top: 0.5rem; color: #888">LearnFlow Report · {{ new Date().toLocaleDateString() }}</div>
+          <div style="font-size: 0.65rem; margin-top: 0.5rem; color: #888">
+            LearnFlow Report · {{ new Date().toLocaleDateString() }}
+          </div>
         </div>
       </div>
     </div>
@@ -564,34 +805,66 @@
 
   <!-- Create Course Modal -->
   <div v-if="createCourseModalOpen" class="modal-overlay" @click.self="closeCreateCourseModal">
-    <div class="modal" style="max-width: 500px;">
-      <h3 style="margin-top: 0; margin-bottom: 1.25rem; font-weight: 700;">Create New Course</h3>
-      <div class="form-group" style="margin-bottom: 1rem;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem;">Course Name *</label>
-        <input v-model="courseForm.name" placeholder="e.g., Algebra I, Physics Basics" style="width: 100%;" required />
+    <div class="modal" style="max-width: 500px">
+      <h3 style="margin-top: 0; margin-bottom: 1.25rem; font-weight: 700">Create New Course</h3>
+      <div class="form-group" style="margin-bottom: 1rem">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem"
+          >Course Name *</label
+        >
+        <input
+          v-model="courseForm.name"
+          placeholder="e.g., Algebra I, Physics Basics"
+          style="width: 100%"
+          required
+        />
       </div>
-      <div class="form-group" style="margin-bottom: 1rem;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem;">Description</label>
-        <textarea v-model="courseForm.description" placeholder="A brief description of this course..." style="width: 100%; resize: vertical;" rows="3"></textarea>
+      <div class="form-group" style="margin-bottom: 1rem">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem"
+          >Description</label
+        >
+        <textarea
+          v-model="courseForm.description"
+          placeholder="A brief description of this course..."
+          style="width: 100%; resize: vertical"
+          rows="3"
+        ></textarea>
       </div>
-      <div class="grid grid-2" style="margin-bottom: 1rem; gap: 1rem;">
+      <div class="grid grid-2" style="margin-bottom: 1rem; gap: 1rem">
         <div class="form-group">
-          <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem;">Unlock Threshold (%)</label>
-          <input v-model.number="courseForm.unlock_threshold" type="number" min="0" max="100" style="width: 100%;" />
+          <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem"
+            >Unlock Threshold (%)</label
+          >
+          <input
+            v-model.number="courseForm.unlock_threshold"
+            type="number"
+            min="0"
+            max="100"
+            style="width: 100%"
+          />
         </div>
         <div class="form-group">
-          <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem;">Course Deadline</label>
-          <input v-model="courseForm.deadline" type="date" style="width: 100%;" />
+          <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem"
+            >Course Deadline</label
+          >
+          <input v-model="courseForm.deadline" type="date" style="width: 100%" />
         </div>
       </div>
-      <div class="form-group" style="margin-bottom: 1.5rem;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem;">Completion Badge Name</label>
-        <input v-model="courseForm.badge_name" placeholder="e.g., Math Wizard, Physics Pioneer" style="width: 100%;" />
-        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">
+      <div class="form-group" style="margin-bottom: 1.5rem">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem"
+          >Completion Badge Name</label
+        >
+        <input
+          v-model="courseForm.badge_name"
+          placeholder="e.g., Math Wizard, Physics Pioneer"
+          style="width: 100%"
+        />
+        <span
+          style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.25rem"
+        >
           Students will receive this badge on their profile + 100 XP upon completion.
         </span>
       </div>
-      <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+      <div style="display: flex; gap: 0.5rem; justify-content: flex-end">
         <button class="btn-sm" @click="closeCreateCourseModal">Cancel</button>
         <button class="btn-primary btn-sm" @click="doCreateCourse">Create Course</button>
       </div>
@@ -599,102 +872,334 @@
   </div>
 
   <!-- Manage Course Modal -->
-  <div v-if="manageCourseModalOpen" class="modal-overlay" @click.self="manageCourseModalOpen = false">
-    <div class="modal" style="max-width: 900px; width: 95%; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem; padding: 2rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
-        <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700;">Manage Course: {{ coursesStore.currentCourse?.course?.name }}</h3>
-        <button class="btn-sm" @click="manageCourseModalOpen = false" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+  <div
+    v-if="manageCourseModalOpen"
+    class="modal-overlay"
+    @click.self="manageCourseModalOpen = false"
+  >
+    <div
+      class="modal"
+      style="
+        max-width: 900px;
+        width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 2rem;
+      "
+    >
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid var(--border-color);
+          padding-bottom: 0.75rem;
+        "
+      >
+        <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700">
+          Manage Course: {{ coursesStore.currentCourse?.course?.name }}
+        </h3>
+        <button
+          class="btn-sm"
+          @click="manageCourseModalOpen = false"
+          style="
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+          "
+        >
+          &times;
+        </button>
       </div>
 
-      <div class="grid grid-3" style="align-items: start; gap: 1.5rem;">
+      <div class="grid grid-3" style="align-items: start; gap: 1.5rem">
         <!-- Left Column: Course Settings Form -->
-        <div class="card" style="padding: 1.25rem; grid-column: span 1; background: var(--bg-main);">
-          <h4 style="margin-top: 0; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; color: var(--primary); font-weight: 700;">Course Settings</h4>
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem;">Name *</label>
-            <input v-model="courseForm.name" style="width: 100%;" />
+        <div class="card" style="padding: 1.25rem; grid-column: span 1; background: var(--bg-main)">
+          <h4
+            style="
+              margin-top: 0;
+              margin-bottom: 1rem;
+              border-bottom: 1px solid var(--border-color);
+              padding-bottom: 0.5rem;
+              color: var(--primary);
+              font-weight: 700;
+            "
+          >
+            Course Settings
+          </h4>
+          <div class="form-group" style="margin-bottom: 1rem">
+            <label
+              style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem"
+              >Name *</label
+            >
+            <input v-model="courseForm.name" style="width: 100%" />
           </div>
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem;">Description</label>
-            <textarea v-model="courseForm.description" style="width: 100%; resize: vertical;" rows="3"></textarea>
+          <div class="form-group" style="margin-bottom: 1rem">
+            <label
+              style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem"
+              >Description</label
+            >
+            <textarea
+              v-model="courseForm.description"
+              style="width: 100%; resize: vertical"
+              rows="3"
+            ></textarea>
           </div>
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem;">Default Threshold (%)</label>
-            <input v-model.number="courseForm.unlock_threshold" type="number" min="0" max="100" style="width: 100%;" />
+          <div class="form-group" style="margin-bottom: 1rem">
+            <label
+              style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem"
+              >Default Threshold (%)</label
+            >
+            <input
+              v-model.number="courseForm.unlock_threshold"
+              type="number"
+              min="0"
+              max="100"
+              style="width: 100%"
+            />
           </div>
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem;">Deadline</label>
-            <input v-model="courseForm.deadline" type="date" style="width: 100%;" />
+          <div class="form-group" style="margin-bottom: 1rem">
+            <label
+              style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem"
+              >Deadline</label
+            >
+            <input v-model="courseForm.deadline" type="date" style="width: 100%" />
           </div>
-          <div class="form-group" style="margin-bottom: 1.25rem;">
-            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem;">Completion Badge Name</label>
-            <input v-model="courseForm.badge_name" style="width: 100%;" />
+          <div class="form-group" style="margin-bottom: 1.25rem">
+            <label
+              style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem"
+              >Completion Badge Name</label
+            >
+            <input v-model="courseForm.badge_name" style="width: 100%" />
           </div>
-          <button class="btn-primary" style="width: 100%; font-weight: 600;" @click="saveCourseSettings">Save Settings</button>
+          <button
+            class="btn-primary"
+            style="width: 100%; font-weight: 600"
+            @click="saveCourseSettings"
+          >
+            Save Settings
+          </button>
         </div>
 
         <!-- Middle Column: Worksheets Sequencing -->
-        <div class="card" style="padding: 1.25rem; grid-column: span 2; background: var(--bg-main);">
-          <h4 style="margin-top: 0; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; color: var(--primary); display: flex; justify-content: space-between; align-items: center; font-weight: 700;">
+        <div class="card" style="padding: 1.25rem; grid-column: span 2; background: var(--bg-main)">
+          <h4
+            style="
+              margin-top: 0;
+              margin-bottom: 1rem;
+              border-bottom: 1px solid var(--border-color);
+              padding-bottom: 0.5rem;
+              color: var(--primary);
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-weight: 700;
+            "
+          >
             <span>Worksheet Sequence</span>
-            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal">
               {{ coursesStore.currentCourse?.worksheets?.length || 0 }} modules
             </span>
           </h4>
 
           <!-- Add Worksheet form -->
-          <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-            <select v-model="newWorksheetToCourseId" style="flex: 1;">
+          <div
+            style="
+              display: flex;
+              gap: 0.5rem;
+              margin-bottom: 1.25rem;
+              padding-bottom: 1rem;
+              border-bottom: 1px solid var(--border-color);
+            "
+          >
+            <select v-model="newWorksheetToCourseId" style="flex: 1">
               <option value="">Select worksheet to add...</option>
               <option v-for="ws in availableWorksheetsForCourse" :key="ws.id" :value="ws.id">
                 {{ ws.title }} ({{ ws.subject || 'General' }})
               </option>
             </select>
-            <button class="btn-primary btn-sm" @click="addWorksheetToCourse" :disabled="!newWorksheetToCourseId">Add</button>
+            <button
+              class="btn-primary btn-sm"
+              @click="addWorksheetToCourse"
+              :disabled="!newWorksheetToCourseId"
+            >
+              Add
+            </button>
           </div>
 
           <!-- List of worksheets -->
-          <div v-if="!coursesStore.currentCourse?.worksheets?.length" style="color: var(--text-muted); text-align: center; padding: 3rem 0;">
+          <div
+            v-if="!coursesStore.currentCourse?.worksheets?.length"
+            style="color: var(--text-muted); text-align: center; padding: 3rem 0"
+          >
             No worksheets added to this course yet.
           </div>
-          
-          <div v-else style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 400px; overflow-y: auto; padding-right: 0.25rem;">
-            <div v-for="(ws, index) in coursesStore.currentCourse.worksheets" :key="ws.id" 
-              style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-card); display: flex; flex-direction: column; gap: 0.5rem; transition: border-color 0.2s;"
-              :style="{ borderColor: editingCourseWorksheetSettings === ws.id ? 'var(--primary)' : 'var(--border-color)' }"
+
+          <div
+            v-else
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 0.75rem;
+              max-height: 400px;
+              overflow-y: auto;
+              padding-right: 0.25rem;
+            "
+          >
+            <div
+              v-for="(ws, index) in coursesStore.currentCourse.worksheets"
+              :key="ws.id"
+              style="
+                padding: 0.75rem;
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-sm);
+                background: var(--bg-card);
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                transition: border-color 0.2s;
+              "
+              :style="{
+                borderColor:
+                  editingCourseWorksheetSettings === ws.id
+                    ? 'var(--primary)'
+                    : 'var(--border-color)',
+              }"
             >
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <span style="font-weight: bold; color: var(--text-muted); font-size: 0.9rem;">#{{ index + 1 }}</span>
-                  <strong style="font-size: 0.95rem;">{{ ws.title }}</strong>
-                  <span style="color: var(--text-muted); font-size: 0.75rem;">({{ ws.subject || 'General' }})</span>
+              <div style="display: flex; justify-content: space-between; align-items: center">
+                <div style="display: flex; align-items: center; gap: 0.5rem">
+                  <span style="font-weight: bold; color: var(--text-muted); font-size: 0.9rem"
+                    >#{{ index + 1 }}</span
+                  >
+                  <strong style="font-size: 0.95rem">{{ ws.title }}</strong>
+                  <span style="color: var(--text-muted); font-size: 0.75rem"
+                    >({{ ws.subject || 'General' }})</span
+                  >
                 </div>
-                
-                <div style="display: flex; gap: 0.25rem;">
-                  <button class="btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; font-weight: 500;" @click="editingCourseWorksheetSettings = editingCourseWorksheetSettings === ws.id ? null : ws.id">
+
+                <div style="display: flex; gap: 0.25rem">
+                  <button
+                    class="btn-sm"
+                    style="padding: 0.2rem 0.5rem; font-size: 0.75rem; font-weight: 500"
+                    @click="
+                      editingCourseWorksheetSettings =
+                        editingCourseWorksheetSettings === ws.id ? null : ws.id
+                    "
+                  >
                     ⚙️ {{ editingCourseWorksheetSettings === ws.id ? 'Close' : 'Configure' }}
                   </button>
-                  <button class="btn-sm" style="padding: 0.2rem 0.4rem;" @click="moveWorksheet(ws.id, -1)" :disabled="index === 0">▲</button>
-                  <button class="btn-sm" style="padding: 0.2rem 0.4rem;" @click="moveWorksheet(ws.id, 1)" :disabled="index === coursesStore.currentCourse.worksheets.length - 1">▼</button>
-                  <button class="btn-sm btn-danger" style="padding: 0.2rem 0.4rem;" @click="removeWorksheetFromCourse(ws.id)">&times;</button>
+                  <button
+                    class="btn-sm"
+                    style="padding: 0.2rem 0.4rem"
+                    @click="moveWorksheet(ws.id, -1)"
+                    :disabled="index === 0"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    class="btn-sm"
+                    style="padding: 0.2rem 0.4rem"
+                    @click="moveWorksheet(ws.id, 1)"
+                    :disabled="index === coursesStore.currentCourse.worksheets.length - 1"
+                  >
+                    ▼
+                  </button>
+                  <button
+                    class="btn-sm btn-danger"
+                    style="padding: 0.2rem 0.4rem"
+                    @click="removeWorksheetFromCourse(ws.id)"
+                  >
+                    &times;
+                  </button>
                 </div>
               </div>
 
               <!-- Worksheet Settings Panel (Expandable) -->
-              <div v-if="editingCourseWorksheetSettings === ws.id" style="margin-top: 0.25rem; padding: 0.75rem; background: var(--bg-main); border-radius: var(--radius-xs); border: 1px dashed var(--border-color);">
-                <h5 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--primary); font-weight: 700;">Configure Worksheet Settings</h5>
-                <div class="grid grid-2" style="gap: 0.75rem; align-items: end;">
+              <div
+                v-if="editingCourseWorksheetSettings === ws.id"
+                style="
+                  margin-top: 0.25rem;
+                  padding: 0.75rem;
+                  background: var(--bg-main);
+                  border-radius: var(--radius-xs);
+                  border: 1px dashed var(--border-color);
+                "
+              >
+                <h5
+                  style="
+                    margin-top: 0;
+                    margin-bottom: 0.5rem;
+                    font-size: 0.85rem;
+                    color: var(--primary);
+                    font-weight: 700;
+                  "
+                >
+                  Configure Worksheet Settings
+                </h5>
+                <div class="grid grid-2" style="gap: 0.75rem; align-items: end">
                   <div class="form-group">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.15rem;">Unlock Threshold (%)</label>
-                    <input v-model.number="ws.ws_unlock_threshold" type="number" min="0" max="100" placeholder="Inherited (default)" style="width: 100%; padding: 0.25rem 0.5rem; font-size: 0.85rem;" />
+                    <label
+                      style="
+                        display: block;
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                        margin-bottom: 0.15rem;
+                      "
+                      >Unlock Threshold (%)</label
+                    >
+                    <input
+                      v-model.number="ws.ws_unlock_threshold"
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="Inherited (default)"
+                      style="width: 100%; padding: 0.25rem 0.5rem; font-size: 0.85rem"
+                    />
                   </div>
                   <div class="form-group">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.15rem;">Deadline override</label>
-                    <input v-model="ws.ws_deadline" type="date" style="width: 100%; padding: 0.25rem 0.5rem; font-size: 0.85rem;" />
+                    <label
+                      style="
+                        display: block;
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                        margin-bottom: 0.15rem;
+                      "
+                      >Deadline override</label
+                    >
+                    <input
+                      v-model="ws.ws_deadline"
+                      type="date"
+                      style="width: 100%; padding: 0.25rem 0.5rem; font-size: 0.85rem"
+                    />
                   </div>
-                  <div style="grid-column: span 2; display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
-                    <button class="btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" @click="editingCourseWorksheetSettings = null">Cancel</button>
-                    <button class="btn-primary btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" @click="updateWorksheetOverride(ws)">Save Settings</button>
+                  <div
+                    style="
+                      grid-column: span 2;
+                      display: flex;
+                      justify-content: flex-end;
+                      gap: 0.5rem;
+                      margin-top: 0.5rem;
+                    "
+                  >
+                    <button
+                      class="btn-sm"
+                      style="padding: 0.2rem 0.5rem; font-size: 0.75rem"
+                      @click="editingCourseWorksheetSettings = null"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      class="btn-primary btn-sm"
+                      style="padding: 0.2rem 0.5rem; font-size: 0.75rem"
+                      @click="updateWorksheetOverride(ws)"
+                    >
+                      Save Settings
+                    </button>
                   </div>
                 </div>
               </div>
@@ -704,46 +1209,119 @@
       </div>
 
       <!-- Bottom Row: Student Enrollment management -->
-      <div class="card" style="padding: 1.25rem; margin-top: 0.5rem; background: var(--bg-main);">
-        <h4 style="margin-top: 0; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; color: var(--primary); display: flex; justify-content: space-between; align-items: center; font-weight: 700;">
+      <div class="card" style="padding: 1.25rem; margin-top: 0.5rem; background: var(--bg-main)">
+        <h4
+          style="
+            margin-top: 0;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            color: var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+          "
+        >
           <span>Student Enrollment</span>
-          <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">
+          <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal">
             {{ coursesStore.currentCourse?.students?.length || 0 }} students enrolled
           </span>
         </h4>
 
         <!-- Enroll Form -->
-        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; max-width: 500px;">
-          <select v-model="newStudentToCourseId" style="flex: 1;">
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; max-width: 500px">
+          <select v-model="newStudentToCourseId" style="flex: 1">
             <option value="">Select student to enroll...</option>
             <option v-for="st in availableStudentsForCourse" :key="st.id" :value="st.id">
               {{ st.name }} (@{{ st.username }})
             </option>
           </select>
-          <button class="btn-primary btn-sm" @click="enrollStudentInCourse" :disabled="!newStudentToCourseId">Enroll Student</button>
+          <button
+            class="btn-primary btn-sm"
+            @click="enrollStudentInCourse"
+            :disabled="!newStudentToCourseId"
+          >
+            Enroll Student
+          </button>
         </div>
 
-        <div v-if="!coursesStore.currentCourse?.students?.length" style="color: var(--text-muted); text-align: center; padding: 1.5rem 0;">
+        <div
+          v-if="!coursesStore.currentCourse?.students?.length"
+          style="color: var(--text-muted); text-align: center; padding: 1.5rem 0"
+        >
           No students currently enrolled in this course.
         </div>
 
-        <div v-else style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; max-height: 200px; overflow-y: auto;">
-          <div v-for="st in coursesStore.currentCourse.students" :key="st.id" 
-            style="padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-card); display: flex; justify-content: space-between; align-items: center;"
+        <div
+          v-else
+          style="
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 0.75rem;
+            max-height: 200px;
+            overflow-y: auto;
+          "
+        >
+          <div
+            v-for="st in coursesStore.currentCourse.students"
+            :key="st.id"
+            style="
+              padding: 0.5rem 0.75rem;
+              border: 1px solid var(--border-color);
+              border-radius: var(--radius-sm);
+              background: var(--bg-card);
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
           >
-            <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
-              <span style="font-size: 1.25rem;">{{ st.character_emoji || '👤' }}</span>
-              <div style="min-width: 0;">
-                <div style="font-weight: 600; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ st.name }}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@{{ st.username }}</div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0">
+              <span style="font-size: 1.25rem">{{ st.character_emoji || '👤' }}</span>
+              <div style="min-width: 0">
+                <div
+                  style="
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                  "
+                >
+                  {{ st.name }}
+                </div>
+                <div
+                  style="
+                    font-size: 0.75rem;
+                    color: var(--text-muted);
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                  "
+                >
+                  @{{ st.username }}
+                </div>
               </div>
             </div>
-            <button class="btn-sm btn-danger" style="padding: 0.15rem 0.4rem; font-size: 0.75rem;" @click="unenrollStudentFromCourse(st.id)">Unenroll</button>
+            <button
+              class="btn-sm btn-danger"
+              style="padding: 0.15rem 0.4rem; font-size: 0.75rem"
+              @click="unenrollStudentFromCourse(st.id)"
+            >
+              Unenroll
+            </button>
           </div>
         </div>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+      <div
+        style="
+          display: flex;
+          justify-content: flex-end;
+          border-top: 1px solid var(--border-color);
+          padding-top: 0.75rem;
+        "
+      >
         <button class="btn-primary btn-sm" @click="manageCourseModalOpen = false">Done</button>
       </div>
     </div>
@@ -783,7 +1361,13 @@ const feedbackText = ref('')
 
 const createCourseModalOpen = ref(false)
 const manageCourseModalOpen = ref(false)
-const courseForm = ref({ name: '', description: '', unlock_threshold: 60, deadline: '', badge_name: '' })
+const courseForm = ref({
+  name: '',
+  description: '',
+  unlock_threshold: 60,
+  deadline: '',
+  badge_name: '',
+})
 const selectedCourseId = ref(null)
 const newWorksheetToCourseId = ref('')
 const newStudentToCourseId = ref('')
@@ -843,16 +1427,22 @@ async function loadReportIndex() {
     for (const ws of wsStore.worksheets) {
       try {
         const data = await api.get(`/worksheets/${ws.id}/assignments`)
-        for (const a of (data.assignments || [])) {
+        for (const a of data.assignments || []) {
           allAssignments.push({ ...a, worksheet_title: ws.title })
         }
-      } catch { /* ignore per-worksheet errors */ }
+      } catch {
+        /* ignore per-worksheet errors */
+      }
     }
     reportAssignments.value = allAssignments
-  } catch { /* */ }
+  } catch {
+    /* */
+  }
   try {
     reportCourses.value = coursesStore.courses || []
-  } catch { /* */ }
+  } catch {
+    /* */
+  }
 }
 
 async function loadAssignmentReport(assignment) {
@@ -1011,7 +1601,13 @@ async function submitFeedback() {
 }
 
 function openCreateCourseModal() {
-  courseForm.value = { name: '', description: '', unlock_threshold: 60, deadline: '', badge_name: '' }
+  courseForm.value = {
+    name: '',
+    description: '',
+    unlock_threshold: 60,
+    deadline: '',
+    badge_name: '',
+  }
   createCourseModalOpen.value = true
 }
 
@@ -1043,7 +1639,7 @@ async function manageCourse(course) {
   editingCourseWorksheetSettings.value = null
   newWorksheetToCourseId.value = ''
   newStudentToCourseId.value = ''
-  
+
   try {
     await coursesStore.fetchCourse(course.id)
     manageCourseModalOpen.value = true
@@ -1106,12 +1702,12 @@ async function moveWorksheet(worksheetId, direction) {
   if (idx === -1) return
   const targetIdx = idx + direction
   if (targetIdx < 0 || targetIdx >= wsList.length) return
-  
+
   const listCopy = [...wsList]
   const temp = listCopy[idx]
   listCopy[idx] = listCopy[targetIdx]
   listCopy[targetIdx] = temp
-  
+
   const orderedIds = listCopy.map((w) => w.id)
   try {
     await coursesStore.reorderWorksheets(selectedCourseId.value, orderedIds)
@@ -1124,7 +1720,10 @@ async function moveWorksheet(worksheetId, direction) {
 async function updateWorksheetOverride(ws) {
   try {
     await coursesStore.updateCourseWorksheetSettings(selectedCourseId.value, ws.id, {
-      unlock_threshold: ws.ws_unlock_threshold !== null && ws.ws_unlock_threshold !== '' ? Number(ws.ws_unlock_threshold) : null,
+      unlock_threshold:
+        ws.ws_unlock_threshold !== null && ws.ws_unlock_threshold !== ''
+          ? Number(ws.ws_unlock_threshold)
+          : null,
       deadline: ws.ws_deadline || null,
     })
     uiStore.showToast('Worksheet settings updated', 'success')
@@ -1185,7 +1784,9 @@ async function unenrollStudentFromCourse(studentId) {
 }
 
 @media (max-width: 800px) {
-  .reports-layout { grid-template-columns: 1fr; }
+  .reports-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .reports-sidebar {
@@ -1256,11 +1857,17 @@ async function unenrollStudentFromCourse(studentId) {
   animation: pulse-green 2s infinite alternate;
 }
 
-[data-theme='dark'] .report-ready-badge { color: #86efac; }
+[data-theme='dark'] .report-ready-badge {
+  color: #86efac;
+}
 
 @keyframes pulse-green {
-  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.2); }
-  100% { box-shadow: 0 0 6px 2px rgba(34, 197, 94, 0.4); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 6px 2px rgba(34, 197, 94, 0.4);
+  }
 }
 
 .reports-main {
@@ -1307,8 +1914,12 @@ async function unenrollStudentFromCourse(studentId) {
   border-bottom: 1px solid var(--border-color);
 }
 
-.row-submitted td:first-child { border-left: 3px solid var(--success); }
-.row-pending td:first-child { border-left: 3px solid var(--warning); }
+.row-submitted td:first-child {
+  border-left: 3px solid var(--success);
+}
+.row-pending td:first-child {
+  border-left: 3px solid var(--warning);
+}
 
 .status-chip {
   display: inline-block;
@@ -1317,10 +1928,20 @@ async function unenrollStudentFromCourse(studentId) {
   font-size: 0.78rem;
   font-weight: 600;
 }
-.chip-done { background: rgba(34, 197, 94, 0.12); color: #166534; }
-.chip-pending { background: rgba(245, 158, 11, 0.12); color: #92400e; }
-[data-theme='dark'] .chip-done { color: #86efac; }
-[data-theme='dark'] .chip-pending { color: #fde68a; }
+.chip-done {
+  background: rgba(34, 197, 94, 0.12);
+  color: #166534;
+}
+.chip-pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #92400e;
+}
+[data-theme='dark'] .chip-done {
+  color: #86efac;
+}
+[data-theme='dark'] .chip-pending {
+  color: #fde68a;
+}
 
 .score-pill {
   display: inline-block;
@@ -1329,10 +1950,20 @@ async function unenrollStudentFromCourse(studentId) {
   font-size: 0.78rem;
   font-weight: 700;
 }
-.score-pass { background: rgba(34, 197, 94, 0.12); color: #166534; }
-.score-fail { background: rgba(239, 68, 68, 0.12); color: #991b1b; }
-[data-theme='dark'] .score-pass { color: #86efac; }
-[data-theme='dark'] .score-fail { color: #fca5a5; }
+.score-pass {
+  background: rgba(34, 197, 94, 0.12);
+  color: #166534;
+}
+.score-fail {
+  background: rgba(239, 68, 68, 0.12);
+  color: #991b1b;
+}
+[data-theme='dark'] .score-pass {
+  color: #86efac;
+}
+[data-theme='dark'] .score-fail {
+  color: #fca5a5;
+}
 
 .mini-bar {
   width: 60px;
@@ -1436,4 +2067,3 @@ async function unenrollStudentFromCourse(studentId) {
    `body > * { display: none }` are not blocked by Vue's scoped CSS hashing.
    ─────────────────────────────────────────────────────────────────────────── */
 </style>
-

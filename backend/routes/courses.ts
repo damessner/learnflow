@@ -31,7 +31,8 @@ router.post('/', requireAuth, requireRole('teacher', 'admin'), async (req, res, 
       name: req.body.name,
       description: req.body.description || '',
       teacher_id: req.user!.userId,
-      unlock_threshold: req.body.unlock_threshold !== undefined ? Number(req.body.unlock_threshold) : 60,
+      unlock_threshold:
+        req.body.unlock_threshold !== undefined ? Number(req.body.unlock_threshold) : 60,
       deadline: req.body.deadline || null,
       badge_name: req.body.badge_name || null,
     })
@@ -57,7 +58,7 @@ router.get('/:id', requireAuth, async (req, res, next) => {
         'worksheets.*',
         'course_worksheets.order_index',
         'course_worksheets.unlock_threshold as ws_unlock_threshold',
-        'course_worksheets.deadline as ws_deadline'
+        'course_worksheets.deadline as ws_deadline',
       )
       .orderBy('course_worksheets.order_index', 'asc')
 
@@ -273,7 +274,7 @@ router.get('/student/course/:id', requireAuth, async (req, res, next) => {
         'worksheets.*',
         'course_worksheets.order_index',
         'course_worksheets.unlock_threshold as ws_unlock_threshold',
-        'course_worksheets.deadline as ws_deadline'
+        'course_worksheets.deadline as ws_deadline',
       )
       .orderBy('course_worksheets.order_index', 'asc')
 
@@ -290,10 +291,16 @@ router.get('/student/course/:id', requireAuth, async (req, res, next) => {
         })
         .first()
 
-      let submissions: Array<{ submitted_at: string | Date | null; score: number | null; max_score: number }> = []
+      let submissions: Array<{
+        submitted_at: string | Date | null
+        score: number | null
+        max_score: number
+      }> = []
       if (assignment) {
-        submissions = await knex('submissions')
-          .where({ assignment_id: assignment.id, user_id: req.user!.userId })
+        submissions = await knex('submissions').where({
+          assignment_id: assignment.id,
+          user_id: req.user!.userId,
+        })
       }
 
       let bestScore = 0
@@ -302,24 +309,31 @@ router.get('/student/course/:id', requireAuth, async (req, res, next) => {
       let isSubmitted = false
 
       if (submissions.length > 0) {
-        submissions.forEach((sub: { submitted_at: string | Date | null; score: number | null; max_score: number }) => {
-          if (sub.submitted_at && sub.score != null) {
-            isSubmitted = true
-            const ratio = sub.max_score > 0 ? sub.score / sub.max_score : 0
-            if (ratio >= bestRatio) {
-              bestRatio = ratio
-              bestScore = sub.score
-              maxScore = sub.max_score
+        submissions.forEach(
+          (sub: {
+            submitted_at: string | Date | null
+            score: number | null
+            max_score: number
+          }) => {
+            if (sub.submitted_at && sub.score != null) {
+              isSubmitted = true
+              const ratio = sub.max_score > 0 ? sub.score / sub.max_score : 0
+              if (ratio >= bestRatio) {
+                bestRatio = ratio
+                bestScore = sub.score
+                maxScore = sub.max_score
+              }
             }
-          }
-        })
+          },
+        )
       }
 
-      const threshold = w.ws_unlock_threshold !== null && w.ws_unlock_threshold !== undefined
-        ? w.ws_unlock_threshold
-        : (course.unlock_threshold || 60)
+      const threshold =
+        w.ws_unlock_threshold !== null && w.ws_unlock_threshold !== undefined
+          ? w.ws_unlock_threshold
+          : course.unlock_threshold || 60
 
-      const isCompleted = isSubmitted && (bestRatio * 100 >= threshold)
+      const isCompleted = isSubmitted && bestRatio * 100 >= threshold
       const isLocked = !previousWorksheetCompleted
 
       worksheetsProgress.push({
@@ -425,9 +439,7 @@ router.get('/:id/reports', requireAuth, requireRole('teacher', 'admin'), async (
         const worksheetDetails = await Promise.all(
           courseWorksheets.map(async (cw) => {
             // Find any assignment for this worksheet
-            const assignment = await knex('assignments')
-              .where({ worksheet_id: cw.id })
-              .first()
+            const assignment = await knex('assignments').where({ worksheet_id: cw.id }).first()
 
             let submitted = false
             let score: number | null = null
@@ -451,8 +463,7 @@ router.get('/:id/reports', requireAuth, requireRole('teacher', 'admin'), async (
                   scorePct = Math.round((score / maxScore) * 100)
                 }
 
-                const threshold =
-                  cw.ws_unlock_threshold ?? course.unlock_threshold ?? 60
+                const threshold = cw.ws_unlock_threshold ?? course.unlock_threshold ?? 60
                 if (scorePct !== null && scorePct >= threshold) {
                   completedCount++
                 }
@@ -500,8 +511,7 @@ router.get('/:id/reports', requireAuth, requireRole('teacher', 'admin'), async (
             courseWorksheets.length > 0
               ? Math.round((completedCount / courseWorksheets.length) * 100)
               : 0,
-          average_score_pct:
-            totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : null,
+          average_score_pct: totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : null,
           worksheets: worksheetDetails,
         }
       }),
@@ -516,7 +526,11 @@ router.get('/:id/reports', requireAuth, requireRole('teacher', 'admin'), async (
         badge_name: course.badge_name,
         unlock_threshold: course.unlock_threshold,
       },
-      worksheets: courseWorksheets.map((w) => ({ id: w.id, title: w.title, order_index: w.order_index })),
+      worksheets: courseWorksheets.map((w) => ({
+        id: w.id,
+        title: w.title,
+        order_index: w.order_index,
+      })),
       students: studentReports,
       generated_at: new Date().toISOString(),
     })

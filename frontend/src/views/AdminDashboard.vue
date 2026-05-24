@@ -98,7 +98,6 @@
     <!-- ─── BACKUPS TAB ──────────────────────────────────────────────────── -->
     <template v-if="tab === 'backups'">
       <div class="backup-grid">
-
         <!-- Backup Section -->
         <div class="card backup-card">
           <div class="backup-card-header">
@@ -106,7 +105,8 @@
             <div>
               <h3 style="margin: 0 0 0.25rem">Database Backup</h3>
               <p style="margin: 0; color: var(--text-muted); font-size: 0.85rem">
-                Download a JSON snapshot of your LearnFlow data. You can restore from this file at any time.
+                Download a JSON snapshot of your LearnFlow data. You can restore from this file at
+                any time.
               </p>
             </div>
           </div>
@@ -165,9 +165,7 @@
             </div>
           </div>
 
-          <div
-            class="restore-warning"
-          >
+          <div class="restore-warning">
             ⚠️ <strong>Warning:</strong> Restoring will overwrite existing data in the restored
             tables. This cannot be undone. Create a fresh backup first!
           </div>
@@ -188,20 +186,30 @@
           </div>
 
           <div v-else class="restore-file-ready">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem">
               <span style="font-size: 1.5rem">📋</span>
-              <div style="flex:1; min-width: 0;">
-                <div style="font-weight: 700; font-size: 0.9rem; word-break: break-all;">{{ restoreFile.name }}</div>
-                <div v-if="restoreMeta" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
-                  Type: <strong>{{ restoreMeta.type }}</strong> ·
-                  Exported: <strong>{{ new Date(restoreMeta.exported_at).toLocaleString() }}</strong> ·
+              <div style="flex: 1; min-width: 0">
+                <div style="font-weight: 700; font-size: 0.9rem; word-break: break-all">
+                  {{ restoreFile.name }}
+                </div>
+                <div
+                  v-if="restoreMeta"
+                  style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem"
+                >
+                  Type: <strong>{{ restoreMeta.type }}</strong> · Exported:
+                  <strong>{{ new Date(restoreMeta.exported_at).toLocaleString() }}</strong> ·
                   Tables: <strong>{{ restoreMeta.tables?.length }}</strong>
                 </div>
               </div>
-              <button class="btn-sm" @click="clearRestoreFile" style="flex-shrink:0">✕ Clear</button>
+              <button class="btn-sm" @click="clearRestoreFile" style="flex-shrink: 0">
+                ✕ Clear
+              </button>
             </div>
 
-            <div v-if="restoreMeta?.row_counts" style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.4rem;">
+            <div
+              v-if="restoreMeta?.row_counts"
+              style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.4rem"
+            >
               <span
                 v-for="(count, table) in restoreMeta.row_counts"
                 :key="table"
@@ -221,16 +229,32 @@
             </button>
           </div>
 
-          <div v-if="restoreResult" :class="['restore-result', restoreResult.ok ? 'result-ok' : 'result-error']">
+          <div
+            v-if="restoreResult"
+            :class="['restore-result', restoreResult.ok ? 'result-ok' : 'result-error']"
+          >
             <div style="font-weight: 700; margin-bottom: 0.5rem">
-              {{ restoreResult.ok ? '✅ Restore completed successfully!' : '❌ Restore encountered errors' }}
+              {{
+                restoreResult.ok
+                  ? '✅ Restore completed successfully!'
+                  : '❌ Restore encountered errors'
+              }}
             </div>
             <div v-if="restoreResult.errors?.length">
-              <div v-for="e in restoreResult.errors" :key="e" style="font-size: 0.8rem; opacity: 0.85;">• {{ e }}</div>
+              <div
+                v-for="e in restoreResult.errors"
+                :key="e"
+                style="font-size: 0.8rem; opacity: 0.85"
+              >
+                • {{ e }}
+              </div>
             </div>
-            <div v-if="restoreResult.ok" style="font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem">
-              {{ Object.keys(restoreResult.restored || {}).length }} tables restored.
-              Please reload the application for changes to take effect.
+            <div
+              v-if="restoreResult.ok"
+              style="font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem"
+            >
+              {{ Object.keys(restoreResult.restored || {}).length }} tables restored. Please reload
+              the application for changes to take effect.
             </div>
           </div>
         </div>
@@ -376,7 +400,8 @@ function clearRestoreFile() {
 
 async function runRestore() {
   if (!restorePayload.value) return
-  if (!confirm('Are you sure you want to restore? This will overwrite existing database records.')) return
+  if (!confirm('Are you sure you want to restore? This will overwrite existing database records.'))
+    return
 
   restoreLoading.value = true
   restoreResult.value = null
@@ -401,10 +426,13 @@ async function runRestore() {
 }
 
 @media (max-width: 900px) {
-  .backup-grid { grid-template-columns: 1fr; }
+  .backup-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.backup-card, .restore-card {
+.backup-card,
+.restore-card {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -447,7 +475,10 @@ async function runRestore() {
   box-shadow: var(--shadow-lg);
 }
 
-.backup-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.backup-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 .backup-all:hover:not(:disabled) {
   border-color: var(--primary);
@@ -488,7 +519,9 @@ async function runRestore() {
   color: #92400e;
 }
 
-[data-theme='dark'] .restore-warning { color: #fde68a; }
+[data-theme='dark'] .restore-warning {
+  color: #fde68a;
+}
 
 .restore-drop-zone {
   border: 2px dashed var(--border-color);
@@ -553,19 +586,27 @@ async function runRestore() {
   color: #991b1b;
 }
 
-[data-theme='dark'] .result-ok { color: #86efac; }
-[data-theme='dark'] .result-error { color: #fca5a5; }
+[data-theme='dark'] .result-ok {
+  color: #86efac;
+}
+[data-theme='dark'] .result-error {
+  color: #fca5a5;
+}
 
 .spinner {
   display: inline-block;
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255,255,255,0.4);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   flex-shrink: 0;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>

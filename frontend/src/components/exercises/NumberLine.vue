@@ -1,15 +1,56 @@
 <template>
   <div>
-    <p style="margin-bottom:0.5rem">Click where the number <strong>{{ Math.round(marker) }}</strong> belongs on the number line:</p>
-    <div style="display:flex;align-items:center;gap:0.5rem">
-      <span style="font-weight:600">{{ block.min_value ?? 0 }}</span>
-      <div ref="lineRef" style="flex:1;height:40px;position:relative;background:var(--bg-main);border-radius:4px;cursor:pointer" @click="clickLine">
-        <div v-for="(m, i) in (block.markers || [])" :key="i" :style="{position:'absolute',left:calcPos(m)+'%',top:'-4px',width:'8px',height:'48px',background:m===marker?'var(--primary)':'var(--text-muted)',borderRadius:'4px',zIndex:2}"></div>
-        <div v-if="userPos != null" :style="{position:'absolute',left:userPos+'%',top:'8px',width:'24px',height:'24px',background:'var(--danger)',borderRadius:'50%',transform:'translateX(-50%)',zIndex:3}"></div>
+    <p style="margin-bottom: 0.5rem">
+      Click where the number <strong>{{ Math.round(marker) }}</strong> belongs on the number line:
+    </p>
+    <div style="display: flex; align-items: center; gap: 0.5rem">
+      <span style="font-weight: 600">{{ block.min_value ?? 0 }}</span>
+      <div
+        ref="lineRef"
+        style="
+          flex: 1;
+          height: 40px;
+          position: relative;
+          background: var(--bg-main);
+          border-radius: 4px;
+          cursor: pointer;
+        "
+        @click="clickLine"
+      >
+        <div
+          v-for="(m, i) in block.markers || []"
+          :key="i"
+          :style="{
+            position: 'absolute',
+            left: calcPos(m) + '%',
+            top: '-4px',
+            width: '8px',
+            height: '48px',
+            background: m === marker ? 'var(--primary)' : 'var(--text-muted)',
+            borderRadius: '4px',
+            zIndex: 2,
+          }"
+        ></div>
+        <div
+          v-if="userPos != null"
+          :style="{
+            position: 'absolute',
+            left: userPos + '%',
+            top: '8px',
+            width: '24px',
+            height: '24px',
+            background: 'var(--danger)',
+            borderRadius: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 3,
+          }"
+        ></div>
       </div>
-      <span style="font-weight:600">{{ block.max_value ?? 100 }}</span>
+      <span style="font-weight: 600">{{ block.max_value ?? 100 }}</span>
     </div>
-    <p v-if="userPos != null" style="margin-top:0.25rem;font-size:0.85rem">Your value: ~{{ userValue }}</p>
+    <p v-if="userPos != null" style="margin-top: 0.25rem; font-size: 0.85rem">
+      Your value: ~{{ userValue }}
+    </p>
   </div>
 </template>
 

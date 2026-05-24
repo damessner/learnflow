@@ -20,26 +20,27 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function saveSession(u) {
+  function saveSession(u, t) {
     user.value = u
     localStorage.setItem('user', JSON.stringify(u))
+    if (t) localStorage.setItem('token', t)
   }
 
   async function login(username, password) {
     const data = await api.post('/auth/login', { username, password })
-    saveSession(data.user)
+    saveSession(data.user, data.token)
     return data
   }
 
   async function loginWithMicrosoft(payload) {
     const data = await api.post('/auth/microsoft', payload)
-    saveSession(data.user)
+    saveSession(data.user, data.token)
     return data
   }
 
   async function loginAsGuest({ name, classCode }) {
     const data = await api.post('/auth/guest', { name, classCode })
-    saveSession({ ...data.user, isGuest: true })
+    saveSession({ ...data.user, isGuest: true }, data.token)
     return data
   }
 
@@ -73,6 +74,7 @@ export const useAuthStore = defineStore('auth', () => {
     await api.post('/auth/logout')
     user.value = null
     localStorage.removeItem('user')
+    localStorage.removeItem('token')
     window.location.href = '/login'
   }
 

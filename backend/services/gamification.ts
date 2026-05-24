@@ -24,7 +24,10 @@ export function xpForNextLevel(level: number): number {
   return level * level * 200
 }
 
-export async function addXp(userId: string, amount: number): Promise<{
+export async function addXp(
+  userId: string,
+  amount: number,
+): Promise<{
   newXp: number
   newLevel: number
   leveledUp: boolean
@@ -178,10 +181,7 @@ function checkStreakCondition(_userId: string, _threshold: number): boolean {
   return false
 }
 
-export async function awardActivityBadges(
-  userId: string,
-  badgeType: string,
-): Promise<string[]> {
+export async function awardActivityBadges(userId: string, badgeType: string): Promise<string[]> {
   const knex = getKnex()
   const gam = await knex('learning_gamification').where({ user_id: userId }).first()
 
