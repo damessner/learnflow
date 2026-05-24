@@ -1,0 +1,44 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.15/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.15",
+  "version": "1.0.0",
+  "id": "e44d3209-67bb-41db-8656-e41b9d4f24ef",
+  "packageName": "at.mittelschule.learnflow",
+  "developer": {
+    "name": "Mittelschule Telfs",
+    "websiteUrl": "{{LEARNFLOW_URL}}/",
+    "privacyUrl": "{{LEARNFLOW_URL}}/privacy.html",
+    "termsOfUseUrl": "{{LEARNFLOW_URL}}/terms.html"
+  },
+  "name": {
+    "short": "LearnFlow",
+    "full": "LearnFlow - Active Recall & Spaced Repetition"
+  },
+  "description": {
+    "short": "Active Recall & Spaced Repetition Learning Platform",
+    "full": "LearnFlow wraps your self-hosted LMS workspace directly into Microsoft Teams. Students can access worksheets, sequential modules, daily mixes, and custom avatar profiles from any Teams tab."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#4F46E5",
+  "staticTabs": [
+    {
+      "entityId": "learnflow-home",
+      "name": "LearnFlow",
+      "contentUrl": "{{LEARNFLOW_URL}}/",
+      "websiteUrl": "{{LEARNFLOW_URL}}/",
+      "scopes": [
+        "personal"
+      ]
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "{{LEARNFLOW_DOMAIN}}"
+  ]
+}
