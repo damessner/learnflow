@@ -264,6 +264,40 @@ function mapLoadedBlocks(rawBlocks) {
     if (loaded.type === 'graph_plot') {
       loaded.pointsStr = JSON.stringify(loaded.points_to_plot || [])
     }
+    if (loaded.type === 'number_line') {
+      loaded.min_value = loaded.min_value ?? 0
+      loaded.max_value = loaded.max_value ?? 100
+      loaded.markers = loaded.markers ?? [50]
+    }
+    if (loaded.type === 'equation_entry') {
+      loaded.equation = loaded.equation || ''
+      loaded.final_answer = loaded.final_answer || ''
+    }
+    if (loaded.type === 'fraction_input') {
+      loaded.numerator = loaded.numerator ?? 1
+      loaded.denominator = loaded.denominator ?? 2
+    }
+    if (loaded.type === 'arithmetic_grid') {
+      loaded.operand1 = loaded.operand1 ?? 0
+      loaded.operand2 = loaded.operand2 ?? 0
+      loaded.operation = loaded.operation || 'add'
+    }
+    if (loaded.type === 'geometry_shape') {
+      loaded.shape_type = loaded.shape_type || 'triangle'
+    }
+    if (loaded.type === 'word_problem') {
+      loaded.problem_text = loaded.problem_text || ''
+      loaded.steps = loaded.steps || [{ description: '', expected: '' }]
+      loaded.final_answer = loaded.final_answer || ''
+    }
+    if (loaded.type === 'matching') {
+      loaded.pairs = loaded.pairs || [['', ''], ['', '']]
+    }
+    if (loaded.type === 'multiple_choice' || loaded.type === 'single_choice') {
+      loaded.options = loaded.options || ['', '', '']
+      if (loaded.type === 'single_choice') loaded.correct = loaded.correct ?? 0
+      else loaded.correct = loaded.correct || []
+    }
     return loaded
   })
 }
@@ -278,24 +312,32 @@ async function syncBuilderToRoute() {
   }
 
   isEditing.value = true
-  await store.fetchWorksheet(worksheetId)
-  if (!store.current) {
-    form.value = emptyForm()
-    blocks.value = []
-    return
-  }
-
-  form.value = {
-    title: store.current.title || '',
-    subject: store.current.subject || '',
-    grade_level: store.current.grade_level || '',
-    description: store.current.description || '',
-  }
-
   try {
-    const content = JSON.parse(store.current.content || '{}')
-    blocks.value = mapLoadedBlocks(content.blocks)
+    await store.fetchWorksheet(worksheetId)
+    if (!store.current) {
+      form.value = emptyForm()
+      blocks.value = []
+      isEditing.value = false
+      return
+    }
+
+    form.value = {
+      title: store.current.title || '',
+      subject: store.current.subject || '',
+      grade_level: store.current.grade_level || '',
+      description: store.current.description || '',
+    }
+
+    try {
+      const content = JSON.parse(store.current.content || '{}')
+      blocks.value = mapLoadedBlocks(content.blocks)
+    } catch {
+      blocks.value = []
+    }
   } catch {
+    uiStore.showToast('Failed to load worksheet', 'error')
+    isEditing.value = false
+    form.value = emptyForm()
     blocks.value = []
   }
 }
@@ -342,7 +384,10 @@ function addBlock(type) {
   if (type === 'equation_entry') { block.equation = ''; block.final_answer = '' }
   if (type === 'fraction_input') { block.numerator = 1; block.denominator = 2 }
   if (type === 'arithmetic_grid') { block.operand1 = 23; block.operand2 = 15; block.operation = 'add' }
-  if (type === 'graph_plot') { block.points_to_plot = [[0, 0]] }
+  if (type === 'graph_plot') {
+    block.points_to_plot = [[0, 0]]
+    block.pointsStr = '[[0,0]]'
+  }
   if (type === 'geometry_shape') { block.shape_type = 'triangle' }
   if (type === 'word_problem') { block.problem_text = ''; block.steps = [{ description: '', expected: '' }]; block.final_answer = '' }
   blocks.value.push(block)
@@ -391,7 +436,7 @@ async function generateAI() {
   aiLoading.value = true
   try {
     const data = await store.aiGenerate(aiPrompt.value, aiProvider.value)
-    blocks.value.push(...data.blocks)
+    blocks.value.push(...mapLoadedBlocks(data.blocks))
     uiStore.showToast(`Generated ${data.blocks.length} blocks`, 'success')
   } catch (e) {
     uiStore.showToast(e.message, 'error')

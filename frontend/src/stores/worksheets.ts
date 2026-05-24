@@ -71,7 +71,7 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
   }
 
   async function aiGenerate(prompt, provider = 'ollama') {
-    return api.post('/worksheets/ai/generate', { prompt, provider })
+    return api.post('/ai/generate', { prompt, provider })
   }
 
   return {
