@@ -1,149 +1,214 @@
-# LearnFlow - Active Recall & Spaced Repetition Learning Platform
+# LearnFlow — Active Recall & Spaced Repetition Learning Platform
 
-LearnFlow is a modern, responsive learning platform designed for seamless course, worksheet, and spaced repetition management. The codebase features a TypeScript & Express backend alongside a Vue 3 & Vite frontend, designed to be highly self-hostable.
-
----
-
-## 🛠️ Deployment Options
-
-LearnFlow can be deployed automatically via Proxmox VE LXC containers, manually on a Linux Server (Debian/Ubuntu), or integrated directly into MDM/Teams clients.
+LearnFlow is a modern, full-stack educational platform designed for teachers and students. It combines worksheet management, spaced repetition, AI-powered content generation, cognitive science-backed learning techniques, and gamification — all in a self-hostable monorepo.
 
 ---
 
-### Option 1: Proxmox VE LXC Deployment (Automated)
+## Features
 
-You can deploy LearnFlow directly into a new Debian 12 LXC container on a Proxmox VE host using the following host shell one-liner:
+### Core Platform
 
-#### Default Installation (Container ID: 200, Hostname: `learnflow`, Password: `changeme`)
+- **Worksheets** — drag-drop block editor with 22 exercise types (gap fill, multiple choice, matching, drag-drop, etc.)
+- **Classes & Courses** — create classes with join codes, manage courses with ordered worksheet sequences
+- **Assignments & Submissions** — assign worksheets to classes, auto-save progress, submit and auto-score
+- **Authentication** — local login, Microsoft Teams SSO, guest access via class codes. JWT-based tokens.
+- **Library** — publish worksheets, browse/search/filter, clone from library, star ratings
+- **Media** — file uploads, video, audio, TTS (text-to-speech via edge-tts or say.js)
+
+### AI-Powered Generation
+
+- **Worksheet Generator** — generate complete interactive worksheets from a natural language prompt via Ollama or Gemini
+- **Story Generator** — auto-generate reading worksheets with story text, comprehension questions, vocabulary exercises, and grammar exercises — all in one worksheet
+- **Socratic Tutor** — AI tutor that guides students with questions instead of giving answers (SSE streaming)
+- **Protege Effect** — AI acts as a confused student; the learner teaches it to deepen their own understanding
+
+### Cognitive Science Engine
+
+- **FSRS Spaced Repetition** — Free Spaced Repetition Scheduler (ts-fsrs v5) optimizes review timing for long-term retention
+- **Interleaved Practice** — daily mix shuffles topics from different subjects to force category discrimination
+- **Progressive Disclosure** — focus mode shows one question at a time to reduce cognitive load
+- **Confidence Calibration & XP Wagering** — students wager gamification XP based on their confidence, training metacognitive monitoring
+- **Dual Coding** — Mermaid.js diagrams rendered alongside exercises to create verbal + visual memory traces
+
+### Gamification
+
+- **XP & Levels** — earn XP from assignments, daily mix, and SRS reviews; level up with `floor(√(xp/200)) + 1` formula
+- **15 Badges** — milestone, achievement, streak, level, XP, wagering, and consistency categories
+- **Streaks** — daily activity tracking with streak counter
+- **Leaderboard-ready** — per-user XP, level, and badge data stored for future leaderboard features
+
+### Math-Specific Question Types
+
+- **Number Line** — click where a value belongs on an interactive number line
+- **Equation Entry** — type solutions to math equations with automatic validation
+- **Fraction Builder** — build fractions with numerator/denominator inputs and visual feedback
+- **Arithmetic Grid** — column arithmetic practice (addition, subtraction, multiplication, division)
+- **Graph Plot** — plot points on an interactive coordinate grid
+- **Geometry Shape** — identify shapes with visual SVG rendering
+- **Word Problem** — step-by-step problem solving with intermediate answer validation
+
+### Subject & Grade Tagging
+
+- **Standardized subjects** — Mathematics, German, English, Science, History, Geography, Art, Music, PE
+- **Grade levels** — 1st through 8th grade
+- **Library filtering** — filter worksheets by subject, grade level, and search
+- **Course categorization** — courses now have subject and grade fields
+
+---
+
+## Tech Stack
+
+| Layer            | Technology                                                              |
+| ---------------- | ----------------------------------------------------------------------- |
+| **Backend**      | Node.js 18+, Express 4, TypeScript (strict, ES2022)                     |
+| **Frontend**     | Vue 3 (Composition API), Vite 6, Pinia, Vue Router 4                    |
+| **Database**     | SQLite via better-sqlite3 (dev) / PostgreSQL via pg + Knex (production) |
+| **AI Providers** | Ollama (local) or Google Gemini (cloud)                                 |
+| **SRS Engine**   | ts-fsrs v5 (Free Spaced Repetition Scheduler)                           |
+| **Diagrams**     | Mermaid.js (npm bundled)                                                |
+| **Math**         | KaTeX (CDN) for math rendering                                          |
+| **Auth**         | JWT (jsonwebtoken), PBKDF2-SHA256 password hashing                      |
+| **Dev**          | tsx for hot-reload, Vitest for testing                                  |
+
+---
+
+## Deployment Options
+
+### Option 1: Proxmox VE LXC (Automated)
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/damessner/learnflow/main/deployment/create-lxc.sh | bash
 ```
 
-#### Custom Installation (Specify ID, Hostname, and Password)
+Creates a Debian 12 LXC container, installs dependencies, builds backend + frontend, configures Nginx + PM2.
+
+Custom installation:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/damessner/learnflow/main/deployment/create-lxc.sh | bash -s -- 200 learnflow yourpassword
 ```
 
-The script will automatically:
-1. Create and start a Debian 12 LXC container with recommended resources (2 Cores, 2GB RAM, Nesting enabled).
-2. Install standard system dependencies (`git`, `curl`, `nginx`, `nodejs 22`).
-3. Clone this repository to `/var/www/learnflow`.
-4. Run the internal setup script to compile the backend, build the frontend, and configure PM2 and Nginx.
+### Option 2: Manual Linux Server
 
----
-
-### Option 2: Manual Linux Server Deployment (Step-by-Step)
-
-Follow these steps to deploy LearnFlow on any Ubuntu, Debian, or other Linux VPS/server.
-
-#### Step 1: Install System Prerequisites
-Install Node.js (v22 is recommended), Git, Nginx, and PM2 (Process Manager).
 ```bash
-# Install Node.js v22
+# Install prerequisites
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs git nginx
-
-# Install PM2 globally
 sudo npm install -g pm2
-```
 
-#### Step 2: Clone the Repository
-Clone the codebase to your web serving directory:
-```bash
+# Clone repo
 sudo git clone https://github.com/damessner/learnflow.git /var/www/learnflow
-sudo chown -R $USER:$USER /var/www/learnflow
 cd /var/www/learnflow
-```
 
-#### Step 3: Configure Environment Variables
-Create the environment file for the backend:
-```bash
+# Backend
 cd backend
 cp .env.example .env
-```
-Open `backend/.env` and configure key variables:
-- `PORT`: Server port (defaults to `3001`).
-- `NODE_ENV`: Set to `production`.
-- `JWT_SECRET`: Change to a secure, random string.
-- `DB_DIALECT`: Set to `better-sqlite3` (SQLite) or `pg` (PostgreSQL).
-- `DB_PATH`: Path for SQLite database (defaults to `./data/learnflow.db`). Make sure you create the `backend/data` directory (`mkdir data`).
-
-#### Step 4: Build and Start the Backend
-Install dependencies and build the TypeScript backend. Database migrations are run automatically on server boot!
-```bash
-npm install --no-package-lock
+npm install
 npm run build
-
-# Start backend using PM2 configuration
 pm2 start ../deployment/ecosystem.config.js
 pm2 save
-pm2 startup
-```
 
-#### Step 5: Build the Frontend
-Install dependencies and build the Vue 3 production client:
-```bash
+# Frontend
 cd ../frontend
-npm install --no-package-lock
+npm install
 npm run build
-```
-This generates the minified static build files under `/var/www/learnflow/frontend/dist`.
 
-#### Step 6: Configure Nginx HTTP Server
-Copy and apply the provided Nginx configuration:
-```bash
+# Nginx
 sudo cp ../deployment/nginx.conf /etc/nginx/sites-available/learnflow
 sudo ln -sf /etc/nginx/sites-available/learnflow /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
-
-# Verify Nginx configuration and reload service
-sudo nginx -t
-sudo systemctl reload nginx
+sudo nginx -t && sudo systemctl reload nginx
 ```
-LearnFlow is now accessible at `http://your-server-ip/` (port 80).
+
+Access at `http://your-server-ip/`.
+
+### Default Seed Users
+
+| Username | Password   | Role    |
+| -------- | ---------- | ------- |
+| admin    | admin123   | Admin   |
+| teacher  | teacher123 | Teacher |
+| student  | student123 | Student |
+
+Guest access class code: `5a1b-c3d4`
 
 ---
 
-## 📱 Progressive Web App (PWA) Setup
+## PWA & Mobile
 
-LearnFlow has full Progressive Web App configurations built-in, enabling a native app-like experience on smartphones, tablets, and desktops without compiler-level native containers.
+LearnFlow is a Progressive Web App — installable on iOS and Android home screens without app stores:
 
-### Installation on Devices:
-- **iOS (Safari)**: Open the LearnFlow URL, tap the **Share** button, and select **Add to Home Screen**.
-- **Android (Chrome / Edge)**: Open the LearnFlow URL, tap the **three dots menu**, and tap **Install app** or **Add to Home Screen**.
+- **iOS Safari**: Open URL → Share → Add to Home Screen
+- **Android Chrome/Edge**: Open URL → Menu → Install app
 
-### School-Wide Mobile Device Management (MDM):
-For school-managed iPads/iPhones, administrators can deploy LearnFlow directly using **Microsoft Intune Web Clips**:
-1. Log in to the **[Microsoft Intune Admin Center](https://endpoint.microsoft.com/)**.
-2. Navigate to **Apps** -> **All apps** -> **Add**.
-3. Select **iOS/iPadOS web clip** as the app type.
-4. Enter the URL of your hosted LearnFlow instance (e.g. `https://learnflow.my-school.edu/`).
-5. Upload the app icon (located in `frontend/public/icon-512.png` or your custom branding logo).
-6. Assign the app to student/teacher groups. It will automatically install on their home screens.
+**MDM Deployment** (Microsoft Intune): Deploy as an iOS/iPadOS web clip in the Intune Admin Center.
 
 ---
 
-## 💬 Microsoft Teams Personal App Integration
+## Microsoft Teams Integration
 
-LearnFlow can be compiled and sideloaded as a dedicated personal tab application inside Microsoft Teams, wrapping your custom self-hosted domain or IP.
+Build the Teams app package:
 
-1. Go to the `teams-app` directory:
-   ```bash
-   cd /var/www/learnflow/teams-app
-   ```
-2. Run the packager script with your self-hosted instance's URL:
-   ```bash
-   node package-teams.js http://172.16.1.61
-   ```
-3. A package file named **`learnflow-teams-app.zip`** will be generated.
-4. **Deploy in Teams**: Go to Teams client -> **Apps** -> **Manage your apps** -> **Upload a custom app** and upload the ZIP package.
-5. Refer to the [Teams App README](file:///c:/Users/dames/OneDrive%20-%20Mittelschule%20Telfs/github/learnflow/teams-app/README.md) for more customization details and org-wide pinned deployment policies.
+```bash
+cd teams-app
+node package-teams.js http://your-server-ip
+```
+
+Upload the generated `learnflow-teams-app.zip` in Teams → Apps → Upload a custom app.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
-- **[backend](file:///c:/Users/dames/OneDrive%20-%20Mittelschule%20Telfs/github/learnflow/backend)**: Express application with Knex database migrations, TypeScript configurations, Zod validation, and SQLite/PostgreSQL connectors.
-- **[frontend](file:///c:/Users/dames/OneDrive%20-%20Mittelschule%20Telfs/github/learnflow/frontend)**: Vue 3 single page application built on Vite, configured with Pinia and Vue Router. Contains PWA manifest configurations.
-- **[teams-app](file:///c:/Users/dames/OneDrive%20-%20Mittelschule%20Telfs/github/learnflow/teams-app)**: Microsoft Teams integration template, script utility, and documentation.
-- **[deployment](file:///c:/Users/dames/OneDrive%20-%20Mittelschule%20Telfs/github/learnflow/deployment)**: Shell scripts for LXC creation, guest setup, PM2 process management config, and Nginx HTTP server configuration.
+```
+learnflow/
+├── backend/                  # Express + TypeScript API
+│   ├── db/                   # Knex migrations, helpers, init, seed
+│   ├── middleware/            # Auth, validation (Zod), error handling, CORS
+│   ├── routes/                # API endpoints (auth, worksheets, submissions, etc.)
+│   ├── services/              # AI worksheet gen, FSRS engine, gamification, MS auth
+│   ├── lib/                   # Logger (Pino)
+│   └── data/                  # badges.json, templates
+├── frontend/                  # Vue 3 + Vite SPA
+│   ├── src/
+│   │   ├── views/             # 11 views (Login, Dashboards, Builder, Player, StoryGenerator, etc.)
+│   │   ├── components/        # 27 exercise components + MermaidDiagram
+│   │   ├── stores/            # 7 Pinia stores (auth, ui, worksheets, classes, submissions, courses, learning)
+│   │   ├── router/            # Vue Router with lazy loading + auth guards
+│   │   └── services/          # API client (fetch-based)
+│   └── public/                # PWA icons, manifest
+├── deployment/                # Nginx config, PM2 ecosystem, LXC setup scripts
+├── teams-app/                 # Microsoft Teams tab integration
+└── .github/workflows/         # CI (lint, typecheck, test, build) + Deploy workflow
+```
+
+---
+
+## API Endpoints
+
+| Prefix             | Module            | Key Endpoints                                                                                             |
+| ------------------ | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| `/api/auth`        | Authentication    | login, microsoft, guest, register, change-password, verify, users CRUD                                    |
+| `/api/worksheets`  | Worksheets        | CRUD, duplicate, templates, assignments, AI generate, TTS, subjects, grade-levels                         |
+| `/api/submissions` | Submissions       | get/submit/save assignment, feedback, student summary                                                     |
+| `/api/classes`     | Classes           | CRUD, students, announcements, join, CSV export, PDF import                                               |
+| `/api/courses`     | Courses           | CRUD, worksheets, reorder, students, progress                                                             |
+| `/api/learning`    | Learning          | mastery, spaced-queue, planner, gamification, daily-mix, at-risk, interventions, analytics, wager-history |
+| `/api/srs`         | Spaced Repetition | due reviews (with interleaving), review submission, KC management                                         |
+| `/api/ai`          | AI                | generate worksheet, generate story, tutor (SSE), protege (SSE)                                            |
+| `/api/teams`       | Teams             | create teams, push grades                                                                                 |
+| `/api/media`       | Media             | upload, list                                                                                              |
+| `/api/library`     | Library           | browse, clone, publish, ratings                                                                           |
+
+---
+
+## CI/CD
+
+- **CI** (`.github/workflows/ci.yml`): Lint, `tsc --noEmit`, Vitest tests, build on push/PR
+- **Deploy** (`.github/workflows/deploy.yml`): rsync + PM2 reload to Ubuntu LXC on push to main
+
+---
+
+## License
+
+MIT
