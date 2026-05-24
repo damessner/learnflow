@@ -259,10 +259,10 @@ const backupLoading = ref<string | false>(false)
 // ── Restore state ─────────────────────────────────────────────────────────────
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const restoreFile = ref<File | null>(null)
-const restoreMeta = ref<Record<string, unknown> | null>(null)
-const restorePayload = ref<Record<string, unknown> | null>(null)
+const restoreMeta = ref(null)
+const restorePayload = ref(null)
 const restoreLoading = ref(false)
-const restoreResult = ref<{ ok: boolean; errors?: string[]; restored?: Record<string, number> } | null>(null)
+const restoreResult = ref(null)
 
 onMounted(async () => {
   try {

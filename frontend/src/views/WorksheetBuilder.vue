@@ -4,11 +4,18 @@
       <h2>{{ isEditing ? 'Edit Worksheet' : 'New Worksheet' }}</h2>
       <div style="display: flex; gap: 0.5rem">
         <button @click="addBlock('gap_fill')">Gap Fill</button>
-        <button @click="addBlock('multiple_choice')">Multiple Choice</button>
-        <button @click="addBlock('single_choice')">Single Choice</button>
-        <button @click="addBlock('short_answer')">Short Answer</button>
-        <button @click="addBlock('matching')">Matching</button>
+        <button @click="addBlock('multiple_choice')">MC</button>
+        <button @click="addBlock('single_choice')">SC</button>
+        <button @click="addBlock('short_answer')">Short</button>
+        <button @click="addBlock('matching')">Match</button>
         <button @click="addBlock('text')">Text</button>
+        <button @click="addBlock('arithmetic_grid')" title="Column arithmetic">Arith</button>
+        <button @click="addBlock('equation_entry')" title="Math equation">Eqn</button>
+        <button @click="addBlock('fraction_input')" title="Fraction builder">Frac</button>
+        <button @click="addBlock('number_line')" title="Number line">#Line</button>
+        <button @click="addBlock('word_problem')" title="Word problem">Word</button>
+        <button @click="addBlock('graph_plot')" title="Graph">Graph</button>
+        <button @click="addBlock('geometry_shape')" title="Geometry">Geo</button>
         <button class="btn-primary" @click="save">Save</button>
       </div>
     </div>
@@ -21,11 +28,17 @@
       <div style="display: flex; gap: 0.5rem">
         <div class="form-group" style="flex: 1">
           <label>Subject</label>
-          <input v-model="form.subject" placeholder="Subject" />
+          <select v-model="form.subject">
+            <option value="">-- Select --</option>
+            <option v-for="s in subjects" :key="s" :value="s">{{ s }}</option>
+          </select>
         </div>
         <div class="form-group" style="flex: 1">
           <label>Grade Level</label>
-          <input v-model="form.grade_level" placeholder="Grade" />
+          <select v-model="form.grade_level">
+            <option value="">-- Select --</option>
+            <option v-for="g in gradeLevels" :key="g" :value="g">Grade {{ g }}</option>
+          </select>
         </div>
       </div>
       <div class="form-group">
@@ -120,6 +133,65 @@
         <textarea v-model="block.text" rows="3" placeholder="Enter text content..."></textarea>
       </template>
 
+      <template v-if="block.type === 'number_line'">
+        <div style="display:flex;gap:0.5rem">
+          <input v-model.number="block.min_value" type="number" placeholder="Min" style="width:80px" />
+          <input v-model.number="block.max_value" type="number" placeholder="Max" style="width:80px" />
+          <input v-model="block.markers[0]" type="number" placeholder="Correct value" style="width:100px" />
+        </div>
+      </template>
+
+      <template v-if="block.type === 'equation_entry'">
+        <input v-model="block.equation" placeholder="Equation (e.g. 3*x + 5 = 14)" />
+        <input v-model="block.final_answer" placeholder="Expected answer" style="margin-top:0.25rem" />
+      </template>
+
+      <template v-if="block.type === 'fraction_input'">
+        <div style="display:flex;gap:0.5rem">
+          <input v-model.number="block.numerator" type="number" placeholder="Numerator" style="width:100px" />
+          <span>/</span>
+          <input v-model.number="block.denominator" type="number" placeholder="Denominator" style="width:100px" />
+        </div>
+      </template>
+
+      <template v-if="block.type === 'arithmetic_grid'">
+        <div style="display:flex;gap:0.5rem">
+          <input v-model.number="block.operand1" type="number" placeholder="Operand 1" style="width:100px" />
+          <select v-model="block.operation" style="width:80px">
+            <option value="add">+</option>
+            <option value="subtract">-</option>
+            <option value="multiply">x</option>
+            <option value="divide">/</option>
+          </select>
+          <input v-model.number="block.operand2" type="number" placeholder="Operand 2" style="width:100px" />
+        </div>
+      </template>
+
+      <template v-if="block.type === 'graph_plot'">
+        <p style="font-size:0.8rem">Points to plot (x,y pairs in [[x,y],[x,y]] format):</p>
+        <textarea v-model="block.pointsStr" rows="2" placeholder="[[1,2],[3,4]]" @blur="tryParsePoints(block)"></textarea>
+      </template>
+
+      <template v-if="block.type === 'geometry_shape'">
+        <select v-model="block.shape_type">
+          <option value="triangle">Triangle</option>
+          <option value="square">Square</option>
+          <option value="rectangle">Rectangle</option>
+          <option value="circle">Circle</option>
+        </select>
+      </template>
+
+      <template v-if="block.type === 'word_problem'">
+        <textarea v-model="block.problem_text" rows="2" placeholder="Problem description..."></textarea>
+        <div v-for="(step, si) in (block.steps || [])" :key="si" style="display:flex;gap:0.25rem;margin-top:0.25rem">
+          <input v-model="step.description" placeholder="Step description" style="flex:1" />
+          <input v-model="step.expected" placeholder="Expected answer" style="flex:1" />
+          <button class="btn-sm btn-danger" @click="block.steps.splice(si, 1)">X</button>
+        </div>
+        <button class="btn-sm" @click="block.steps = [...(block.steps||[]), { description: '', expected: '' }]" style="margin-top:0.25rem">Add Step</button>
+        <input v-model="block.final_answer" placeholder="Final answer" style="margin-top:0.25rem" />
+      </template>
+
       <details style="margin-top: 0.5rem; font-size: 0.85rem">
         <summary>+ Dual Coding (Mermaid Diagram)</summary>
         <textarea
@@ -155,11 +227,12 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWorksheetsStore } from '../stores/worksheets'
 import { useUiStore } from '../stores/ui'
+import { api } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -169,11 +242,22 @@ const uiStore = useUiStore()
 const isEditing = ref(false)
 const blocks = ref([])
 const form = ref({ title: '', subject: '', grade_level: '', description: '' })
+const subjects = ref([])
+const gradeLevels = ref([])
 const aiPrompt = ref('')
 const aiProvider = ref('ollama')
 const aiLoading = ref(false)
 
 onMounted(async () => {
+  try {
+    const [subData, gradeData] = await Promise.all([
+      api.get('/worksheets/subjects'),
+      api.get('/worksheets/grade-levels'),
+    ])
+    subjects.value = subData.subjects || []
+    gradeLevels.value = gradeData.gradeLevels || []
+  } catch { /* */ }
+
   if (route.params.id) {
     isEditing.value = true
     await store.fetchWorksheet(route.params.id)
@@ -204,6 +288,10 @@ function genId() {
   return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)
 }
 
+function tryParsePoints(block) {
+  try { block.points_to_plot = JSON.parse(block.pointsStr) } catch { /* */ }
+}
+
 function addBlock(type) {
   const block = { id: genId(), type, points: 10 }
   if (type === 'gap_fill') block.template = ''
@@ -221,6 +309,13 @@ function addBlock(type) {
     block.keywordsStr = ''
   }
   if (type === 'text' || type === 'read_aloud') block.text = ''
+  if (type === 'number_line') { block.min_value = 0; block.max_value = 100; block.markers = [50] }
+  if (type === 'equation_entry') { block.equation = ''; block.final_answer = '' }
+  if (type === 'fraction_input') { block.numerator = 1; block.denominator = 2 }
+  if (type === 'arithmetic_grid') { block.operand1 = 23; block.operand2 = 15; block.operation = 'add' }
+  if (type === 'graph_plot') { block.points_to_plot = [[0, 0]] }
+  if (type === 'geometry_shape') { block.shape_type = 'triangle' }
+  if (type === 'word_problem') { block.problem_text = ''; block.steps = [{ description: '', expected: '' }]; block.final_answer = '' }
   blocks.value.push(block)
 }
 

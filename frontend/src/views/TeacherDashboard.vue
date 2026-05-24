@@ -2,7 +2,10 @@
   <div class="page">
     <div style="display: flex; justify-content: space-between; align-items: center">
       <h2>Teacher Dashboard</h2>
-      <router-link to="/teacher/builder" class="btn-primary">Create Worksheet</router-link>
+      <div style="display:flex;gap:0.5rem">
+        <router-link to="/teacher/stories" class="btn-primary">Stories Generator</router-link>
+        <router-link to="/teacher/builder" class="btn-primary">Create Worksheet</router-link>
+      </div>
     </div>
 
     <div style="display: flex; gap: 0.5rem; margin: 1rem 0">
@@ -815,7 +818,7 @@ const availableStudentsForCourse = computed(() => {
 // ── Report state ─────────────────────────────────────────────────────────────
 const reportAssignments = ref([])
 const reportCourses = ref([])
-const selectedReport = ref<{ id: string; type: 'assignment' | 'course' } | null>(null)
+const selectedReport = ref(null)
 const reportData = ref(null)
 const reportLoading = ref(false)
 const printMode = ref<'list' | 'cards' | null>(null)

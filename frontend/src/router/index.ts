@@ -9,6 +9,7 @@ const WorksheetPreview = () => import('../views/WorksheetPreview.vue')
 const CourseView = () => import('../views/CourseView.vue')
 const TeacherRegistration = () => import('../views/TeacherRegistration.vue')
 const AdminDashboard = () => import('../views/AdminDashboard.vue')
+const StoryGenerator = () => import('../views/StoryGenerator.vue')
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -38,6 +39,11 @@ const routes = [
   {
     path: '/teacher/preview/:id',
     component: WorksheetPreview,
+    meta: { requiresAuth: true, role: ['teacher', 'admin'] },
+  },
+  {
+    path: '/teacher/stories',
+    component: StoryGenerator,
     meta: { requiresAuth: true, role: ['teacher', 'admin'] },
   },
   { path: '/admin', component: AdminDashboard, meta: { requiresAuth: true, role: 'admin' } },

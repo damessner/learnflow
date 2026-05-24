@@ -118,6 +118,34 @@
         </div>
       </template>
 
+      <template v-if="block.type === 'number_line'">
+        <NumberLine v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      </template>
+
+      <template v-if="block.type === 'equation_entry'">
+        <EquationInput v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      </template>
+
+      <template v-if="block.type === 'fraction_input'">
+        <FractionInput v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      </template>
+
+      <template v-if="block.type === 'arithmetic_grid'">
+        <ArithmeticGrid v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      </template>
+
+      <template v-if="block.type === 'graph_plot'">
+        <GraphPlot v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      </template>
+
+      <template v-if="block.type === 'geometry_shape'">
+        <GeometryShape v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      </template>
+
+      <template v-if="block.type === 'word_problem'">
+        <WordProblem v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      </template>
+
       <div
         v-if="!submitted"
         style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color)"
@@ -260,6 +288,13 @@ import { useUiStore } from '../stores/ui'
 import { useLearningStore } from '../stores/learning'
 import { audioSynth } from '../utils/audioSynth'
 import MermaidDiagram from '../components/exercises/MermaidDiagram.vue'
+import NumberLine from '../components/exercises/NumberLine.vue'
+import EquationInput from '../components/exercises/EquationInput.vue'
+import FractionInput from '../components/exercises/FractionInput.vue'
+import ArithmeticGrid from '../components/exercises/ArithmeticGrid.vue'
+import GraphPlot from '../components/exercises/GraphPlot.vue'
+import GeometryShape from '../components/exercises/GeometryShape.vue'
+import WordProblem from '../components/exercises/WordProblem.vue'
 
 const route = useRoute()
 const store = useSubmissionsStore()

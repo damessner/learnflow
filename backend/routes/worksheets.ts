@@ -7,6 +7,16 @@ import { validate } from '../middleware/validate'
 
 const router = Router()
 
+router.get('/subjects', requireAuth, (_req, res) => {
+  const { SUBJECTS } = require('./ai')
+  res.json({ subjects: SUBJECTS })
+})
+
+router.get('/grade-levels', requireAuth, (_req, res) => {
+  const { GRADE_LEVELS } = require('./ai')
+  res.json({ gradeLevels: GRADE_LEVELS })
+})
+
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const knex = getKnex()

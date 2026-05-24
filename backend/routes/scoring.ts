@@ -47,6 +47,18 @@ interface Block {
   messages?: { text: string; isGap?: boolean; answer?: string }[]
   vocabulary?: { l: string; r: string }[] | { pairs: { l: string; r: string }[]; direction: string }
   template?: string
+  markers?: number[]
+  equation?: string
+  numerator?: number
+  denominator?: number
+  operand1?: number
+  operand2?: number
+  operation?: string
+  final_answer?: string
+  steps?: { description: string; expected: string }[]
+  problem_text?: string
+  points_to_plot?: [number, number][]
+  shape_type?: string
 }
 
 interface ScoreResult {
@@ -258,8 +270,91 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           feedback.push(`${block.type}: auto`)
           break
         }
-        default: {
-          feedback.push(`Unknown block type: ${block.type}`)
+        case 'number_line': {
+          const ans = Number(userAnswer)
+          const markers = block.markers || []
+          if (markers.length > 0 && !isNaN(ans)) {
+            const closest = markers.reduce((prev, curr) =>
+              Math.abs(curr - ans) < Math.abs(prev - ans) ? curr : prev,
+            )
+            earned = Math.abs(ans - closest) < 0.5 ? block.points : 0
+            feedback.push(`Number line: ${earned > 0 ? 'correct' : 'incorrect'}`)
+          }
+          break
+        }
+        case 'equation_entry': {
+          const ans = String(userAnswer || '').replace(/\s/g, '').toLowerCase()
+          const expected = String(block.final_answer || block.equation || '').replace(/\s/g, '').toLowerCase()
+          earned = ans === expected ? block.points : 0
+          feedback.push(`Equation: ${earned > 0 ? 'correct' : 'incorrect'}`)
+          break
+        }
+        case 'fraction_input': {
+          const userNum = (userAnswer as Record<string, number>)?.numerator
+          const userDen = (userAnswer as Record<string, number>)?.denominator
+          if (userNum === block.numerator && userDen === block.denominator) {
+            earned = block.points
+            feedback.push('Fraction: correct')
+          } else {
+            feedback.push('Fraction: incorrect')
+          }
+          break
+        }
+        case 'arithmetic_grid': {
+          const ans = String(userAnswer || '').replace(/\s/g, '')
+          const a = block.operand1 || 0
+          const b = block.operand2 || 0
+          const op = block.operation || 'add'
+          let expectedResult = 0
+          if (op === 'add') expectedResult = a + b
+          else if (op === 'subtract') expectedResult = a - b
+          else if (op === 'multiply') expectedResult = a * b
+          else if (op === 'divide') expectedResult = b !== 0 ? Math.round(a / b) : 0
+          earned = Number(ans) === expectedResult ? block.points : 0
+          feedback.push(`Arithmetic: ${earned > 0 ? 'correct' : 'incorrect'}`)
+          break
+        }
+        case 'graph_plot': {
+          const userPoints = (userAnswer as [number, number][]) || []
+          const expectedPoints = block.points_to_plot || []
+          let correct = 0
+          for (const ep of expectedPoints) {
+            for (const up of userPoints) {
+              if (Math.abs(up[0] - ep[0]) < 0.5 && Math.abs(up[1] - ep[1]) < 0.5) {
+                correct++
+                break
+              }
+            }
+          }
+          earned = expectedPoints.length > 0
+            ? Math.round((correct / expectedPoints.length) * block.points)
+            : 0
+          feedback.push(`Graph: ${correct}/${expectedPoints.length} points`)
+          break
+        }
+        case 'geometry_shape': {
+          const ans = (userAnswer as Record<string, unknown>) || {}
+          const nameMatch = String(ans.shape_name || '').toLowerCase() === String(block.shape_type || '').toLowerCase()
+          earned = nameMatch ? block.points : 0
+          feedback.push(`Geometry: ${earned > 0 ? 'correct' : 'incorrect'}`)
+          break
+        }
+        case 'word_problem': {
+          const steps = block.steps || []
+          const userSteps = (userAnswer as Record<string, string>) || {}
+          let correct = 0
+          for (let i = 0; i < steps.length; i++) {
+            const userVal = String(userSteps[i] || userSteps[String(i)] || '').trim().toLowerCase()
+            const expVal = steps[i].expected.trim().toLowerCase()
+            if (userVal === expVal || checkSTEMMatch(userVal, expVal)) correct++
+          }
+          const finalAnsMatch = String(userSteps.final_answer || '').trim().toLowerCase() ===
+            String(block.final_answer || '').trim().toLowerCase()
+          if (finalAnsMatch) correct++
+          const totalItems = steps.length + 1
+          earned = totalItems > 0 ? Math.round((correct / totalItems) * block.points) : 0
+          feedback.push(`Word problem: ${correct}/${totalItems}`)
+          break
         }
       }
 

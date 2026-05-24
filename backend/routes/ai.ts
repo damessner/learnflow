@@ -5,6 +5,20 @@ import { z } from 'zod'
 
 const router = Router()
 
+export const SUBJECTS = [
+  'Mathematics',
+  'German',
+  'English',
+  'Science',
+  'History',
+  'Geography',
+  'Art',
+  'Music',
+  'Physical Education',
+] as const
+
+export const GRADE_LEVELS = ['1', '2', '3', '4', '5', '6', '7', '8'] as const
+
 const BlockSchema = z.object({
   id: z.string().uuid().optional(),
   type: z.enum([
@@ -16,6 +30,13 @@ const BlockSchema = z.object({
     'matching',
     'word_scramble',
     'short_answer',
+    'number_line',
+    'equation_entry',
+    'fraction_input',
+    'arithmetic_grid',
+    'graph_plot',
+    'geometry_shape',
+    'word_problem',
   ]),
   points: z.number().optional().default(1),
   text: z.string().optional(),
@@ -30,6 +51,22 @@ const BlockSchema = z.object({
   kc_ids: z.array(z.string().uuid()).optional(),
   mermaid: z.string().optional(),
   alt_text: z.string().optional(),
+  min_value: z.number().optional(),
+  max_value: z.number().optional(),
+  markers: z.array(z.number()).optional(),
+  equation: z.string().optional(),
+  numerator: z.number().optional(),
+  denominator: z.number().optional(),
+  operand1: z.number().optional(),
+  operand2: z.number().optional(),
+  operation: z.string().optional(),
+  grid_size: z.number().optional(),
+  points_to_plot: z.array(z.tuple([z.number(), z.number()])).optional(),
+  shape_type: z.string().optional(),
+  measurements: z.record(z.string(), z.number()).optional(),
+  problem_text: z.string().optional(),
+  steps: z.array(z.object({ description: z.string(), expected: z.string() })).optional(),
+  final_answer: z.string().optional(),
 })
 
 const GenerationSchema = z.object({
@@ -349,5 +386,138 @@ function getMisconceptions(kcName: string): string[] {
     `I keep mixing up the steps. Is it step A first, then B, or B first then A?`,
   ]
 }
+
+router.post('/generate-story', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
+  try {
+    const {
+      topic,
+      gradeLevel,
+      grammarFocus,
+      vocabulary,
+      questionCount,
+      includeVocab,
+      includeGrammar,
+    } = req.body
+
+    if (!topic) {
+      res.status(400).json({ error: 'Topic required' })
+      return
+    }
+
+    const blocks: z.infer<typeof BlockSchema>[] = []
+
+    const storyPrompt = `Generate a complete educational story worksheet for grade ${gradeLevel || '2'} in German.
+
+Topic: "${topic}"
+${grammarFocus ? `Grammar focus: ${grammarFocus}` : ''}
+${vocabulary ? `Required vocabulary words: ${vocabulary}` : ''}
+${questionCount ? `Generate ${questionCount} questions` : 'Generate 5-8 questions'}
+
+Return ONLY valid JSON with this structure:
+{
+  "story": {
+    "title": "short engaging title",
+    "text": "the full story text, 150-350 words, age-appropriate for grade ${gradeLevel || '2'}, in German"
+  },
+  "blocks": [
+    {
+      "id": "uuid-string",
+      "type": "text",
+      "points": 0,
+      "text": "the story text (same as above)"
+    },
+    {
+      "id": "uuid-string", 
+      "type": "multiple_choice",
+      "points": 10,
+      "text": "A reading comprehension question in German",
+      "options": ["correct answer", "wrong 1", "wrong 2", "wrong 3"],
+      "correct": [0]
+    }
+    ${includeVocab ? `,
+    {
+      "id": "uuid-string",
+      "type": "gap_fill",
+      "points": 5,
+      "template": "sentence with a ((vocabulary word)) to fill in German"
+    },
+    {
+      "id": "uuid-string",
+      "type": "vocabulary",
+      "points": 10,
+      "vocabulary": {
+        "pairs": [{"l": "German word", "r": "definition or translation"}],
+        "direction": "l2r"
+      }
+    }` : ''}
+    ${includeGrammar ? `,
+    {
+      "id": "uuid-string", 
+      "type": "gap_fill",
+      "points": 5,
+      "template": "sentence with grammar-based ((gap)) focused on ${grammarFocus || 'the grammar topic'}"
+    }` : ''}
+  ]
+}
+
+Mix reading comprehension, vocabulary, and grammar exercises. All content in German.`
+
+    if (process.env.OLLAMA_URL) {
+      const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: process.env.OLLAMA_MODEL || 'llama3',
+          prompt: storyPrompt,
+          stream: false,
+          format: 'json',
+        }),
+      })
+      const data = await response.json()
+      try {
+        const parsed = JSON.parse(data.response)
+        if (parsed.blocks) {
+          for (const b of parsed.blocks) {
+            if (!b.id) b.id = uuidv4()
+          }
+          blocks.push(...parsed.blocks)
+        }
+      } catch {
+        blocks.push({ id: uuidv4(), type: 'text', points: 0, text: 'Story generation failed to parse.' })
+      }
+    } else if (process.env.GEMINI_API_KEY) {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: storyPrompt }] }],
+            generationConfig: { responseMimeType: 'application/json' },
+          }),
+        },
+      )
+      const data = await response.json()
+      try {
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
+        const parsed = JSON.parse(text)
+        if (parsed.blocks) {
+          for (const b of parsed.blocks) {
+            if (!b.id) b.id = uuidv4()
+          }
+          blocks.push(...parsed.blocks)
+        }
+      } catch { /* */ }
+    }
+
+    if (blocks.length === 0) {
+      blocks.push({ id: uuidv4(), type: 'text', points: 0, text: `Story: "${topic}" — AI generation unavailable.` })
+    }
+
+    res.json({ blocks })
+  } catch (err) {
+    next(err)
+  }
+})
 
 export default router

@@ -131,7 +131,9 @@
 
       <!-- Worksheets Flow Sequence -->
       <h3 style="margin-bottom: 1rem; font-weight: 700; font-size: 1.3rem;">Worksheet Modules</h3>
-      <div v-for="(ws, idx) in worksheets" :key="ws.id"
+      <div
+        v-for="(ws, idx) in worksheets"
+        :key="ws.id"
         class="card"
         style="
           margin-bottom: 1rem;
