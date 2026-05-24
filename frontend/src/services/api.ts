@@ -3,8 +3,9 @@ const BASE = '/api'
 const api = {
   async request(method, path, body = null) {
     const headers = { 'Content-Type': 'application/json' }
+    const token = localStorage.getItem('token')
+    if (token) headers.Authorization = `Bearer ${token}`
 
-    // We rely on cookies now, so we need to send credentials
     const opts = { method, headers, credentials: 'include' }
     if (body) opts.body = JSON.stringify(body)
 
@@ -29,6 +30,8 @@ const api = {
 
   async upload(path, formData) {
     const headers = {}
+    const token = localStorage.getItem('token')
+    if (token) headers.Authorization = `Bearer ${token}`
 
     const res = await fetch(`${BASE}${path}`, {
       method: 'POST',
