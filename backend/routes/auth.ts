@@ -218,6 +218,23 @@ router.post('/change-password', requireAuth, async (req, res, next) => {
   }
 })
 
+router.put('/emoji', requireAuth, async (req, res, next) => {
+  try {
+    const { emoji } = req.body
+    const knex = getKnex()
+    await knex('users')
+      .where({ id: req.user!.userId })
+      .update({
+        character_emoji: emoji || null,
+        updated_at: knex.fn.now(),
+      })
+    const user = await knex('users').where({ id: req.user!.userId }).first()
+    res.json({ user: sanitizeUser(user) })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.get('/config', (_req, res) => {
   res.json({ mode: process.env.MS_CLIENT_ID ? 'microsoft' : 'local' })
 })

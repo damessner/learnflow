@@ -102,6 +102,10 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
       return
     }
 
+    const prevScore = submission.score
+    const prevMaxScore = submission.max_score
+    const prevRatio = prevScore !== null && prevMaxScore > 0 ? prevScore / prevMaxScore : 0
+
     const assignment = await knex('assignments').where({ id: req.params.id }).first()
     const worksheet = await knex('worksheets').where({ id: assignment.worksheet_id }).first()
 
@@ -195,7 +199,17 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
       totalXpEarned = flatXp
     }
 
-    const netXp = totalXpEarned - totalXpLost
+    const newRatio = result.maxScore > 0 ? result.score / result.maxScore : 0
+    let gritBonusAwarded = false
+    if (prevScore !== null && (newRatio - prevRatio >= 0.3)) {
+      gritBonusAwarded = true
+    }
+
+    let netXp = totalXpEarned - totalXpLost
+    if (gritBonusAwarded) {
+      netXp += 150
+    }
+
     const { newXp, newLevel, leveledUp, newBadges } = await addXp(req.user!.userId, netXp)
     await updateStreak(req.user!.userId)
     if (wageringResults.length > 0) {
@@ -281,13 +295,14 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
       maxScore: result.maxScore,
       feedback: result.feedback,
       submitted_at: new Date().toISOString(),
-      xpEarned: totalXpEarned,
+      xpEarned: totalXpEarned + (gritBonusAwarded ? 150 : 0),
       xpLost: totalXpLost,
       newXp,
       newLevel,
       leveledUp,
       newBadges,
       wageringResults,
+      gritBonusAwarded,
     })
   } catch (err) {
     next(err)

@@ -269,3 +269,38 @@ async function getActivityCount(userId: string, type: string): Promise<number> {
       return 0
   }
 }
+
+export async function awardCourseBadge(userId: string, badgeName: string): Promise<boolean> {
+  const knex = getKnex()
+  let gam = await knex('learning_gamification').where({ user_id: userId }).first()
+  if (!gam) {
+    const id = uuidv4()
+    await knex('learning_gamification').insert({
+      id,
+      user_id: userId,
+      xp: 0,
+      level: 1,
+      badges: '[]',
+      streak_days: 0,
+    })
+    gam = await knex('learning_gamification').where({ user_id: userId }).first()
+  }
+
+  let badges: string[] = []
+  try {
+    badges = JSON.parse(gam.badges || '[]')
+  } catch {
+    badges = []
+  }
+
+  if (badges.includes(badgeName)) {
+    return false
+  }
+
+  badges.push(badgeName)
+  await knex('learning_gamification')
+    .where({ user_id: userId })
+    .update({ badges: JSON.stringify(badges) })
+
+  return true
+}

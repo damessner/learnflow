@@ -31,6 +31,9 @@ router.post('/', requireAuth, requireRole('teacher', 'admin'), async (req, res, 
       name: req.body.name,
       description: req.body.description || '',
       teacher_id: req.user!.userId,
+      unlock_threshold: req.body.unlock_threshold !== undefined ? Number(req.body.unlock_threshold) : 60,
+      deadline: req.body.deadline || null,
+      badge_name: req.body.badge_name || null,
     })
     const course = await knex('courses').where({ id }).first()
     res.status(201).json({ course })
@@ -50,10 +53,20 @@ router.get('/:id', requireAuth, async (req, res, next) => {
     const worksheets = await knex('course_worksheets')
       .join('worksheets', 'course_worksheets.worksheet_id', 'worksheets.id')
       .where('course_worksheets.course_id', req.params.id)
-      .select('worksheets.*', 'course_worksheets.order_index')
+      .select(
+        'worksheets.*',
+        'course_worksheets.order_index',
+        'course_worksheets.unlock_threshold as ws_unlock_threshold',
+        'course_worksheets.deadline as ws_deadline'
+      )
       .orderBy('course_worksheets.order_index', 'asc')
 
-    res.json({ course, worksheets })
+    const students = await knex('course_students')
+      .join('users', 'course_students.student_id', 'users.id')
+      .where('course_students.course_id', req.params.id)
+      .select('users.id', 'users.name', 'users.username', 'users.character_emoji')
+
+    res.json({ course, worksheets, students })
   } catch (err) {
     next(err)
   }
@@ -62,10 +75,21 @@ router.get('/:id', requireAuth, async (req, res, next) => {
 router.put('/:id', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
   try {
     const knex = getKnex()
-    await knex('courses').where({ id: req.params.id }).update({
+    const updateData: Record<string, unknown> = {
       name: req.body.name,
       description: req.body.description,
-    })
+    }
+    if (req.body.unlock_threshold !== undefined) {
+      updateData.unlock_threshold = Number(req.body.unlock_threshold)
+    }
+    if (req.body.deadline !== undefined) {
+      updateData.deadline = req.body.deadline || null
+    }
+    if (req.body.badge_name !== undefined) {
+      updateData.badge_name = req.body.badge_name || null
+    }
+
+    await knex('courses').where({ id: req.params.id }).update(updateData)
     const course = await knex('courses').where({ id: req.params.id }).first()
     res.json({ course })
   } catch (err) {
@@ -123,6 +147,33 @@ router.delete(
         .where({ course_id: req.params.id, worksheet_id: req.params.worksheetId })
         .del()
       res.json({ message: 'Worksheet removed from course' })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
+
+router.put(
+  '/:id/worksheets/:worksheetId',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const { unlock_threshold, deadline } = req.body
+      const updateData: Record<string, unknown> = {}
+      if (unlock_threshold !== undefined) {
+        updateData.unlock_threshold = unlock_threshold !== null ? Number(unlock_threshold) : null
+      }
+      if (deadline !== undefined) {
+        updateData.deadline = deadline || null
+      }
+
+      await knex('course_worksheets')
+        .where({ course_id: req.params.id, worksheet_id: req.params.worksheetId })
+        .update(updateData)
+
+      res.json({ message: 'Course worksheet settings updated' })
     } catch (err) {
       next(err)
     }
@@ -211,29 +262,110 @@ router.get('/student/course/:id', requireAuth, async (req, res, next) => {
       return
     }
 
+    const studentClasses = await knex('class_students')
+      .where('student_id', req.user!.userId)
+      .pluck('class_id')
+
     const courseWs = await knex('course_worksheets')
       .where('course_worksheets.course_id', req.params.id)
       .join('worksheets', 'course_worksheets.worksheet_id', 'worksheets.id')
-      .select('worksheets.*', 'course_worksheets.order_index')
+      .select(
+        'worksheets.*',
+        'course_worksheets.order_index',
+        'course_worksheets.unlock_threshold as ws_unlock_threshold',
+        'course_worksheets.deadline as ws_deadline'
+      )
       .orderBy('course_worksheets.order_index', 'asc')
 
-    const worksheetIds = courseWs.map((w: { id: string }) => w.id)
-    const assignments = await knex('assignments').whereIn('worksheet_id', worksheetIds)
-    const assignmentIds = assignments.map((a: { id: string }) => a.id)
+    const worksheetsProgress = []
+    let previousWorksheetCompleted = true
 
-    const submissions = await knex('submissions')
-      .where('user_id', req.user!.userId)
-      .whereIn('assignment_id', assignmentIds)
+    for (let i = 0; i < courseWs.length; i++) {
+      const w = courseWs[i]
 
-    const completedCount = submissions.filter(
-      (s: { submitted_at: unknown }) => s.submitted_at,
-    ).length
+      const assignment = await knex('assignments')
+        .where({ worksheet_id: w.id })
+        .where(function () {
+          this.whereIn('class_id', studentClasses).orWhereNull('class_id')
+        })
+        .first()
+
+      let submissions: Array<{ submitted_at: string | Date | null; score: number | null; max_score: number }> = []
+      if (assignment) {
+        submissions = await knex('submissions')
+          .where({ assignment_id: assignment.id, user_id: req.user!.userId })
+      }
+
+      let bestScore = 0
+      let maxScore = w.total_points || 0
+      let bestRatio = 0
+      let isSubmitted = false
+
+      if (submissions.length > 0) {
+        submissions.forEach((sub: { submitted_at: string | Date | null; score: number | null; max_score: number }) => {
+          if (sub.submitted_at && sub.score != null) {
+            isSubmitted = true
+            const ratio = sub.max_score > 0 ? sub.score / sub.max_score : 0
+            if (ratio >= bestRatio) {
+              bestRatio = ratio
+              bestScore = sub.score
+              maxScore = sub.max_score
+            }
+          }
+        })
+      }
+
+      const threshold = w.ws_unlock_threshold !== null && w.ws_unlock_threshold !== undefined
+        ? w.ws_unlock_threshold
+        : (course.unlock_threshold || 60)
+
+      const isCompleted = isSubmitted && (bestRatio * 100 >= threshold)
+      const isLocked = !previousWorksheetCompleted
+
+      worksheetsProgress.push({
+        id: w.id,
+        title: w.title,
+        description: w.description,
+        subject: w.subject,
+        grade_level: w.grade_level,
+        order_index: w.order_index,
+        unlock_threshold: threshold,
+        deadline: w.ws_deadline || course.deadline || null,
+        is_locked: isLocked,
+        is_completed: isCompleted,
+        best_score: bestScore,
+        max_score: maxScore,
+        assignment_id: assignment?.id || null,
+        content: isLocked ? JSON.stringify({ blocks: [] }) : w.content,
+      })
+
+      previousWorksheetCompleted = isCompleted
+    }
+
+    const totalWorksheets = worksheetsProgress.length
+    const completedCount = worksheetsProgress.filter((w) => w.is_completed).length
+    const courseCompleted = totalWorksheets > 0 && completedCount === totalWorksheets
+
+    let badgeAwarded = false
+    let xpGained = 0
+
+    if (courseCompleted && course.badge_name) {
+      const { awardCourseBadge, addXp } = require('../services/gamification')
+      const newlyAwarded = await awardCourseBadge(req.user!.userId, course.badge_name)
+      if (newlyAwarded) {
+        badgeAwarded = true
+        await addXp(req.user!.userId, 100)
+        xpGained = 100
+      }
+    }
 
     res.json({
       course,
-      worksheets: courseWs,
-      progress: { completed: completedCount, total: courseWs.length },
-      submissions,
+      worksheets: worksheetsProgress,
+      progress: { completed: completedCount, total: totalWorksheets },
+      course_completed: courseCompleted,
+      badge_awarded: badgeAwarded,
+      xp_gained: xpGained,
     })
   } catch (err) {
     next(err)

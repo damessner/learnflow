@@ -22,6 +22,11 @@ export const useCoursesStore = defineStore('courses', () => {
     currentCourse.value = data
   }
 
+  async function fetchStudentCourse(id) {
+    const data = await api.get(`/courses/student/course/${id}`)
+    currentCourse.value = data
+  }
+
   async function createCourse(payload) {
     const data = await api.post('/courses', payload)
     return data.course
@@ -43,6 +48,15 @@ export const useCoursesStore = defineStore('courses', () => {
     return api.put(`/courses/${courseId}/worksheets/reorder`, { worksheetIds })
   }
 
+  async function updateCourseSettings(courseId, payload) {
+    const data = await api.put(`/courses/${courseId}`, payload)
+    return data.course
+  }
+
+  async function updateCourseWorksheetSettings(courseId, worksheetId, payload) {
+    return api.put(`/courses/${courseId}/worksheets/${worksheetId}`, payload)
+  }
+
   async function enrollStudent(courseId, studentId) {
     return api.post(`/courses/${courseId}/students`, { student_id: studentId })
   }
@@ -58,11 +72,14 @@ export const useCoursesStore = defineStore('courses', () => {
     fetchCourses,
     fetchStudentCourses,
     fetchCourse,
+    fetchStudentCourse,
     createCourse,
     deleteCourse,
     addWorksheetToCourse,
     removeWorksheetFromCourse,
     reorderWorksheets,
+    updateCourseSettings,
+    updateCourseWorksheetSettings,
     enrollStudent,
     unenrollStudent,
   }

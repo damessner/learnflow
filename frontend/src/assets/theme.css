@@ -284,3 +284,64 @@ th {
   color: var(--text-muted);
   font-size: 0.85rem;
 }
+
+/* Streak Aura Effects */
+.streak-aura {
+  position: relative;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.5s ease;
+}
+
+/* 1-2 days: subtle blue pulse */
+.streak-aura.streak-level-1 {
+  animation: aura-blue 2.5s infinite alternate;
+}
+
+/* 3-6 days: vibrant magenta glow */
+.streak-aura.streak-level-2 {
+  animation: aura-magenta 2s infinite alternate;
+}
+
+/* 7+ days: fiery golden glow with float */
+.streak-aura.streak-level-3 {
+  animation: aura-gold 1.8s infinite alternate, aura-float 4s infinite ease-in-out;
+}
+
+@keyframes aura-blue {
+  0% {
+    box-shadow: 0 0 6px rgba(6, 182, 212, 0.2), inset 0 0 6px rgba(6, 182, 212, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.6), inset 0 0 10px rgba(6, 182, 212, 0.3);
+  }
+}
+
+@keyframes aura-magenta {
+  0% {
+    box-shadow: 0 0 8px rgba(217, 70, 239, 0.3), inset 0 0 8px rgba(217, 70, 239, 0.15);
+  }
+  100% {
+    box-shadow: 0 0 28px rgba(217, 70, 239, 0.8), inset 0 0 15px rgba(217, 70, 239, 0.4);
+  }
+}
+
+@keyframes aura-gold {
+  0% {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4), inset 0 0 10px rgba(245, 158, 11, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 35px rgba(245, 158, 11, 0.95), inset 0 0 20px rgba(245, 158, 11, 0.5);
+  }
+}
+
+@keyframes aura-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}

@@ -446,7 +446,7 @@ router.post('/tts', requireAuth, async (req, res, next) => {
       }
     } else {
       try {
-        const { mstts } = require('msedge-tts')
+        const { MsEdgeTTS, OUTPUT_FORMAT } = require('msedge-tts')
         const path = require('path')
         const fs = require('fs')
         const uploadsDir = path.join(__dirname, '..', 'uploads', 'audio')
@@ -454,11 +454,12 @@ router.post('/tts', requireAuth, async (req, res, next) => {
         const filename = `tts_${Date.now()}.mp3`
         const filepath = path.join(uploadsDir, filename)
 
-        await mstts({
-          text,
-          voice: voice || 'en-US-AriaNeural',
-          output: filepath,
-        })
+        const tts = new MsEdgeTTS()
+        await tts.setMetadata(
+          voice || 'en-US-AriaNeural',
+          OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3,
+        )
+        await tts.toFile(filepath, text)
 
         res.json({ url: `/uploads/audio/${filename}` })
       } catch {

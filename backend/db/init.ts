@@ -23,6 +23,15 @@ export async function initDB(): Promise<void> {
     } else {
       logger.info('Database already initialized (srs)')
     }
+
+    const hasUnlockColumn = await knex.schema.hasColumn('courses', 'unlock_threshold')
+    if (!hasUnlockColumn) {
+      const { up: upCourseFeatures } = require('./migrations/20260524_003_course_features')
+      await upCourseFeatures(knex)
+      logger.info('Database migration (course features) completed')
+    } else {
+      logger.info('Database already initialized (course features)')
+    }
   } catch (err) {
     logger.error({ err }, 'Database migration failed')
     throw err

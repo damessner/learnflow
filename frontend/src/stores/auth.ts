@@ -55,6 +55,13 @@ export const useAuthStore = defineStore('auth', () => {
     return api.post('/auth/change-password', { current, newPassword })
   }
 
+  async function updateEmoji(emoji) {
+    const data = await api.put('/auth/emoji', { emoji })
+    user.value = data.user
+    localStorage.setItem('user', JSON.stringify(data.user))
+    return data
+  }
+
   async function verifyToken() {
     const data = await api.get('/auth/verify')
     user.value = data.user
@@ -81,6 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
     registerTeacher,
     getAuthConfig,
     changePassword,
+    updateEmoji,
     verifyToken,
     logout,
     loadFromStorage,

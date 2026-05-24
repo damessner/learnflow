@@ -84,8 +84,15 @@ router.get('/:id/progress', requireAuth, async (req, res, next) => {
     const knex = getKnex()
     const students = await knex('class_students')
       .join('users', 'class_students.student_id', 'users.id')
+      .leftJoin('learning_gamification', 'users.id', 'learning_gamification.user_id')
       .where('class_students.class_id', req.params.id)
-      .select('users.id', 'users.name', 'users.username')
+      .select(
+        'users.id',
+        'users.name',
+        'users.username',
+        'users.character_emoji',
+        'learning_gamification.streak_days as streak_days'
+      )
 
     const assignments = await knex('assignments').where({ class_id: req.params.id })
 
@@ -117,7 +124,7 @@ router.get('/:id/students', requireAuth, async (req, res, next) => {
     const students = await knex('class_students')
       .join('users', 'class_students.student_id', 'users.id')
       .where('class_students.class_id', req.params.id)
-      .select('users.id', 'users.name', 'users.username', 'users.email', 'class_students.joined_at')
+      .select('users.id', 'users.name', 'users.username', 'users.email', 'class_students.joined_at', 'users.character_emoji')
 
     res.json({ students })
   } catch (err) {

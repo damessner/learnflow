@@ -21,6 +21,7 @@ const BlockSchema = z.object({
   text: z.string().optional(),
   template: z.string().optional(),
   options: z.array(z.string()).optional(),
+  correct: z.union([z.number(), z.array(z.number())]).optional(),
   correctIndices: z.array(z.number()).optional(),
   correctIndex: z.number().optional(),
   pairs: z.array(z.tuple([z.string(), z.string()])).optional(),
@@ -46,7 +47,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: process.env.OLLAMA_MODEL || 'llama3',
-          prompt: `Create an educational worksheet with interactive exercise blocks from this prompt: "${prompt}". Return ONLY valid JSON with a "blocks" array. Each block has id, type, points, and type-specific fields matching this schema. For concepts involving processes, hierarchies, or relationships, include a "mermaid" field with valid Mermaid.js syntax (graph TD/LR, flowchart, sequenceDiagram) and an "alt_text" field describing the diagram.`,
+          prompt: `Create an educational worksheet with interactive exercise blocks from this prompt: "${prompt}". Return ONLY valid JSON with a "blocks" array. Each block has id, type, points, and type-specific fields matching this schema. For "single_choice", include a "correct" field (integer index of correct option, 0-indexed). For "multiple_choice", include a "correct" field (array of integer indices of correct options, 0-indexed). For concepts involving processes, hierarchies, or relationships, include a "mermaid" field with valid Mermaid.js syntax (graph TD/LR, flowchart, sequenceDiagram) and an "alt_text" field describing the diagram.`,
           stream: false,
           format: 'json',
         }),
@@ -76,7 +77,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
               {
                 parts: [
                   {
-                    text: `Generate a JSON array of interactive worksheet blocks for an educational platform. Prompt: "${prompt}". Each block has id (uuid string), type (one of: gap_fill, multiple_choice, single_choice, matching, short_answer, text), points (number), and type-specific fields. For abstract concepts, include a "mermaid" field with Mermaid.js syntax (graph TD/LR, flowchart, or sequenceDiagram) and an "alt_text" accessibility description. Return ONLY valid JSON with {"blocks": [...]}.`,
+                    text: `Generate a JSON array of interactive worksheet blocks for an educational platform. Prompt: "${prompt}". Each block has id (uuid string), type (one of: gap_fill, multiple_choice, single_choice, matching, short_answer, text), points (number), and type-specific fields. For "single_choice", include a "correct" field (integer index of correct option, 0-indexed). For "multiple_choice", include a "correct" field (array of integer indices of correct options, 0-indexed). For abstract concepts, include a "mermaid" field with Mermaid.js syntax (graph TD/LR, flowchart, or sequenceDiagram) and an "alt_text" accessibility description. Return ONLY valid JSON with {"blocks": [...]}.`,
                   },
                 ],
               },
@@ -107,9 +108,16 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
       })
     }
 
-    // Ensure IDs
+    // Ensure IDs and map correct formats
     blocks.forEach((b) => {
       if (!b.id) b.id = uuidv4()
+      if (b.correct === undefined) {
+        if (b.correctIndex !== undefined) {
+          b.correct = b.correctIndex
+        } else if (b.correctIndices !== undefined) {
+          b.correct = b.correctIndices
+        }
+      }
     })
 
     res.json({ blocks })

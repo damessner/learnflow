@@ -186,7 +186,13 @@ onMounted(async () => {
       }
       try {
         const content = JSON.parse(store.current.content)
-        blocks.value = content.blocks || []
+        const loadedBlocks = content.blocks || []
+        loadedBlocks.forEach((b) => {
+          if (b.type === 'short_answer') {
+            b.keywordsStr = b.keywords ? b.keywords.join(', ') : ''
+          }
+        })
+        blocks.value = loadedBlocks
       } catch {
         blocks.value = []
       }
@@ -228,7 +234,17 @@ function moveBlock(idx, delta) {
 }
 
 async function save() {
-  const content = JSON.stringify({ blocks: blocks.value })
+  const mappedBlocks = blocks.value.map((b) => {
+    const copy = { ...b }
+    if (copy.type === 'short_answer') {
+      copy.keywords = (copy.keywordsStr || '')
+        .split(',')
+        .map((k) => k.trim())
+        .filter(Boolean)
+    }
+    return copy
+  })
+  const content = JSON.stringify({ blocks: mappedBlocks })
   const totalPoints = blocks.value.reduce((s, b) => s + (b.points || 0), 0)
   const payload = { ...form.value, content, total_points: totalPoints }
 

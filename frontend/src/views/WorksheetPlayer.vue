@@ -12,6 +12,9 @@
     >
       <h3>Submitted!</h3>
       <p>Score: {{ submitResult.score }} / {{ submitResult.maxScore }}</p>
+      <div v-if="submitResult.gritBonusAwarded" style="background: rgba(253, 224, 71, 0.2); border: 1px solid #fde047; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-weight: 700; color: #fef08a; display: inline-flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0; width: 100%; box-sizing: border-box;">
+        🔥 Grit Boost! +150 XP for Retake Improvement!
+      </div>
       <p v-if="submitResult.xpEarned">XP: +{{ submitResult.xpEarned }}</p>
       <p v-if="submitResult.xpLost" style="color: var(--danger-light)">
         XP Lost: -{{ submitResult.xpLost }}
@@ -254,14 +257,13 @@ import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSubmissionsStore } from '../stores/submissions'
 import { useUiStore } from '../stores/ui'
-import { useAuthStore } from '../stores/auth'
 import { useLearningStore } from '../stores/learning'
+import { audioSynth } from '../utils/audioSynth'
 import MermaidDiagram from '../components/exercises/MermaidDiagram.vue'
 
 const route = useRoute()
 const store = useSubmissionsStore()
 const uiStore = useUiStore()
-const authStore = useAuthStore()
 const learningStore = useLearningStore()
 
 const worksheet = ref(null)
@@ -419,7 +421,13 @@ async function submit() {
     submitted.value = true
     if (autoSaveTimer) clearInterval(autoSaveTimer)
     localStorage.removeItem(`answers_${route.params.id}`)
-    uiStore.showToast('Submitted!', 'success')
+    if (result.gritBonusAwarded) {
+      audioSynth.playLevelUp()
+      uiStore.showToast('Grit Boost! +150 XP for retake improvement!', 'success')
+    } else {
+      audioSynth.playComplete()
+      uiStore.showToast('Submitted successfully!', 'success')
+    }
   } catch (e) {
     uiStore.showToast(e.message, 'error')
   }
@@ -449,7 +457,6 @@ async function sendToTutor() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(authStore.token ? { Authorization: `Bearer ${authStore.token}` } : {}),
       },
       body: JSON.stringify({ question, context }),
       credentials: 'include', // Since we use cookies now

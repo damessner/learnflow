@@ -24,6 +24,12 @@ import srsRoutes from './routes/srs'
 export function createApp(): express.Application {
   const app = express()
 
+  app.use(requestId)
+  app.use((req, _res, next) => {
+    logger.info({ method: req.method, url: req.url, requestId: req.id }, 'Request')
+    next()
+  })
+
   app.use(helmet())
   app.use(corsMiddleware)
 
@@ -52,7 +58,6 @@ export function createApp(): express.Application {
 
   app.use(express.json({ limit: '10mb' }))
   app.use(cookieParser())
-  app.use(requestId)
 
   app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
 
@@ -71,11 +76,6 @@ export function createApp(): express.Application {
   app.use('/api/library', libraryRoutes)
   app.use('/api/ai', aiRoutes)
   app.use('/api/srs', srsRoutes)
-
-  app.use((req, _res, next) => {
-    logger.info({ method: req.method, url: req.url, requestId: req.id }, 'Request')
-    next()
-  })
 
   app.use(errorHandler)
 
