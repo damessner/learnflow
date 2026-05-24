@@ -1,28 +1,15 @@
 <template>
   <div :data-theme="uiStore.isDark ? 'dark' : ''">
     <header class="header">
-      <router-link to="/login" class="header-logo">
-        <span class="logo-icon">⚡</span>LearnFlow
-      </router-link>
+      <router-link to="/login" class="header-logo">LearnFlow</router-link>
       <nav class="header-nav">
         <template v-if="authStore.isAuthenticated">
-          <router-link v-if="authStore.role === 'student'" to="/student">Dashboard</router-link>
-          <router-link
-            v-if="authStore.role === 'teacher' || authStore.role === 'admin'"
-            to="/teacher"
-            >Dashboard</router-link
-          >
-          <router-link v-if="authStore.role === 'admin'" to="/admin">Admin</router-link>
-          <div class="nav-divider"></div>
-          <button
-            class="btn-icon"
-            :title="uiStore.isDark ? 'Light mode' : 'Dark mode'"
-            @click="uiStore.toggleTheme()"
-          >
-            {{ uiStore.isDark ? '☀️' : '🌙' }}
-          </button>
-          <button class="btn-sm" @click="showChangePassword = true">Password</button>
-          <button class="btn-sm btn-danger" @click="authStore.logout()">Sign Out</button>
+          <router-link v-if="authStore.role === 'student'" :to="authStore.isGuest ? '' : '/student'"> Dashboard</router-link>
+          <router-link v-if="authStore.role === 'teacher' || authStore.role === 'admin'" to="/teacher"> Dashboard</router-link>
+          <router-link v-if="authStore.role === 'admin'" to="/admin"> Admin</router-link>
+          <button @click="uiStore.toggleTheme()" class="btn-sm">{{ uiStore.isDark ? 'Light' : 'Dark' }}</button>
+          <button @click="showChangePassword = true" class="btn-sm"> Password</button>
+          <button @click="authStore.logout()" class="btn-sm btn-danger"> Logout</button>
         </template>
       </nav>
     </header>

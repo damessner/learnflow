@@ -98,7 +98,7 @@
       </div>
 
       <div style="flex: 1" class="card" v-if="dailyMix.length > 0 && !mixing">
-        <h3 style="margin-top: 0">🧠 Your Daily Mix</h3>
+          <h3 style="margin-top: 0"> Your Daily Mix</h3>
         <p style="font-size: 0.9rem; color: var(--text-muted)">
           Spaced repetition & interleaving session ready! {{ dailyMix.length }} items to review.
         </p>
@@ -204,7 +204,7 @@
 
     <div class="grid grid-2" style="margin-top: 1rem">
       <div class="card">
-        <h3>My Classes</h3>
+        <h3> My Classes</h3>
         <div v-if="myClasses.length === 0" style="color: var(--text-muted)">No classes yet</div>
         <div
           v-for="c in myClasses"
@@ -217,7 +217,7 @@
       </div>
 
       <div class="card">
-        <h3>Announcements</h3>
+        <h3> Announcements</h3>
         <div v-if="announcements.length === 0" style="color: var(--text-muted)">
           No announcements
         </div>
@@ -232,7 +232,7 @@
       </div>
 
       <div class="card">
-        <h3>My Submissions</h3>
+        <h3> My Submissions</h3>
         <div v-if="submissions.length === 0" style="color: var(--text-muted)">
           No submissions yet
         </div>
@@ -260,7 +260,7 @@
       </div>
 
       <div class="card">
-        <h3>Courses</h3>
+        <h3> Courses</h3>
         <div v-if="courses.length === 0" style="color: var(--text-muted)">No courses assigned</div>
         <div
           v-for="c in courses"
@@ -323,7 +323,7 @@
       </div>
 
       <div class="card">
-        <h3>Mastery Map</h3>
+        <h3> Mastery Map</h3>
         <div
           v-for="m in masteryList"
           :key="m.id"
