@@ -4,6 +4,7 @@ import { getKnex } from '../db/knex'
 import { requireAuth, requireRole } from '../middleware/requireAuth'
 import { scoreAnswers } from './scoring'
 import { reviewKnowledgeComponent } from '../services/srs'
+import { addXp, updateStreak, awardActivityBadges } from '../services/gamification'
 import { Rating } from 'ts-fsrs'
 
 const router = Router()
@@ -161,7 +162,6 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
     let totalXpLost = 0
     const wageringResults: Record<string, unknown>[] = []
 
-    // Process wagering per block
     for (const blockScore of result.blockScores) {
       const wagerAmount = wagers[blockScore.blockId]
       if (!wagerAmount || wagerAmount <= 0) continue
@@ -190,17 +190,19 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
       })
     }
 
-    // Fallback: no wagers → flat XP
     if (wageringResults.length === 0) {
       const flatXp = Math.round(result.score * 10)
       totalXpEarned = flatXp
     }
 
-    const currentGam = await knex('learning_gamification')
-      .where({ user_id: req.user!.userId })
-      .first()
-    const newXp = Math.max(0, (currentGam?.xp || 0) + totalXpEarned - totalXpLost)
-    await knex('learning_gamification').where({ user_id: req.user!.userId }).update({ xp: newXp })
+    const netXp = totalXpEarned - totalXpLost
+    const { newXp, newLevel, leveledUp, newBadges } = await addXp(req.user!.userId, netXp)
+    await updateStreak(req.user!.userId)
+    if (wageringResults.length > 0) {
+      await awardActivityBadges(req.user!.userId, 'wagers_won')
+    }
+    await awardActivityBadges(req.user!.userId, 'submissions_completed')
+    await awardActivityBadges(req.user!.userId, 'perfect_score')
 
     // Update SRS and Mastery if confidence was provided
     const confidence = parseInt(req.body.confidence || '3')
@@ -213,21 +215,21 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
     const existingMastery = await knex('learning_mastery')
       .where({ user_id: req.user!.userId, topic })
       .first()
-    let newLevel = 50
+    let newMasteryLevel = 50
     if (existingMastery) {
-      newLevel = pass
+      newMasteryLevel = pass
         ? Math.min(100, existingMastery.mastery_level + 10)
         : Math.max(0, existingMastery.mastery_level - 15)
       await knex('learning_mastery')
         .where({ id: existingMastery.id })
-        .update({ mastery_level: newLevel, last_practiced_at: knex.fn.now() })
+        .update({ mastery_level: newMasteryLevel, last_practiced_at: knex.fn.now() })
     } else {
-      newLevel = pass ? 60 : 40
+      newMasteryLevel = pass ? 60 : 40
       await knex('learning_mastery').insert({
         id: uuidv4(),
         user_id: req.user!.userId,
         topic,
-        mastery_level: newLevel,
+        mastery_level: newMasteryLevel,
         last_practiced_at: knex.fn.now(),
       })
     }
@@ -282,6 +284,9 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
       xpEarned: totalXpEarned,
       xpLost: totalXpLost,
       newXp,
+      newLevel,
+      leveledUp,
+      newBadges,
       wageringResults,
     })
   } catch (err) {

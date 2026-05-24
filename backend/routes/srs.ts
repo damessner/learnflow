@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { getKnex } from '../db/knex'
 import { requireAuth, requireRole } from '../middleware/requireAuth'
+import { addXp, updateStreak, awardActivityBadges } from '../services/gamification'
 
 const router = Router()
 
@@ -79,7 +80,23 @@ router.post('/review', requireAuth, requireRole('student'), async (req, res, nex
       await reviewKnowledgeComponent(req.user!.userId, r.kc_id, r.rating)
     }
 
-    res.json({ message: 'Reviews processed successfully' })
+    const xpPerItem = 10
+    const { newXp, newLevel, leveledUp, newBadges } = await addXp(
+      req.user!.userId,
+      reviews.length * xpPerItem,
+    )
+    await updateStreak(req.user!.userId)
+    await awardActivityBadges(req.user!.userId, 'daily_mix_completions')
+    await awardActivityBadges(req.user!.userId, 'unique_kcs_reviewed')
+
+    res.json({
+      message: 'Reviews processed successfully',
+      xpGained: reviews.length * xpPerItem,
+      newXp,
+      newLevel,
+      leveledUp,
+      newBadges,
+    })
   } catch (err) {
     next(err)
   }

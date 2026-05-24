@@ -118,12 +118,8 @@
       <div v-if="gamification" class="card">
         <h3>🏆 Progress</h3>
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem">
-          <span
-            >XP: <strong>{{ gamification.xp }}</strong></span
-          >
-          <span
-            >Level: <strong>{{ gamification.level }}</strong></span
-          >
+          <span>Level: <strong>{{ gamification.level }}</strong></span>
+          <span>XP: <strong>{{ gamification.xp }}</strong></span>
         </div>
 
         <div
@@ -133,30 +129,28 @@
             background: var(--border-color);
             border-radius: 4px;
             overflow: hidden;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
           "
         >
           <div
             :style="{
-              width: (gamification.xp % 100) + '%',
+              width: levelProgress + '%',
               background: 'var(--primary)',
               height: '100%',
-              transition: 'width 0.3s',
+              transition: 'width 0.5s ease',
             }"
           ></div>
         </div>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem">
+          {{ gamification.xp }} / {{ xpForNext }} XP to Level {{ gamification.level + 1 }}
+        </div>
 
-        <p>
-          🔥 Streak: <strong>{{ gamification.streak_days }}</strong> days
-        </p>
-        <div v-if="gamification.badges.length" style="margin-top: 0.5rem">
-          <span
-            v-for="b in gamification.badges"
-            :key="b"
-            class="badge"
-            style="margin-right: 0.25rem"
-            >{{ b }}</span
-          >
+        <p>🔥 Streak: <strong>{{ gamification.streak_days }}</strong> days</p>
+        <div v-if="gamification.badges && gamification.badges.length" style="margin-top: 0.5rem">
+          <span v-for="b in gamification.badges" :key="b" class="badge" style="margin-right:0.25rem;margin-bottom:0.25rem;display:inline-block">{{ b }}</span>
+        </div>
+        <div v-else style="color:var(--text-muted);font-size:0.8rem;margin-top:0.5rem">
+          No badges yet — complete activities to earn them!
         </div>
       </div>
 
@@ -297,6 +291,22 @@ const protegeLoading = ref(false)
 import { computed } from 'vue'
 const currentMixItem = computed(() => dailyMix.value[mixIndex.value])
 
+const levelProgress = computed(() => {
+  if (!gamification.value) return 0
+  const lvl = gamification.value.level
+  const currentXp = gamification.value.xp
+  const baseXp = (lvl - 1) * (lvl - 1) * 200
+  const nextXp = lvl * lvl * 200
+  const progress = ((currentXp - baseXp) / (nextXp - baseXp)) * 100
+  return Math.min(100, Math.max(0, progress))
+})
+
+const xpForNext = computed(() => {
+  if (!gamification.value) return 200
+  const lvl = gamification.value.level
+  return lvl * lvl * 200
+})
+
 onMounted(async () => {
   try {
     const [status, ann, _summ, _gam, _mast, _dm] = await Promise.all([
@@ -361,7 +371,15 @@ async function answerMix(correct, confidence) {
     mixing.value = false
     try {
       const res = await learningStore.completeDailyMix(mixResults.value)
-      uiStore.showToast(`Daily Mix Complete! +${res.xpGained} XP`, 'success')
+      let msg = `Daily Mix Complete! +${res.xpGained} XP`
+      if (res.leveledUp) msg += ` | Level Up! Now Level ${res.newLevel}`
+      if (res.newBadges && res.newBadges.length) {
+        msg += ` | New Badge: ${res.newBadges.join(', ')}`
+        res.newBadges.forEach((b) => {
+          setTimeout(() => uiStore.showToast(`Badge Earned: ${b}`, 'success'), 500)
+        })
+      }
+      uiStore.showToast(msg, 'success')
       await learningStore.fetchGamification()
       gamification.value = learningStore.gamification
       dailyMix.value = []

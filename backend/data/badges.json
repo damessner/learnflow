@@ -1,0 +1,124 @@
+{
+  "badges": [
+    {
+      "id": "first_steps",
+      "name": "First Steps",
+      "description": "Complete your first assignment",
+      "icon": "1F463",
+      "category": "milestone",
+      "condition": { "type": "submissions_completed", "threshold": 1 }
+    },
+    {
+      "id": "perfect_score",
+      "name": "Perfect Score",
+      "description": "Achieve 100% on any assignment",
+      "icon": "2B50",
+      "category": "achievement",
+      "condition": { "type": "perfect_score", "threshold": 1 }
+    },
+    {
+      "id": "sharp_shooter",
+      "name": "Sharp Shooter",
+      "description": "Achieve 5 perfect scores",
+      "icon": "1F3AF",
+      "category": "achievement",
+      "condition": { "type": "perfect_score", "threshold": 5 }
+    },
+    {
+      "id": "warming_up",
+      "name": "Warming Up",
+      "description": "Reach a 3-day streak",
+      "icon": "1F525",
+      "category": "streak",
+      "condition": { "type": "streak", "threshold": 3 }
+    },
+    {
+      "id": "on_fire",
+      "name": "On Fire",
+      "description": "Reach a 7-day streak",
+      "icon": "1F525",
+      "category": "streak",
+      "condition": { "type": "streak", "threshold": 7 }
+    },
+    {
+      "id": "unstoppable",
+      "name": "Unstoppable",
+      "description": "Reach a 30-day streak",
+      "icon": "1F4AA",
+      "category": "streak",
+      "condition": { "type": "streak", "threshold": 30 }
+    },
+    {
+      "id": "scholar",
+      "name": "Scholar",
+      "description": "Reach level 5",
+      "icon": "1F393",
+      "category": "level",
+      "condition": { "type": "level", "threshold": 5 }
+    },
+    {
+      "id": "mastermind",
+      "name": "Mastermind",
+      "description": "Reach level 10",
+      "icon": "1F9E0",
+      "category": "level",
+      "condition": { "type": "level", "threshold": 10 }
+    },
+    {
+      "id": "centurion",
+      "name": "Centurion",
+      "description": "Earn 1,000 total XP",
+      "icon": "1F4B0",
+      "category": "xp",
+      "condition": { "type": "total_xp", "threshold": 1000 }
+    },
+    {
+      "id": "xp_millionaire",
+      "name": "XP Tycoon",
+      "description": "Earn 10,000 total XP",
+      "icon": "1F48E",
+      "category": "xp",
+      "condition": { "type": "total_xp", "threshold": 10000 }
+    },
+    {
+      "id": "knowledge_seeker",
+      "name": "Knowledge Seeker",
+      "description": "Review 10 different Knowledge Components",
+      "icon": "1F4DA",
+      "category": "learning",
+      "condition": { "type": "unique_kcs_reviewed", "threshold": 10 }
+    },
+    {
+      "id": "risk_taker",
+      "name": "Risk Taker",
+      "description": "Win an XP wager",
+      "icon": "1F3B2",
+      "category": "wagering",
+      "condition": { "type": "wagers_won", "threshold": 1 }
+    },
+    {
+      "id": "high_roller",
+      "name": "High Roller",
+      "description": "Win 10 XP wagers",
+      "icon": "1F3B0",
+      "category": "wagering",
+      "condition": { "type": "wagers_won", "threshold": 10 }
+    },
+    {
+      "id": "consistent",
+      "name": "Consistent",
+      "description": "Complete the Daily Mix 5 times",
+      "icon": "1F504",
+      "category": "consistency",
+      "condition": { "type": "daily_mix_completions", "threshold": 5 }
+    },
+    {
+      "id": "dedicated",
+      "name": "Dedicated",
+      "description": "Complete the Daily Mix 20 times",
+      "icon": "1F31F",
+      "category": "consistency",
+      "condition": { "type": "daily_mix_completions", "threshold": 20 }
+    }
+  ]
+}
