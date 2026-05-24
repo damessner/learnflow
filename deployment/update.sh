@@ -20,7 +20,7 @@ npm run build
 cd ..
 
 echo "Reloading PM2..."
-pm2 reload deployment/ecosystem.config.js --update-env
+pm2 reload learnflow --update-env
 pm2 save
 
 echo "=== Update complete ==="
