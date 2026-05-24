@@ -1,289 +1,357 @@
 <template>
-  <div class="page">
-    <div style="display: flex; justify-content: space-between; align-items: center">
-      <h2>{{ isEditing ? 'Edit Worksheet' : 'New Worksheet' }}</h2>
-      <div style="display: flex; gap: 0.5rem">
-        <button @click="addBlock('gap_fill')">Gap Fill</button>
-        <button @click="addBlock('multiple_choice')">MC</button>
-        <button @click="addBlock('single_choice')">SC</button>
-        <button @click="addBlock('short_answer')">Short</button>
-        <button @click="addBlock('matching')">Match</button>
-        <button @click="addBlock('text')">Text</button>
-        <button @click="addBlock('arithmetic_grid')" title="Column arithmetic">Arith</button>
-        <button @click="addBlock('equation_entry')" title="Math equation">Eqn</button>
-        <button @click="addBlock('fraction_input')" title="Fraction builder">Frac</button>
-        <button @click="addBlock('number_line')" title="Number line">#Line</button>
-        <button @click="addBlock('word_problem')" title="Word problem">Word</button>
-        <button @click="addBlock('graph_plot')" title="Graph">Graph</button>
-        <button @click="addBlock('geometry_shape')" title="Geometry">Geo</button>
-        <button class="btn-primary" @click="save">Save</button>
-      </div>
-    </div>
+  <div class="page" style="padding-left: 0">
+    <div style="display: flex; gap: 1.5rem">
+      <div class="builder-sidebar">
+        <h3
+          style="
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+          "
+        >
+          Blocks
+        </h3>
 
-    <div class="card" style="margin: 1rem 0">
-      <div class="form-group">
-        <label>Title</label>
-        <input v-model="form.title" placeholder="Worksheet title" />
-      </div>
-      <div style="display: flex; gap: 0.5rem">
-        <div class="form-group" style="flex: 1">
-          <label>Subject</label>
-          <select v-model="form.subject">
-            <option value="">-- Select --</option>
-            <option v-for="s in subjects" :key="s" :value="s">{{ s }}</option>
-          </select>
-        </div>
-        <div class="form-group" style="flex: 1">
-          <label>Grade Level</label>
-          <select v-model="form.grade_level">
-            <option value="">-- Select --</option>
-            <option v-for="g in gradeLevels" :key="g" :value="g">Grade {{ g }}</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <textarea v-model="form.description" rows="2" placeholder="Description"></textarea>
-      </div>
-    </div>
+        <button class="sidebar-btn" @click="addBlock('text')">Text</button>
+        <button class="sidebar-btn" @click="addBlock('gap_fill')">Gap</button>
+        <button class="sidebar-btn" @click="addBlock('multiple_choice')">MC</button>
+        <button class="sidebar-btn" @click="addBlock('single_choice')">SC</button>
+        <button class="sidebar-btn" @click="addBlock('short_answer')">Short</button>
+        <button class="sidebar-btn" @click="addBlock('matching')">Match</button>
+        <button class="sidebar-btn" @click="addBlock('word_scramble')">Scramble</button>
+        <button class="sidebar-btn" @click="addBlock('read_aloud')">Read</button>
 
-    <div
-      v-if="blocks.length === 0"
-      class="card"
-      style="text-align: center; color: var(--text-muted); padding: 2rem"
-    >
-      Click a block type above to add your first exercise
-    </div>
+        <div style="margin: 0.5rem 0; border-top: 1px solid var(--border-color)"></div>
+        <h3
+          style="
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+          "
+        >
+          Math
+        </h3>
 
-    <div v-for="(block, idx) in blocks" :key="block.id" class="card" style="margin-bottom: 0.5rem">
-      <div
-        style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.5rem;
-        "
-      >
-        <strong>{{ block.type.replace(/_/g, ' ') }}</strong>
-        <div style="display: flex; gap: 0.25rem">
-          <label>Points:</label>
-          <input v-model.number="block.points" type="number" style="width: 80px" min="0" />
-          <button class="btn-sm" :disabled="idx === 0" @click="moveBlock(idx, -1)">Up</button>
-          <button class="btn-sm" :disabled="idx === blocks.length - 1" @click="moveBlock(idx, 1)">
-            Down
-          </button>
-          <button class="btn-sm btn-danger" @click="removeBlock(idx)">Remove</button>
-        </div>
+        <button class="sidebar-btn" @click="addBlock('arithmetic_grid')">Arith</button>
+        <button class="sidebar-btn" @click="addBlock('equation_entry')">Eqn</button>
+        <button class="sidebar-btn" @click="addBlock('fraction_input')">Frac</button>
+        <button class="sidebar-btn" @click="addBlock('number_line')">#Line</button>
+        <button class="sidebar-btn" @click="addBlock('word_problem')">Word</button>
+        <button class="sidebar-btn" @click="addBlock('graph_plot')">Graph</button>
+        <button class="sidebar-btn" @click="addBlock('geometry_shape')">Geo</button>
       </div>
 
-      <template v-if="block.type === 'gap_fill'">
-        <textarea
-          v-model="block.template"
-          rows="3"
-          placeholder="Text with ((answer)) placeholders"
-        ></textarea>
-      </template>
-
-      <template v-if="block.type === 'multiple_choice' || block.type === 'single_choice'">
+      <div style="flex: 1; min-width: 0">
         <div
-          v-for="(opt, oi) in block.options || []"
-          :key="oi"
-          style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+          "
         >
-          <input v-model="block.options[oi]" :placeholder="`Option ${oi + 1}`" />
-          <label v-if="block.type === 'multiple_choice'">
-            <input v-model="block.correct" type="checkbox" :value="oi" /> Correct
-          </label>
-          <label v-else> <input v-model="block.correct" type="radio" :value="oi" /> Correct </label>
-          <button class="btn-sm btn-danger" @click="block.options.splice(oi, 1)">X</button>
+          <h2 style="margin: 0">{{ isEditing ? 'Edit Worksheet' : 'New Worksheet' }}</h2>
+          <button class="btn-primary" @click="save">Save</button>
         </div>
-        <button class="btn-sm" @click="block.options = [...(block.options || []), '']">
-          Add Option
-        </button>
-      </template>
 
-      <template v-if="block.type === 'matching'">
+        <div class="card" style="margin-bottom: 1rem">
+          <div class="form-group">
+            <label>Title</label>
+            <input v-model="form.title" placeholder="Worksheet title" />
+          </div>
+          <div style="display: flex; gap: 0.5rem">
+            <div class="form-group" style="flex: 1">
+              <label>Subject</label>
+              <select v-model="form.subject">
+                <option value="">-- Select --</option>
+                <option v-for="s in subjects" :key="s" :value="s">{{ s }}</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex: 1">
+              <label>Grade Level</label>
+              <select v-model="form.grade_level">
+                <option value="">-- Select --</option>
+                <option v-for="g in gradeLevels" :key="g" :value="g">Grade {{ g }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea v-model="form.description" rows="2" placeholder="Description"></textarea>
+          </div>
+        </div>
+
         <div
-          v-for="(pair, pi) in block.pairs || []"
-          :key="pi"
-          style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem"
+          v-if="blocks.length === 0"
+          class="card"
+          style="text-align: center; color: var(--text-muted); padding: 3rem"
         >
-          <input v-model="pair[0]" placeholder="Left" />
-          <span>→</span>
-          <input v-model="pair[1]" placeholder="Right" />
-          <button class="btn-sm btn-danger" @click="block.pairs.splice(pi, 1)">X</button>
+          <div style="font-size: 3rem; margin-bottom: 0.5rem; opacity: 0.3">📝</div>
+          <p>Add exercise blocks from the sidebar to start building your worksheet</p>
         </div>
-        <button class="btn-sm" @click="block.pairs = [...(block.pairs || []), ['', '']]">
-          Add Pair
-        </button>
-      </template>
 
-      <template v-if="block.type === 'short_answer'">
-        <div class="form-group">
-          <label>Sample Answer</label>
-          <input v-model="block.sample_answer" />
-        </div>
-        <div class="form-group">
-          <label>Keywords (comma-separated)</label>
-          <input v-model="block.keywordsStr" placeholder="keyword1, keyword2" />
-        </div>
-      </template>
-
-      <template v-if="block.type === 'text' || block.type === 'read_aloud'">
-        <textarea v-model="block.text" rows="3" placeholder="Enter text content..."></textarea>
-      </template>
-
-      <template v-if="block.type === 'number_line'">
-        <div style="display: flex; gap: 0.5rem">
-          <input
-            v-model.number="block.min_value"
-            type="number"
-            placeholder="Min"
-            style="width: 80px"
-          />
-          <input
-            v-model.number="block.max_value"
-            type="number"
-            placeholder="Max"
-            style="width: 80px"
-          />
-          <input
-            v-model="block.markers[0]"
-            type="number"
-            placeholder="Correct value"
-            style="width: 100px"
-          />
-        </div>
-      </template>
-
-      <template v-if="block.type === 'equation_entry'">
-        <input v-model="block.equation" placeholder="Equation (e.g. 3*x + 5 = 14)" />
-        <input
-          v-model="block.final_answer"
-          placeholder="Expected answer"
-          style="margin-top: 0.25rem"
-        />
-      </template>
-
-      <template v-if="block.type === 'fraction_input'">
-        <div style="display: flex; gap: 0.5rem">
-          <input
-            v-model.number="block.numerator"
-            type="number"
-            placeholder="Numerator"
-            style="width: 100px"
-          />
-          <span>/</span>
-          <input
-            v-model.number="block.denominator"
-            type="number"
-            placeholder="Denominator"
-            style="width: 100px"
-          />
-        </div>
-      </template>
-
-      <template v-if="block.type === 'arithmetic_grid'">
-        <div style="display: flex; gap: 0.5rem">
-          <input
-            v-model.number="block.operand1"
-            type="number"
-            placeholder="Operand 1"
-            style="width: 100px"
-          />
-          <select v-model="block.operation" style="width: 80px">
-            <option value="add">+</option>
-            <option value="subtract">-</option>
-            <option value="multiply">x</option>
-            <option value="divide">/</option>
-          </select>
-          <input
-            v-model.number="block.operand2"
-            type="number"
-            placeholder="Operand 2"
-            style="width: 100px"
-          />
-        </div>
-      </template>
-
-      <template v-if="block.type === 'graph_plot'">
-        <p style="font-size: 0.8rem">Points to plot (x,y pairs in [[x,y],[x,y]] format):</p>
-        <textarea
-          v-model="block.pointsStr"
-          rows="2"
-          placeholder="[[1,2],[3,4]]"
-          @blur="tryParsePoints(block)"
-        ></textarea>
-      </template>
-
-      <template v-if="block.type === 'geometry_shape'">
-        <select v-model="block.shape_type">
-          <option value="triangle">Triangle</option>
-          <option value="square">Square</option>
-          <option value="rectangle">Rectangle</option>
-          <option value="circle">Circle</option>
-        </select>
-      </template>
-
-      <template v-if="block.type === 'word_problem'">
-        <textarea
-          v-model="block.problem_text"
-          rows="2"
-          placeholder="Problem description..."
-        ></textarea>
         <div
-          v-for="(step, si) in block.steps || []"
-          :key="si"
-          style="display: flex; gap: 0.25rem; margin-top: 0.25rem"
+          v-for="(block, idx) in blocks"
+          :key="block.id"
+          class="card"
+          style="margin-bottom: 0.75rem"
         >
-          <input v-model="step.description" placeholder="Step description" style="flex: 1" />
-          <input v-model="step.expected" placeholder="Expected answer" style="flex: 1" />
-          <button class="btn-sm btn-danger" @click="block.steps.splice(si, 1)">X</button>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 0.75rem;
+            "
+          >
+            <strong
+              >{{ blockIcons[block.type] || '📄' }} {{ block.type.replace(/_/g, ' ') }}</strong
+            >
+            <div style="display: flex; gap: 0.25rem; align-items: center">
+              <label style="font-size: 0.8rem; margin: 0">Pts:</label>
+              <input v-model.number="block.points" type="number" style="width: 60px" min="0" />
+              <button class="btn-sm" :disabled="idx === 0" @click="moveBlock(idx, -1)">↑</button>
+              <button
+                class="btn-sm"
+                :disabled="idx === blocks.length - 1"
+                @click="moveBlock(idx, 1)"
+              >
+                ↓
+              </button>
+              <button class="btn-sm btn-danger" @click="removeBlock(idx)">×</button>
+            </div>
+          </div>
+
+          <div class="form-group" v-if="block.type !== 'text' && block.type !== 'read_aloud'">
+            <textarea
+              v-model="block.text"
+              rows="2"
+              :placeholder="'Write your question for this ' + block.type.replace(/_/g, ' ') + '...'"
+            ></textarea>
+          </div>
+
+          <template v-if="block.type === 'gap_fill'">
+            <textarea
+              v-model="block.template"
+              rows="3"
+              placeholder="Text with ((answer)) placeholders"
+            ></textarea>
+          </template>
+
+          <template v-if="block.type === 'multiple_choice' || block.type === 'single_choice'">
+            <div
+              v-for="(opt, oi) in block.options || []"
+              :key="oi"
+              style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem"
+            >
+              <input
+                v-model="block.options[oi]"
+                :placeholder="`Option ${oi + 1}`"
+                style="flex: 1"
+              />
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 0.25rem;
+                  white-space: nowrap;
+                  margin: 0;
+                "
+              >
+                <input
+                  v-if="block.type === 'multiple_choice'"
+                  v-model="block.correct"
+                  type="checkbox"
+                  :value="oi"
+                />
+                <input v-else v-model="block.correct" type="radio" :value="oi" name="correct" />
+                Correct
+              </label>
+              <button class="btn-sm btn-danger" @click="block.options.splice(oi, 1)">×</button>
+            </div>
+            <button class="btn-sm" @click="block.options = [...(block.options || []), '']">
+              + Option
+            </button>
+          </template>
+
+          <template v-if="block.type === 'matching'">
+            <div
+              v-for="(pair, pi) in block.pairs || []"
+              :key="pi"
+              style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem"
+            >
+              <input v-model="pair[0]" placeholder="Left" style="flex: 1" />
+              <span style="color: var(--text-muted)">→</span>
+              <input v-model="pair[1]" placeholder="Right" style="flex: 1" />
+              <button class="btn-sm btn-danger" @click="block.pairs.splice(pi, 1)">×</button>
+            </div>
+            <button class="btn-sm" @click="block.pairs = [...(block.pairs || []), ['', '']]">
+              + Pair
+            </button>
+          </template>
+
+          <template v-if="block.type === 'short_answer'">
+            <div class="form-group">
+              <label>Keywords (comma-separated)</label>
+              <input v-model="block.keywordsStr" placeholder="keyword1, keyword2" />
+            </div>
+          </template>
+
+          <template v-if="block.type === 'text' || block.type === 'read_aloud'">
+            <textarea v-model="block.text" rows="3" placeholder="Enter text content..."></textarea>
+          </template>
+
+          <template v-if="block.type === 'word_scramble'">
+            <div
+              v-for="(w, wi) in block.words || []"
+              :key="wi"
+              style="display: flex; gap: 0.25rem; margin-bottom: 0.25rem"
+            >
+              <input v-model="block.words[wi].word" placeholder="Word" style="flex: 1" />
+              <button class="btn-sm btn-danger" @click="block.words.splice(wi, 1)">×</button>
+            </div>
+            <button class="btn-sm" @click="block.words = [...(block.words || []), { word: '' }]">
+              + Word
+            </button>
+          </template>
+
+          <template v-if="block.type === 'number_line'">
+            <div style="display: flex; gap: 0.5rem">
+              <input v-model.number="block.min_value" type="number" placeholder="Min" />
+              <input v-model.number="block.max_value" type="number" placeholder="Max" />
+              <input v-model="block.markers[0]" type="number" placeholder="Correct value" />
+            </div>
+          </template>
+
+          <template v-if="block.type === 'equation_entry'">
+            <input v-model="block.equation" placeholder="Equation (e.g. 3*x + 5 = 14)" />
+            <input
+              v-model="block.final_answer"
+              placeholder="Expected answer"
+              style="margin-top: 0.25rem"
+            />
+          </template>
+
+          <template v-if="block.type === 'fraction_input'">
+            <div style="display: flex; gap: 0.5rem; align-items: center">
+              <input
+                v-model.number="block.numerator"
+                type="number"
+                placeholder="Num"
+                style="width: 80px"
+              />
+              <span>/</span>
+              <input
+                v-model.number="block.denominator"
+                type="number"
+                placeholder="Den"
+                style="width: 80px"
+              />
+            </div>
+          </template>
+
+          <template v-if="block.type === 'arithmetic_grid'">
+            <div style="display: flex; gap: 0.5rem; align-items: center">
+              <input
+                v-model.number="block.operand1"
+                type="number"
+                placeholder="A"
+                style="width: 80px"
+              />
+              <select v-model="block.operation" style="width: 60px">
+                <option value="add">+</option>
+                <option value="subtract">−</option>
+                <option value="multiply">×</option>
+                <option value="divide">÷</option>
+              </select>
+              <input
+                v-model.number="block.operand2"
+                type="number"
+                placeholder="B"
+                style="width: 80px"
+              />
+            </div>
+          </template>
+
+          <template v-if="block.type === 'graph_plot'">
+            <textarea
+              v-model="block.pointsStr"
+              rows="2"
+              placeholder="[[x,y],[x,y]]"
+              @blur="tryParsePoints(block)"
+            ></textarea>
+          </template>
+
+          <template v-if="block.type === 'geometry_shape'">
+            <select v-model="block.shape_type">
+              <option value="triangle">Triangle</option>
+              <option value="square">Square</option>
+              <option value="rectangle">Rectangle</option>
+              <option value="circle">Circle</option>
+            </select>
+          </template>
+
+          <template v-if="block.type === 'word_problem'">
+            <textarea
+              v-model="block.problem_text"
+              rows="2"
+              placeholder="Problem description..."
+            ></textarea>
+            <div
+              v-for="(step, si) in block.steps || []"
+              :key="si"
+              style="display: flex; gap: 0.25rem; margin-top: 0.25rem"
+            >
+              <input v-model="step.description" placeholder="Step" style="flex: 1" />
+              <input v-model="step.expected" placeholder="Expected" style="flex: 1" />
+              <button class="btn-sm btn-danger" @click="block.steps.splice(si, 1)">×</button>
+            </div>
+            <button
+              class="btn-sm"
+              @click="block.steps = [...(block.steps || []), { description: '', expected: '' }]"
+              style="margin-top: 0.25rem"
+            >
+              + Step
+            </button>
+            <input
+              v-model="block.final_answer"
+              placeholder="Final answer"
+              style="margin-top: 0.25rem"
+            />
+          </template>
+
+          <details style="margin-top: 0.75rem; font-size: 0.8rem">
+            <summary>+ Mermaid Diagram</summary>
+            <textarea
+              v-model="block.mermaid"
+              rows="3"
+              placeholder="graph TD; A[Concept] --> B[Outcome]"
+              style="font-family: monospace; font-size: 0.75rem; margin-top: 0.25rem"
+            ></textarea>
+            <input v-model="block.alt_text" placeholder="Alt text" style="margin-top: 0.25rem" />
+          </details>
         </div>
-        <button
-          class="btn-sm"
-          @click="block.steps = [...(block.steps || []), { description: '', expected: '' }]"
-          style="margin-top: 0.25rem"
-        >
-          Add Step
-        </button>
-        <input
-          v-model="block.final_answer"
-          placeholder="Final answer"
-          style="margin-top: 0.25rem"
-        />
-      </template>
 
-      <details style="margin-top: 0.5rem; font-size: 0.85rem">
-        <summary>+ Dual Coding (Mermaid Diagram)</summary>
-        <textarea
-          v-model="block.mermaid"
-          rows="4"
-          placeholder="graph TD; A[Concept] --> B[Outcome]; ..."
-          style="font-family: monospace; font-size: 0.8rem; margin-top: 0.25rem"
-        ></textarea>
-        <input
-          v-model="block.alt_text"
-          placeholder="Alt text for accessibility"
-          style="margin-top: 0.25rem"
-        />
-      </details>
-    </div>
-
-    <div class="card" style="margin-top: 1rem">
-      <h4>AI Generation</h4>
-      <div style="display: flex; gap: 0.5rem">
-        <textarea
-          v-model="aiPrompt"
-          rows="2"
-          placeholder="Describe the worksheet you want..."
-          style="flex: 1"
-        ></textarea>
-        <select v-model="aiProvider" style="width: 120px">
-          <option value="ollama">Ollama</option>
-          <option value="gemini">Gemini</option>
-        </select>
-        <button class="btn-primary" :disabled="aiLoading" @click="generateAI">Generate</button>
+        <div class="card" style="margin-top: 1rem" v-if="blocks.length > 0">
+          <h4>AI Generation</h4>
+          <div style="display: flex; gap: 0.5rem">
+            <textarea
+              v-model="aiPrompt"
+              rows="2"
+              placeholder="Describe the worksheet you want..."
+              style="flex: 1"
+            ></textarea>
+            <select v-model="aiProvider" style="width: 120px">
+              <option value="ollama">Ollama</option>
+              <option value="gemini">Gemini</option>
+            </select>
+            <button class="btn-primary" :disabled="aiLoading" @click="generateAI">Generate</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -312,6 +380,24 @@ const aiPrompt = ref('')
 const aiProvider = ref('ollama')
 const aiLoading = ref(false)
 
+const blockIcons = {
+  text: '📄',
+  read_aloud: '🔊',
+  gap_fill: '✏️',
+  multiple_choice: '✅',
+  single_choice: '☑️',
+  short_answer: '📝',
+  matching: '🔗',
+  word_scramble: '🔤',
+  arithmetic_grid: '➕',
+  equation_entry: '📐',
+  fraction_input: '🧮',
+  number_line: '📏',
+  word_problem: '📖',
+  graph_plot: '📊',
+  geometry_shape: '🔷',
+}
+
 function getRouteWorksheetId() {
   if (!route.params.id) return null
   return Array.isArray(route.params.id) ? route.params.id[0] : route.params.id
@@ -320,6 +406,7 @@ function getRouteWorksheetId() {
 function mapLoadedBlocks(rawBlocks) {
   return (rawBlocks || []).map((block) => {
     const loaded = { ...block }
+    loaded.text = loaded.text || ''
     if (loaded.type === 'short_answer') {
       loaded.keywordsStr = loaded.keywords ? loaded.keywords.join(', ') : ''
     }
@@ -360,8 +447,8 @@ function mapLoadedBlocks(rawBlocks) {
     }
     if (loaded.type === 'multiple_choice' || loaded.type === 'single_choice') {
       loaded.options = loaded.options || ['', '', '']
-      if (loaded.type === 'single_choice') loaded.correct = loaded.correct ?? 0
-      else loaded.correct = loaded.correct || []
+      loaded.correct =
+        loaded.type === 'single_choice' ? (loaded.correct ?? 0) : loaded.correct || []
     }
     return loaded
   })
@@ -375,7 +462,6 @@ async function syncBuilderToRoute() {
     blocks.value = []
     return
   }
-
   isEditing.value = true
   try {
     await store.fetchWorksheet(worksheetId)
@@ -385,14 +471,12 @@ async function syncBuilderToRoute() {
       isEditing.value = false
       return
     }
-
     form.value = {
       title: store.current.title || '',
       subject: store.current.subject || '',
       grade_level: store.current.grade_level || '',
       description: store.current.description || '',
     }
-
     try {
       const content = JSON.parse(store.current.content || '{}')
       blocks.value = mapLoadedBlocks(content.blocks)
@@ -435,7 +519,7 @@ function tryParsePoints(block) {
 }
 
 function addBlock(type) {
-  const block = { id: genId(), type, points: 10 }
+  const block = { id: genId(), type, points: 10, text: '' }
   if (type === 'gap_fill') block.template = ''
   if (type === 'multiple_choice' || type === 'single_choice') {
     block.options = ['', '', '']
@@ -450,7 +534,7 @@ function addBlock(type) {
     block.sample_answer = ''
     block.keywordsStr = ''
   }
-  if (type === 'text' || type === 'read_aloud') block.text = ''
+  if (type === 'word_scramble') block.words = [{ word: '' }, { word: '' }]
   if (type === 'number_line') {
     block.min_value = 0
     block.max_value = 100
@@ -473,9 +557,7 @@ function addBlock(type) {
     block.points_to_plot = [[0, 0]]
     block.pointsStr = '[[0,0]]'
   }
-  if (type === 'geometry_shape') {
-    block.shape_type = 'triangle'
-  }
+  if (type === 'geometry_shape') block.shape_type = 'triangle'
   if (type === 'word_problem') {
     block.problem_text = ''
     block.steps = [{ description: '', expected: '' }]
@@ -508,7 +590,6 @@ async function save() {
   const content = JSON.stringify({ blocks: mappedBlocks })
   const totalPoints = blocks.value.reduce((s, b) => s + (b.points || 0), 0)
   const payload = { ...form.value, content, total_points: totalPoints }
-
   try {
     if (isEditing.value && worksheetId) {
       await store.updateWorksheet(worksheetId, payload)

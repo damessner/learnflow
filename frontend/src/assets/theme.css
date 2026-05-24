@@ -699,3 +699,44 @@ tr:hover td {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Builder Sidebar */
+.builder-sidebar {
+  width: 180px;
+  min-width: 180px;
+  position: sticky;
+  top: 5rem;
+  align-self: flex-start;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem 0.75rem;
+  box-shadow: var(--shadow-xs);
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+}
+.sidebar-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  font-size: var(--font-size-xs);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  margin-bottom: 0.15rem;
+}
+.sidebar-btn:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary-soft);
+  transform: translateX(2px);
+}
+.sidebar-btn:active {
+  transform: translateX(0);
+}
