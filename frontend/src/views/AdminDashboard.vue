@@ -11,7 +11,10 @@
         Overview
       </button>
       <button :class="{ 'btn-primary': tab === 'backups' }" @click="tab = 'backups'">
-        🗄️ Backups
+        Backups
+      </button>
+      <button :class="{ 'btn-primary': tab === 'settings' }" @click="tab = 'settings'">
+        Settings
       </button>
     </div>
 
@@ -260,6 +263,28 @@
         </div>
       </div>
     </template>
+
+    <template v-if="tab === 'settings'">
+      <div class="card" style="margin-bottom: 1rem">
+        <h4>AI / API Settings</h4>
+        <div class="form-group">
+          <label>Google Gemini API Key</label>
+          <input v-model="settingsForm.gemini_api_key" placeholder="AI-..." />
+        </div>
+        <div class="form-group">
+          <label>Ollama URL</label>
+          <input v-model="settingsForm.ollama_url" placeholder="http://localhost:11434" />
+        </div>
+        <div class="form-group">
+          <label>Ollama Model</label>
+          <input v-model="settingsForm.ollama_model" placeholder="llama3" />
+        </div>
+        <button class="btn-primary" @click="saveSettings" :disabled="savingSettings">
+          Save Settings
+        </button>
+        <span v-if="settingsSaved" style="color: var(--success); margin-left: 0.5rem">Saved</span>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -415,6 +440,31 @@ async function runRestore() {
   } finally {
     restoreLoading.value = false
   }
+}
+
+const settingsForm = ref({ gemini_api_key: '', ollama_url: '', ollama_model: '' })
+const savingSettings = ref(false)
+const settingsSaved = ref(false)
+
+onMounted(async () => {
+  try {
+    const data = await api.get('/admin/settings')
+    if (data.settings) Object.assign(settingsForm.value, data.settings)
+  } catch {
+    /* */
+  }
+})
+
+async function saveSettings() {
+  savingSettings.value = true
+  settingsSaved.value = false
+  try {
+    await api.put('/admin/settings', settingsForm.value)
+    settingsSaved.value = true
+  } catch (e) {
+    uiStore.showToast(e.message, 'error')
+  }
+  savingSettings.value = false
 }
 </script>
 

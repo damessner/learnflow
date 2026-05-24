@@ -75,6 +75,32 @@
         </button>
 
         <div style="margin: 0.5rem 0; border-top: 1px solid var(--border-color)"></div>
+        <h3
+          style="
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+          "
+        >
+          Media
+        </h3>
+
+        <button class="sidebar-btn" @click="addBlock('media')">
+          <span style="font-size: 1.1rem">🖼️</span> Image
+        </button>
+        <button class="sidebar-btn" @click="addBlock('audio')">
+          <span style="font-size: 1.1rem">🎵</span> Audio
+        </button>
+        <button class="sidebar-btn" @click="addBlock('video')">
+          <span style="font-size: 1.1rem">🎬</span> Video
+        </button>
+        <button class="sidebar-btn" @click="addBlock('youtube')">
+          <span style="font-size: 1.1rem">📺</span> YouTube
+        </button>
+
+        <div style="margin: 0.5rem 0; border-top: 1px solid var(--border-color)"></div>
 
         <button
           class="sidebar-btn"
@@ -401,6 +427,88 @@
             />
           </template>
 
+          <template
+            v-if="block.type === 'media' || block.type === 'audio' || block.type === 'video'"
+          >
+            <div style="display: flex; gap: 0.5rem; align-items: center">
+              <input
+                v-model="block.src"
+                :placeholder="
+                  block.type === 'media'
+                    ? 'Image URL'
+                    : block.type === 'audio'
+                      ? 'Audio URL (.mp3)'
+                      : 'Video URL (.mp4)'
+                "
+                style="flex: 1"
+              />
+              <label class="btn-sm" style="cursor: pointer; margin: 0; white-space: nowrap">
+                Upload
+                <input
+                  type="file"
+                  :accept="
+                    block.type === 'media'
+                      ? 'image/*'
+                      : block.type === 'audio'
+                        ? 'audio/*'
+                        : 'video/*'
+                  "
+                  style="display: none"
+                  @change="uploadFile($event, block)"
+                />
+              </label>
+            </div>
+            <input
+              v-model="block.caption"
+              placeholder="Caption (optional)"
+              style="margin-top: 0.25rem"
+            />
+            <div v-if="block.src" style="margin-top: 0.5rem">
+              <img
+                v-if="block.type === 'media'"
+                :src="block.src"
+                style="max-width: 100%; max-height: 200px; border-radius: 4px"
+              />
+              <audio
+                v-else-if="block.type === 'audio'"
+                :src="block.src"
+                controls
+                style="width: 100%"
+              ></audio>
+              <video
+                v-else
+                :src="block.src"
+                controls
+                style="max-width: 100%; max-height: 200px; border-radius: 4px"
+              ></video>
+            </div>
+          </template>
+
+          <template v-if="block.type === 'youtube'">
+            <input
+              v-model="block.src"
+              placeholder="YouTube URL (e.g. https://youtube.com/watch?v=...)"
+            />
+            <div
+              v-if="block.src && isYoutube(block.src)"
+              style="margin-top: 0.5rem; position: relative; padding-bottom: 56.25%; height: 0"
+            >
+              <iframe
+                :src="youtubeEmbed(block.src)"
+                style="
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 100%;
+                  border-radius: 4px;
+                "
+                frameborder="0"
+                allowfullscreen
+              ></iframe>
+            </div>
+          </template>
+
           <details style="margin-top: 0.75rem; font-size: 0.8rem">
             <summary>+ Mermaid Diagram</summary>
             <textarea
@@ -457,6 +565,10 @@ const blockIcons = {
   word_problem: '📖',
   graph_plot: '📊',
   geometry_shape: '🔷',
+  media: '🖼️',
+  audio: '🎵',
+  video: '🎬',
+  youtube: '📺',
 }
 
 function getRouteWorksheetId() {
@@ -580,7 +692,20 @@ function tryParsePoints(block) {
 }
 
 function addBlock(type) {
-  const block = { id: genId(), type, points: 10, text: '' }
+  const block = {
+    id: genId(),
+    type,
+    points:
+      type === 'media' ||
+      type === 'audio' ||
+      type === 'video' ||
+      type === 'youtube' ||
+      type === 'text' ||
+      type === 'read_aloud'
+        ? 0
+        : 10,
+    text: '',
+  }
   if (type === 'gap_fill') block.template = ''
   if (type === 'multiple_choice' || type === 'single_choice') {
     block.options = ['', '', '']
@@ -623,6 +748,10 @@ function addBlock(type) {
     block.problem_text = ''
     block.steps = [{ description: '', expected: '' }]
     block.final_answer = ''
+  }
+  if (type === 'media' || type === 'audio' || type === 'video' || type === 'youtube') {
+    block.src = ''
+    block.caption = ''
   }
   blocks.value.push(block)
 }
@@ -681,5 +810,27 @@ async function generateAI() {
 async function sidebarGenerate() {
   await generateAI()
   aiOpen.value = false
+}
+
+function isYoutube(url) {
+  return /youtube\.com|youtu\.be/.test(url)
+}
+function youtubeEmbed(url) {
+  const id = url.match(/(?:v=|\/)([\w-]{11})/)
+  return id ? `https://www.youtube.com/embed/${id[1]}` : ''
+}
+
+async function uploadFile(event, block) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  const formData = new FormData()
+  formData.append('file', file)
+  try {
+    const data = await api.upload('/media/upload', formData)
+    block.src = data.media.url
+    uiStore.showToast('Uploaded', 'success')
+  } catch (e) {
+    uiStore.showToast(e.message, 'error')
+  }
 }
 </script>

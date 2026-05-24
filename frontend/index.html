@@ -25,9 +25,9 @@
     <script type="module" src="/src/main.ts"></script>
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch((err) => {
-            console.warn('PWA service worker registration failed: ', err)
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (reg) {
+            reg.unregister()
           })
         })
       }
