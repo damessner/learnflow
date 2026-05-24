@@ -101,10 +101,7 @@
           <button
             class="btn-primary"
             :disabled="aiLoading"
-            @click="
-              generateAI()
-              aiOpen = false
-            "
+            @click="sidebarGenerate()"
             style="width: 100%; font-size: 0.75rem; padding: 0.35rem"
           >
             Generate
@@ -666,5 +663,10 @@ async function generateAI() {
   } finally {
     aiLoading.value = false
   }
+}
+
+async function sidebarGenerate() {
+  await generateAI()
+  aiOpen.value = false
 }
 </script>
