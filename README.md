@@ -122,6 +122,14 @@ sudo nginx -t && sudo systemctl reload nginx
 
 Access at `http://your-server-ip/`.
 
+### Updating (One-Liner)
+
+On your LXC/server, pull the latest code, rebuild, and restart in one command:
+
+```bash
+cd /var/www/learnflow && bash deployment/update.sh
+```
+
 ### Default Seed Users
 
 | Username | Password   | Role    |
