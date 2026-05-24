@@ -146,8 +146,7 @@ async function doMicrosoftLogin() {
 
 function navigateByRole() {
   const role = authStore.role
-  if (role === 'admin') router.push('/admin')
-  else if (role === 'teacher') router.push('/teacher')
+  if (role === 'teacher' || role === 'admin') router.push('/teacher')
   else router.push('/student')
 }
 </script>

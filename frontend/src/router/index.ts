@@ -79,7 +79,6 @@ router.beforeEach((to) => {
   if (isAuthenticated) {
     if (to.path === '/login') {
       if (user.role === 'student' || user.isGuest) return '/student'
-      if (user.role === 'admin') return '/admin'
       return '/teacher'
     }
 
