@@ -14,14 +14,30 @@
           Blocks
         </h3>
 
-        <button class="sidebar-btn" @click="addBlock('text')">Text</button>
-        <button class="sidebar-btn" @click="addBlock('gap_fill')">Gap</button>
-        <button class="sidebar-btn" @click="addBlock('multiple_choice')">MC</button>
-        <button class="sidebar-btn" @click="addBlock('single_choice')">SC</button>
-        <button class="sidebar-btn" @click="addBlock('short_answer')">Short</button>
-        <button class="sidebar-btn" @click="addBlock('matching')">Match</button>
-        <button class="sidebar-btn" @click="addBlock('word_scramble')">Scramble</button>
-        <button class="sidebar-btn" @click="addBlock('read_aloud')">Read</button>
+        <button class="sidebar-btn" @click="addBlock('text')">
+          <span style="font-size: 1.1rem">📄</span> Text
+        </button>
+        <button class="sidebar-btn" @click="addBlock('gap_fill')">
+          <span style="font-size: 1.1rem">✏️</span> Gap
+        </button>
+        <button class="sidebar-btn" @click="addBlock('multiple_choice')">
+          <span style="font-size: 1.1rem">✅</span> MC
+        </button>
+        <button class="sidebar-btn" @click="addBlock('single_choice')">
+          <span style="font-size: 1.1rem">☑️</span> SC
+        </button>
+        <button class="sidebar-btn" @click="addBlock('short_answer')">
+          <span style="font-size: 1.1rem">📝</span> Short
+        </button>
+        <button class="sidebar-btn" @click="addBlock('matching')">
+          <span style="font-size: 1.1rem">🔗</span> Match
+        </button>
+        <button class="sidebar-btn" @click="addBlock('word_scramble')">
+          <span style="font-size: 1.1rem">🔤</span> Scramble
+        </button>
+        <button class="sidebar-btn" @click="addBlock('read_aloud')">
+          <span style="font-size: 1.1rem">🔊</span> Read
+        </button>
 
         <div style="margin: 0.5rem 0; border-top: 1px solid var(--border-color)"></div>
         <h3
@@ -36,13 +52,64 @@
           Math
         </h3>
 
-        <button class="sidebar-btn" @click="addBlock('arithmetic_grid')">Arith</button>
-        <button class="sidebar-btn" @click="addBlock('equation_entry')">Eqn</button>
-        <button class="sidebar-btn" @click="addBlock('fraction_input')">Frac</button>
-        <button class="sidebar-btn" @click="addBlock('number_line')">#Line</button>
-        <button class="sidebar-btn" @click="addBlock('word_problem')">Word</button>
-        <button class="sidebar-btn" @click="addBlock('graph_plot')">Graph</button>
-        <button class="sidebar-btn" @click="addBlock('geometry_shape')">Geo</button>
+        <button class="sidebar-btn" @click="addBlock('arithmetic_grid')">
+          <span style="font-size: 1.1rem">➕</span> Arith
+        </button>
+        <button class="sidebar-btn" @click="addBlock('equation_entry')">
+          <span style="font-size: 1.1rem">📐</span> Eqn
+        </button>
+        <button class="sidebar-btn" @click="addBlock('fraction_input')">
+          <span style="font-size: 1.1rem">🧮</span> Frac
+        </button>
+        <button class="sidebar-btn" @click="addBlock('number_line')">
+          <span style="font-size: 1.1rem">📏</span> #Line
+        </button>
+        <button class="sidebar-btn" @click="addBlock('word_problem')">
+          <span style="font-size: 1.1rem">📖</span> Word
+        </button>
+        <button class="sidebar-btn" @click="addBlock('graph_plot')">
+          <span style="font-size: 1.1rem">📊</span> Graph
+        </button>
+        <button class="sidebar-btn" @click="addBlock('geometry_shape')">
+          <span style="font-size: 1.1rem">🔷</span> Geo
+        </button>
+
+        <div style="margin: 0.5rem 0; border-top: 1px solid var(--border-color)"></div>
+
+        <button
+          class="sidebar-btn"
+          @click="aiOpen = !aiOpen"
+          :style="aiOpen ? { background: 'var(--primary)', color: '#fff' } : {}"
+        >
+          <span style="font-size: 1.1rem">🤖</span> AI
+        </button>
+        <div v-if="aiOpen" style="padding: 0.25rem 0">
+          <textarea
+            v-model="aiPrompt"
+            rows="3"
+            placeholder="Describe the worksheet..."
+            style="font-size: 0.75rem; margin-bottom: 0.35rem"
+            @keydown.esc="aiOpen = false"
+          ></textarea>
+          <select
+            v-model="aiProvider"
+            style="font-size: 0.7rem; padding: 0.25rem; margin-bottom: 0.35rem"
+          >
+            <option value="ollama">Ollama</option>
+            <option value="gemini">Gemini</option>
+          </select>
+          <button
+            class="btn-primary"
+            :disabled="aiLoading"
+            @click="
+              generateAI()
+              aiOpen = false
+            "
+            style="width: 100%; font-size: 0.75rem; padding: 0.35rem"
+          >
+            Generate
+          </button>
+        </div>
       </div>
 
       <div style="flex: 1; min-width: 0">
@@ -335,23 +402,6 @@
             <input v-model="block.alt_text" placeholder="Alt text" style="margin-top: 0.25rem" />
           </details>
         </div>
-
-        <div class="card" style="margin-top: 1rem" v-if="blocks.length > 0">
-          <h4>AI Generation</h4>
-          <div style="display: flex; gap: 0.5rem">
-            <textarea
-              v-model="aiPrompt"
-              rows="2"
-              placeholder="Describe the worksheet you want..."
-              style="flex: 1"
-            ></textarea>
-            <select v-model="aiProvider" style="width: 120px">
-              <option value="ollama">Ollama</option>
-              <option value="gemini">Gemini</option>
-            </select>
-            <button class="btn-primary" :disabled="aiLoading" @click="generateAI">Generate</button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -379,6 +429,7 @@ const gradeLevels = ref([])
 const aiPrompt = ref('')
 const aiProvider = ref('ollama')
 const aiLoading = ref(false)
+const aiOpen = ref(false)
 
 const blockIcons = {
   text: '📄',
