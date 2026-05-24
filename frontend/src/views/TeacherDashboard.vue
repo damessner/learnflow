@@ -2,10 +2,6 @@
   <div class="page">
     <div style="display: flex; justify-content: space-between; align-items: center">
       <h2>Teacher Dashboard</h2>
-      <div style="display: flex; gap: 0.5rem">
-        <router-link to="/teacher/stories" class="btn-primary"> Stories</router-link>
-        <router-link to="/teacher/builder" class="btn-primary"> Create</router-link>
-      </div>
     </div>
 
     <div style="display: flex; gap: 0.5rem; margin: 1rem 0">
@@ -1326,6 +1322,27 @@
       </div>
     </div>
   </div>
+
+  <div class="fab-container">
+    <button class="fab-btn" @click="fabOpen = !fabOpen">
+      <span
+        :style="{
+          transform: fabOpen ? 'rotate(45deg)' : 'none',
+          transition: '0.25s',
+          display: 'inline-block',
+        }"
+        >+</span
+      >
+    </button>
+    <div v-if="fabOpen" class="fab-menu">
+      <router-link to="/teacher/builder" class="fab-item" @click="fabOpen = false">
+        Create</router-link
+      >
+      <router-link to="/teacher/stories" class="fab-item" @click="fabOpen = false">
+        Stories</router-link
+      >
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -1348,6 +1365,7 @@ const uiStore = useUiStore()
 const coursesStore = useCoursesStore()
 
 const tab = ref('worksheets')
+const fabOpen = ref(false)
 const classesList = ref([])
 const newClassName = ref('')
 const assignTarget = ref(null)
