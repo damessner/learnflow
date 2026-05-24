@@ -72,9 +72,11 @@ nginx -t && systemctl reload nginx
 
 echo -e "${BLUE}🔥 Starting daemonized backend server under PM2...${NC}"
 cd backend
-pm2 start ../deployment/ecosystem.config.js >/dev/null 2>&1
-pm2 save >/dev/null 2>&1
-pm2 startup >/dev/null 2>&1
+pm2 start ../deployment/ecosystem.config.js > /dev/null 2>&1
+pm2 save > /dev/null 2>&1
+# pm2 startup prints a shell command that must be eval'd to register the systemd service
+eval "$(pm2 startup | grep -E '^sudo |^env ' | tail -1)" > /dev/null 2>&1 || true
+pm2 save > /dev/null 2>&1
 
 echo -e "${BLUE}💡 Setting up dynamic terminal welcome message...${NC}"
 cat << 'EOF' > /etc/profile.d/learnflow.sh

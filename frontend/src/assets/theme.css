@@ -345,3 +345,185 @@ th {
     transform: translateY(-6px);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRINT STYLES — Teacher Reports (global so body-level selectors work)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media print {
+  /* Hide the entire app shell; only show #print-section */
+  body > * {
+    display: none !important;
+  }
+
+  #print-section {
+    display: block !important;
+  }
+
+  #print-section > * {
+    display: block !important;
+  }
+
+  /* ── Shared print header ── */
+  .print-header {
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #333;
+    padding-bottom: 0.75rem;
+  }
+
+  .print-header h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+  }
+
+  .print-header p {
+    font-size: 0.8rem;
+    color: #555;
+    margin: 0;
+  }
+
+  /* ── List print ── */
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  .print-table th {
+    background: #f3f4f6;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #d1d5db;
+    font-weight: 700;
+    text-align: left;
+  }
+
+  .print-table td {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid #e5e7eb;
+  }
+
+  .print-table tr:nth-child(even) td {
+    background: #fafafa;
+  }
+
+  /* ── Card print: exactly 2 students per A4 page ── */
+  .print-cards {
+    width: 100%;
+  }
+
+  .print-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12mm;
+    width: 100%;
+  }
+
+  .print-student-card {
+    border: 1.5px solid #c7d2fe;
+    border-radius: 6px;
+    padding: 8mm 7mm;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    background: #fff;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  /* Page break after every 2nd card so exactly 2 appear per printed sheet */
+  .print-student-card:nth-child(2n) {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .psc-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+  }
+
+  .psc-emoji {
+    font-size: 1.75rem;
+  }
+
+  .psc-name {
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .psc-username {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  .psc-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .psc-stat {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 0.3rem 0.4rem;
+    text-align: center;
+  }
+
+  .psc-stat-label {
+    font-size: 0.65rem;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .psc-stat-val {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .psc-status {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+
+  .psc-done {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .psc-pending {
+    background: #fef9c3;
+    color: #854d0e;
+  }
+
+  .psc-badge {
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #b45309;
+    margin-top: 0.4rem;
+  }
+
+  .psc-progress-bar {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+  }
+
+  .psc-progress-fill {
+    height: 100%;
+    background: #6366f1;
+    border-radius: 3px;
+  }
+}

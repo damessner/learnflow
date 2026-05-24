@@ -21,6 +21,9 @@
       <button :class="{ 'btn-primary': tab === 'analytics' }" @click="tab = 'analytics'">
         Analytics
       </button>
+      <button :class="{ 'btn-primary': tab === 'reports' }" @click="tab = 'reports'">
+        📊 Reports
+      </button>
     </div>
 
     <template v-if="tab === 'worksheets'">
@@ -311,6 +314,249 @@
         </div>
       </div>
     </template>
+
+    <!-- ─── REPORTS TAB ─────────────────────────────────────────────────── -->
+    <template v-if="tab === 'reports'">
+      <div class="reports-layout">
+
+        <!-- Left panel: Assignments list -->
+        <div class="reports-sidebar">
+          <h4 class="reports-section-title">📝 Worksheet Assignments</h4>
+          <div v-if="!reportAssignments.length" class="reports-empty">No assignments yet.</div>
+          <div
+            v-for="a in reportAssignments"
+            :key="a.id"
+            class="report-item"
+            :class="{ 'report-item-active': selectedReport?.id === a.id && selectedReport?.type === 'assignment' }"
+            @click="loadAssignmentReport(a)"
+          >
+            <div class="report-item-name">{{ a.worksheet_title }}</div>
+            <div class="report-item-meta">{{ a.class_name }} · {{ a.due_date ? new Date(a.due_date).toLocaleDateString() : 'No deadline' }}</div>
+            <span
+              v-if="a.due_date && new Date(a.due_date) < new Date()"
+              class="report-ready-badge"
+            >📢 REPORT READY</span>
+          </div>
+
+          <h4 class="reports-section-title" style="margin-top: 1.5rem">🎓 Courses</h4>
+          <div v-if="!reportCourses.length" class="reports-empty">No courses yet.</div>
+          <div
+            v-for="c in reportCourses"
+            :key="c.id"
+            class="report-item"
+            :class="{ 'report-item-active': selectedReport?.id === c.id && selectedReport?.type === 'course' }"
+            @click="loadCourseReport(c)"
+          >
+            <div class="report-item-name">{{ c.name }}</div>
+            <div class="report-item-meta">{{ c.deadline ? new Date(c.deadline).toLocaleDateString() : 'No deadline' }}</div>
+            <span
+              v-if="c.deadline && new Date(c.deadline) < new Date()"
+              class="report-ready-badge"
+            >📢 REPORT READY</span>
+          </div>
+        </div>
+
+        <!-- Right panel: Report view -->
+        <div class="reports-main">
+          <div v-if="reportLoading" style="text-align:center; padding: 3rem; color: var(--text-muted)">
+            ⏳ Loading report data...
+          </div>
+
+          <div v-else-if="!reportData" class="reports-placeholder">
+            <div style="font-size: 3rem; margin-bottom: 1rem">📊</div>
+            <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem">Select an assignment or course</div>
+            <div style="color: var(--text-muted); font-size: 0.9rem">Items marked with 📢 REPORT READY have passed their deadline.</div>
+          </div>
+
+          <div v-else>
+            <!-- Report Header -->
+            <div class="report-header-row">
+              <div>
+                <h3 style="margin: 0 0 0.25rem">
+                  {{ selectedReport?.type === 'course' ? reportData.course?.name : reportData.assignment?.worksheet_title }}
+                </h3>
+                <div style="font-size: 0.85rem; color: var(--text-muted)">
+                  <span v-if="selectedReport?.type === 'assignment'">
+                    Class: <strong>{{ reportData.assignment?.class_name }}</strong> ·
+                    Subject: <strong>{{ reportData.assignment?.subject || '—' }}</strong> ·
+                    Due: <strong>{{ reportData.assignment?.due_date ? new Date(reportData.assignment.due_date).toLocaleDateString() : '—' }}</strong>
+                  </span>
+                  <span v-else>
+                    Deadline: <strong>{{ reportData.course?.deadline ? new Date(reportData.course.deadline).toLocaleDateString() : '—' }}</strong> ·
+                    Badge: <strong>{{ reportData.course?.badge_name || '—' }}</strong>
+                  </span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.5rem">
+                <button class="btn-sm" @click="printList">📄 Print List</button>
+                <button class="btn-sm btn-primary" @click="printCards">📇 Print Student Cards</button>
+              </div>
+            </div>
+
+            <!-- ── LIST VIEW (always shown in browser) ── -->
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Student</th>
+                  <th v-if="selectedReport?.type === 'assignment'">Submitted</th>
+                  <th v-if="selectedReport?.type === 'assignment'">Score</th>
+                  <th v-if="selectedReport?.type === 'course'">Progress</th>
+                  <th v-if="selectedReport?.type === 'course'">Avg Score</th>
+                  <th>XP / Lv</th>
+                  <th>Streak</th>
+                  <th v-if="selectedReport?.type === 'course'">Badge</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(student, idx) in reportData.students"
+                  :key="student.student_id"
+                  :class="{ 'row-submitted': student.submitted || student.completion_pct === 100, 'row-pending': !student.submitted && student.completion_pct !== 100 }"
+                >
+                  <td style="color: var(--text-muted); font-size: 0.8rem">{{ idx + 1 }}</td>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem">
+                      <span>{{ student.character_emoji }}</span>
+                      <div>
+                        <div style="font-weight: 600; font-size: 0.9rem">{{ student.student_name }}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted)">@{{ student.student_username }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td v-if="selectedReport?.type === 'assignment'">
+                    <span v-if="student.submitted" class="status-chip chip-done">✅ {{ new Date(student.submitted_at).toLocaleDateString() }}</span>
+                    <span v-else class="status-chip chip-pending">⏳ Pending</span>
+                  </td>
+                  <td v-if="selectedReport?.type === 'assignment'">
+                    <span v-if="student.score !== null" class="score-pill" :class="student.score_pct >= 60 ? 'score-pass' : 'score-fail'">
+                      {{ student.score }}/{{ student.max_score }} ({{ student.score_pct }}%)
+                    </span>
+                    <span v-else style="color: var(--text-muted)">—</span>
+                  </td>
+                  <td v-if="selectedReport?.type === 'course'">
+                    <div style="display: flex; align-items: center; gap: 0.5rem">
+                      <div class="mini-bar"><div class="mini-bar-fill" :style="{ width: student.completion_pct + '%', background: student.completion_pct === 100 ? 'var(--success)' : 'var(--primary)' }"></div></div>
+                      <span style="font-size: 0.8rem; font-weight: 700">{{ student.completion_pct }}%</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted)">{{ student.completed_worksheets }}/{{ student.total_worksheets }}</div>
+                  </td>
+                  <td v-if="selectedReport?.type === 'course'">
+                    <span v-if="student.average_score_pct !== null" class="score-pill" :class="student.average_score_pct >= 60 ? 'score-pass' : 'score-fail'">{{ student.average_score_pct }}%</span>
+                    <span v-else style="color: var(--text-muted)">—</span>
+                  </td>
+                  <td style="font-size: 0.85rem">⚡ {{ student.xp }} / Lv {{ student.level }}</td>
+                  <td style="font-size: 0.85rem">🔥 {{ student.streak_days }}d</td>
+                  <td v-if="selectedReport?.type === 'course'">
+                    <span v-if="student.course_badge_earned" style="color: #ca8a04">🏆 {{ reportData.course?.badge_name }}</span>
+                    <span v-else style="color: var(--text-muted)">—</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- ─── PRINT SECTION (hidden in browser, shown only on print) ─────────── -->
+  <div id="print-section" style="display: none">
+    <!-- List Print -->
+    <div v-if="printMode === 'list' && reportData" class="print-list">
+      <div class="print-header">
+        <h1>{{ selectedReport?.type === 'course' ? reportData.course?.name : reportData.assignment?.worksheet_title }}</h1>
+        <p>
+          <span v-if="selectedReport?.type === 'assignment'">
+            Class: {{ reportData.assignment?.class_name }} ·
+            Subject: {{ reportData.assignment?.subject || '—' }} ·
+            Due: {{ reportData.assignment?.due_date ? new Date(reportData.assignment.due_date).toLocaleDateString() : '—' }}
+          </span>
+          <span v-else>
+            Course Deadline: {{ reportData.course?.deadline ? new Date(reportData.course.deadline).toLocaleDateString() : '—' }}
+          </span>
+          · Generated: {{ new Date().toLocaleString() }}
+        </p>
+      </div>
+      <table class="print-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student</th>
+            <th v-if="selectedReport?.type === 'assignment'">Submitted</th>
+            <th v-if="selectedReport?.type === 'assignment'">Score</th>
+            <th v-if="selectedReport?.type === 'course'">Progress</th>
+            <th v-if="selectedReport?.type === 'course'">Avg Score</th>
+            <th>XP</th>
+            <th>Level</th>
+            <th>Streak</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(s, idx) in reportData.students" :key="s.student_id">
+            <td>{{ idx + 1 }}</td>
+            <td>{{ s.character_emoji }} {{ s.student_name }}</td>
+            <td v-if="selectedReport?.type === 'assignment'">{{ s.submitted ? new Date(s.submitted_at).toLocaleDateString() : 'Pending' }}</td>
+            <td v-if="selectedReport?.type === 'assignment'">{{ s.score !== null ? s.score + '/' + s.max_score + ' (' + s.score_pct + '%)' : '—' }}</td>
+            <td v-if="selectedReport?.type === 'course'">{{ s.completed_worksheets }}/{{ s.total_worksheets }} ({{ s.completion_pct }}%)</td>
+            <td v-if="selectedReport?.type === 'course'">{{ s.average_score_pct !== null ? s.average_score_pct + '%' : '—' }}</td>
+            <td>{{ s.xp }}</td>
+            <td>{{ s.level }}</td>
+            <td>{{ s.streak_days }}d</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Cards Print (2 per A4 page) -->
+    <div v-if="printMode === 'cards' && reportData" class="print-cards">
+      <div class="print-header">
+        <h1>{{ selectedReport?.type === 'course' ? reportData.course?.name : reportData.assignment?.worksheet_title }}</h1>
+        <p>Student Progress Report · {{ new Date().toLocaleString() }}</p>
+      </div>
+      <div class="print-cards-grid">
+        <div
+          v-for="s in reportData.students"
+          :key="s.student_id"
+          class="print-student-card"
+        >
+          <div class="psc-header">
+            <span class="psc-emoji">{{ s.character_emoji }}</span>
+            <div>
+              <div class="psc-name">{{ s.student_name }}</div>
+              <div class="psc-username">@{{ s.student_username }}</div>
+            </div>
+          </div>
+          <div class="psc-stats">
+            <div class="psc-stat"><div class="psc-stat-label">XP</div><div class="psc-stat-val">⚡ {{ s.xp }}</div></div>
+            <div class="psc-stat"><div class="psc-stat-label">Level</div><div class="psc-stat-val">{{ s.level }}</div></div>
+            <div class="psc-stat"><div class="psc-stat-label">Streak</div><div class="psc-stat-val">🔥 {{ s.streak_days }}d</div></div>
+            <div v-if="selectedReport?.type === 'assignment'" class="psc-stat">
+              <div class="psc-stat-label">Score</div>
+              <div class="psc-stat-val">{{ s.score !== null ? s.score_pct + '%' : '—' }}</div>
+            </div>
+            <div v-if="selectedReport?.type === 'course'" class="psc-stat">
+              <div class="psc-stat-label">Progress</div>
+              <div class="psc-stat-val">{{ s.completion_pct }}%</div>
+            </div>
+            <div v-if="selectedReport?.type === 'course'" class="psc-stat">
+              <div class="psc-stat-label">Avg Score</div>
+              <div class="psc-stat-val">{{ s.average_score_pct !== null ? s.average_score_pct + '%' : '—' }}</div>
+            </div>
+          </div>
+          <div v-if="selectedReport?.type === 'assignment'" class="psc-status" :class="s.submitted ? 'psc-done' : 'psc-pending'">
+            {{ s.submitted ? '✅ Submitted ' + new Date(s.submitted_at).toLocaleDateString() : '⏳ Not submitted' }}
+          </div>
+          <div v-if="selectedReport?.type === 'course' && s.course_badge_earned" class="psc-badge">
+            🏆 {{ reportData.course?.badge_name }}
+          </div>
+          <div v-if="selectedReport?.type === 'course'" class="psc-progress-bar">
+            <div class="psc-progress-fill" :style="{ width: s.completion_pct + '%' }"></div>
+          </div>
+          <div style="font-size: 0.65rem; margin-top: 0.5rem; color: #888">LearnFlow Report · {{ new Date().toLocaleDateString() }}</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Create Course Modal -->
@@ -502,7 +748,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWorksheetsStore } from '../stores/worksheets'
 import { useClassesStore } from '../stores/classes'
@@ -566,6 +812,14 @@ const availableStudentsForCourse = computed(() => {
   return allStudents.value.filter((s) => !enrolledIds.has(s.id))
 })
 
+// ── Report state ─────────────────────────────────────────────────────────────
+const reportAssignments = ref([])
+const reportCourses = ref([])
+const selectedReport = ref<{ id: string; type: 'assignment' | 'course' } | null>(null)
+const reportData = ref(null)
+const reportLoading = ref(false)
+const printMode = ref<'list' | 'cards' | null>(null)
+
 onMounted(async () => {
   await wsStore.fetchMyWorksheets()
   await classesStore.fetchClasses()
@@ -576,7 +830,69 @@ onMounted(async () => {
   } catch {
     /* ignore */
   }
+  await loadReportIndex()
 })
+
+async function loadReportIndex() {
+  try {
+    const allAssignments = []
+    // Fetch assignments for every worksheet this teacher owns
+    for (const ws of wsStore.worksheets) {
+      try {
+        const data = await api.get(`/worksheets/${ws.id}/assignments`)
+        for (const a of (data.assignments || [])) {
+          allAssignments.push({ ...a, worksheet_title: ws.title })
+        }
+      } catch { /* ignore per-worksheet errors */ }
+    }
+    reportAssignments.value = allAssignments
+  } catch { /* */ }
+  try {
+    reportCourses.value = coursesStore.courses || []
+  } catch { /* */ }
+}
+
+async function loadAssignmentReport(assignment) {
+  selectedReport.value = { id: assignment.id, type: 'assignment' }
+  reportData.value = null
+  reportLoading.value = true
+  printMode.value = null
+  try {
+    const data = await api.get(`/worksheets/assignments/${assignment.id}/reports`)
+    reportData.value = data
+  } catch (e) {
+    uiStore.showToast(e.message || 'Error loading report', 'error')
+  } finally {
+    reportLoading.value = false
+  }
+}
+
+async function loadCourseReport(course) {
+  selectedReport.value = { id: course.id, type: 'course' }
+  reportData.value = null
+  reportLoading.value = true
+  printMode.value = null
+  try {
+    const data = await api.get(`/courses/${course.id}/reports`)
+    reportData.value = data
+  } catch (e) {
+    uiStore.showToast(e.message || 'Error loading report', 'error')
+  } finally {
+    reportLoading.value = false
+  }
+}
+
+async function printList() {
+  printMode.value = 'list'
+  await nextTick()
+  window.print()
+}
+
+async function printCards() {
+  printMode.value = 'cards'
+  await nextTick()
+  window.print()
+}
 
 function editWs(id) {
   router.push(`/teacher/builder/${id}`)
@@ -857,6 +1173,176 @@ async function unenrollStudentFromCourse(studentId) {
 </script>
 
 <style scoped>
+/* ── Reports tab ─────────────────────────────────────────────────────────── */
+.reports-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .reports-layout { grid-template-columns: 1fr; }
+}
+
+.reports-sidebar {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.reports-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem;
+}
+
+.reports-empty {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 0.5rem 0;
+}
+
+.report-item {
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  margin-bottom: 0.4rem;
+  transition: all 0.15s;
+}
+
+.report-item:hover {
+  background: var(--bg-main);
+  border-color: var(--border-color);
+}
+
+.report-item-active {
+  background: rgba(79, 70, 229, 0.08);
+  border-color: var(--primary);
+}
+
+.report-item-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.report-item-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+.report-ready-badge {
+  display: inline-block;
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 20px;
+  background: rgba(34, 197, 94, 0.15);
+  color: #166534;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  animation: pulse-green 2s infinite alternate;
+}
+
+[data-theme='dark'] .report-ready-badge { color: #86efac; }
+
+@keyframes pulse-green {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.2); }
+  100% { box-shadow: 0 0 6px 2px rgba(34, 197, 94, 0.4); }
+}
+
+.reports-main {
+  min-width: 0;
+}
+
+.reports-placeholder {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.report-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.report-table th {
+  background: var(--bg-main);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.6rem 0.75rem;
+}
+
+.report-table td {
+  padding: 0.6rem 0.75rem;
+  font-size: 0.87rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.row-submitted td:first-child { border-left: 3px solid var(--success); }
+.row-pending td:first-child { border-left: 3px solid var(--warning); }
+
+.status-chip {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.chip-done { background: rgba(34, 197, 94, 0.12); color: #166534; }
+.chip-pending { background: rgba(245, 158, 11, 0.12); color: #92400e; }
+[data-theme='dark'] .chip-done { color: #86efac; }
+[data-theme='dark'] .chip-pending { color: #fde68a; }
+
+.score-pill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.score-pass { background: rgba(34, 197, 94, 0.12); color: #166534; }
+.score-fail { background: rgba(239, 68, 68, 0.12); color: #991b1b; }
+[data-theme='dark'] .score-pass { color: #86efac; }
+[data-theme='dark'] .score-fail { color: #fca5a5; }
+
+.mini-bar {
+  width: 60px;
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.mini-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
 .student-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -941,4 +1427,10 @@ async function unenrollStudentFromCourse(studentId) {
   height: 100%;
   transition: width 0.5s ease;
 }
+
+/* ─── Print Styles ───────────────────────────────────────────────────────────
+   Moved to src/assets/theme.css (global) so that body-level selectors like
+   `body > * { display: none }` are not blocked by Vue's scoped CSS hashing.
+   ─────────────────────────────────────────────────────────────────────────── */
 </style>
+

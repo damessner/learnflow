@@ -471,4 +471,95 @@ router.post('/tts', requireAuth, async (req, res, next) => {
   }
 })
 
+// ─── GET /api/worksheets/assignments/:assignmentId/reports ──────────────────
+// Returns full student×submission matrix for teacher report printing
+router.get(
+  '/assignments/:assignmentId/reports',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const { assignmentId } = req.params
+
+      const assignment = await knex('assignments')
+        .join('worksheets', 'assignments.worksheet_id', 'worksheets.id')
+        .where('assignments.id', assignmentId)
+        .select(
+          'assignments.*',
+          'worksheets.title as worksheet_title',
+          'worksheets.subject',
+          'worksheets.total_points',
+        )
+        .first()
+
+      if (!assignment) {
+        res.status(404).json({ error: 'Assignment not found' })
+        return
+      }
+
+      // All students enrolled in the class
+      const students = await knex('class_students')
+        .join('users', 'class_students.student_id', 'users.id')
+        .leftJoin('learning_gamification', 'users.id', 'learning_gamification.user_id')
+        .where('class_students.class_id', assignment.class_id)
+        .select(
+          'users.id',
+          'users.name',
+          'users.username',
+          'users.character_emoji',
+          'learning_gamification.xp',
+          'learning_gamification.level',
+          'learning_gamification.streak_days',
+        )
+        .orderBy('users.name', 'asc')
+
+      // All submissions for this assignment
+      const submissions = await knex('submissions')
+        .where({ assignment_id: assignmentId })
+        .select('*')
+
+      const submissionMap = new Map(submissions.map((s) => [s.user_id, s]))
+
+      const rows = students.map((student) => {
+        const sub = submissionMap.get(student.id)
+        return {
+          student_id: student.id,
+          student_name: student.name,
+          student_username: student.username,
+          character_emoji: student.character_emoji || '👤',
+          xp: student.xp ?? 0,
+          level: student.level ?? 1,
+          streak_days: student.streak_days ?? 0,
+          submitted: !!sub?.submitted_at,
+          submitted_at: sub?.submitted_at ?? null,
+          score: sub?.score ?? null,
+          max_score: sub?.max_score ?? assignment.total_points ?? null,
+          score_pct:
+            sub?.max_score && sub.max_score > 0
+              ? Math.round((sub.score / sub.max_score) * 100)
+              : null,
+          feedback: sub?.feedback ?? null,
+        }
+      })
+
+      res.json({
+        assignment: {
+          id: assignment.id,
+          worksheet_title: assignment.worksheet_title,
+          subject: assignment.subject,
+          due_date: assignment.due_date,
+          class_id: assignment.class_id,
+          class_name: assignment.class_name,
+          total_points: assignment.total_points,
+        },
+        students: rows,
+        generated_at: new Date().toISOString(),
+      })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
+
 export default router

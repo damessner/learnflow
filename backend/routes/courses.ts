@@ -372,4 +372,157 @@ router.get('/student/course/:id', requireAuth, async (req, res, next) => {
   }
 })
 
+// ─── GET /api/courses/:id/reports ──────────────────────────────────────────
+// Returns per-student course completion data for teacher report printing
+router.get('/:id/reports', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
+  try {
+    const knex = getKnex()
+
+    const course = await knex('courses').where({ id: req.params.id }).first()
+    if (!course) {
+      res.status(404).json({ error: 'Course not found' })
+      return
+    }
+
+    // All worksheets in this course (ordered)
+    const courseWorksheets = await knex('course_worksheets')
+      .join('worksheets', 'course_worksheets.worksheet_id', 'worksheets.id')
+      .where('course_worksheets.course_id', req.params.id)
+      .select(
+        'worksheets.id',
+        'worksheets.title',
+        'worksheets.total_points',
+        'course_worksheets.order_index',
+        'course_worksheets.unlock_threshold as ws_unlock_threshold',
+        'course_worksheets.deadline as ws_deadline',
+      )
+      .orderBy('course_worksheets.order_index', 'asc')
+
+    // All enrolled students
+    const students = await knex('course_students')
+      .join('users', 'course_students.student_id', 'users.id')
+      .leftJoin('learning_gamification', 'users.id', 'learning_gamification.user_id')
+      .where('course_students.course_id', req.params.id)
+      .select(
+        'users.id',
+        'users.name',
+        'users.username',
+        'users.character_emoji',
+        'learning_gamification.xp',
+        'learning_gamification.level',
+        'learning_gamification.badges',
+        'learning_gamification.streak_days',
+      )
+      .orderBy('users.name', 'asc')
+
+    // Build per-student progress across all course worksheets
+    const studentReports = await Promise.all(
+      students.map(async (student) => {
+        let completedCount = 0
+        let totalScore = 0
+        let totalMax = 0
+
+        const worksheetDetails = await Promise.all(
+          courseWorksheets.map(async (cw) => {
+            // Find any assignment for this worksheet
+            const assignment = await knex('assignments')
+              .where({ worksheet_id: cw.id })
+              .first()
+
+            let submitted = false
+            let score: number | null = null
+            let maxScore: number | null = cw.total_points ?? null
+            let scorePct: number | null = null
+            let submittedAt: string | null = null
+
+            if (assignment) {
+              const sub = await knex('submissions')
+                .where({ assignment_id: assignment.id, user_id: student.id })
+                .whereNotNull('submitted_at')
+                .orderBy('score', 'desc')
+                .first()
+
+              if (sub) {
+                submitted = true
+                submittedAt = sub.submitted_at
+                score = sub.score ?? null
+                maxScore = sub.max_score ?? maxScore
+                if (maxScore && maxScore > 0 && score !== null) {
+                  scorePct = Math.round((score / maxScore) * 100)
+                }
+
+                const threshold =
+                  cw.ws_unlock_threshold ?? course.unlock_threshold ?? 60
+                if (scorePct !== null && scorePct >= threshold) {
+                  completedCount++
+                }
+
+                if (score !== null) totalScore += score
+                if (maxScore !== null) totalMax += maxScore
+              }
+            }
+
+            return {
+              worksheet_id: cw.id,
+              title: cw.title,
+              order_index: cw.order_index,
+              submitted,
+              submitted_at: submittedAt,
+              score,
+              max_score: maxScore,
+              score_pct: scorePct,
+            }
+          }),
+        )
+
+        const badges: string[] = (() => {
+          try {
+            return JSON.parse(student.badges || '[]')
+          } catch {
+            return []
+          }
+        })()
+
+        const hasBadge = course.badge_name ? badges.includes(course.badge_name) : false
+
+        return {
+          student_id: student.id,
+          student_name: student.name,
+          student_username: student.username,
+          character_emoji: student.character_emoji || '👤',
+          xp: student.xp ?? 0,
+          level: student.level ?? 1,
+          streak_days: student.streak_days ?? 0,
+          course_badge_earned: hasBadge,
+          completed_worksheets: completedCount,
+          total_worksheets: courseWorksheets.length,
+          completion_pct:
+            courseWorksheets.length > 0
+              ? Math.round((completedCount / courseWorksheets.length) * 100)
+              : 0,
+          average_score_pct:
+            totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : null,
+          worksheets: worksheetDetails,
+        }
+      }),
+    )
+
+    res.json({
+      course: {
+        id: course.id,
+        name: course.name,
+        description: course.description,
+        deadline: course.deadline,
+        badge_name: course.badge_name,
+        unlock_threshold: course.unlock_threshold,
+      },
+      worksheets: courseWorksheets.map((w) => ({ id: w.id, title: w.title, order_index: w.order_index })),
+      students: studentReports,
+      generated_at: new Date().toISOString(),
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
 export default router
