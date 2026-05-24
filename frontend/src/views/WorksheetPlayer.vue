@@ -190,7 +190,7 @@
       <button
         class="btn-primary"
         @click="openTutor"
-        style="background: var(--info); border-color: var(--info)"
+        style="background: #0ea5e9; border-color: #0ea5e9"
       >
         🤖 Ask Socratic Tutor
       </button>
@@ -220,7 +220,7 @@
         style="
           width: 500px;
           max-width: 90%;
-          background: var(--bg);
+          background: var(--bg-card);
           display: flex;
           flex-direction: column;
           max-height: 80vh;
@@ -243,7 +243,7 @@
             padding: 1rem;
             margin-bottom: 1rem;
             border-radius: 4px;
-            background: var(--surface);
+            background: var(--bg-main);
           "
         >
           <div
@@ -387,17 +387,17 @@ onUnmounted(() => {
   if (autoSaveTimer) clearInterval(autoSaveTimer)
 })
 
+function escapeHtmlAttr(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 function renderGaps(template, blockId) {
   if (!template) return ''
-
-  let html = template
-  const gaps = []
-  html = html.replace(/\(\((.*?)\)\)/g, (_, answer, idx) => {
-    const val = answers[blockId] || {}
-    const answerText = val[idx] || ''
-    gaps.push(idx)
-    return `<input type='text' value='${answerText}' oninput='window.__updateGap("${blockId}", ${idx}, this.value)' style='display:inline;width:auto;min-width:80px;padding:0.2rem 0.5rem;border:1px dashed var(--primary);border-radius:4px' />`
-  })
 
   if (typeof window !== 'undefined') {
     window.__updateGap = (id, idx, value) => {
@@ -405,6 +405,16 @@ function renderGaps(template, blockId) {
       answers[id][idx] = value
     }
   }
+
+  let html = template
+  let gapIdx = 0
+  html = html.replace(/\(\((.*?)\)\)/g, (_match, _answer) => {
+    const idx = gapIdx++
+    const val = answers[blockId] || {}
+    const answerText = escapeHtmlAttr(val[idx] || '')
+    const safeBlockId = escapeHtmlAttr(blockId)
+    return `<input type="text" value="${answerText}" oninput="window.__updateGap(&quot;${safeBlockId}&quot;,${idx},this.value)" style="display:inline;width:auto;min-width:80px;padding:0.2rem 0.5rem;border:1px dashed var(--primary);border-radius:4px" />`
+  })
 
   return html
 }
@@ -506,7 +516,7 @@ async function sendToTutor() {
       if (done) break
 
       const chunk = decoder.decode(value)
-      const lines = chunk.split('\\n').filter((l) => l.startsWith('data: '))
+      const lines = chunk.split('\n').filter((l) => l.startsWith('data: '))
 
       for (const line of lines) {
         if (line === 'data: [DONE]') {
