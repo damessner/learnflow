@@ -58,6 +58,22 @@ const router = createRouter({
   routes,
 })
 
+router.onError((error, to) => {
+  const message = error instanceof Error ? error.message : String(error)
+  const isChunkError =
+    message.includes('Failed to fetch dynamically imported module') ||
+    message.includes('Importing a module script failed')
+
+  if (!isChunkError || !to.fullPath) return
+
+  const reloadKey = 'learnflow:chunk-reload'
+  const alreadyReloaded = sessionStorage.getItem(reloadKey) === to.fullPath
+  if (alreadyReloaded) return
+
+  sessionStorage.setItem(reloadKey, to.fullPath)
+  window.location.assign(to.fullPath)
+})
+
 function getStoredUser() {
   const userStr = localStorage.getItem('user')
   if (!userStr) return {}
@@ -92,6 +108,10 @@ router.beforeEach((to) => {
       }
     }
   }
+})
+
+router.afterEach(() => {
+  sessionStorage.removeItem('learnflow:chunk-reload')
 })
 
 export default router

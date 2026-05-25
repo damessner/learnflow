@@ -76,7 +76,7 @@ router.post('/login', async (req, res, next) => {
 
     const token = makeToken({ userId: user.id, role: user.role, isGuest: false })
     setTokenCookie(res, token)
-    res.json({ user: sanitizeUser(user) })
+    res.json({ user: sanitizeUser(user), token })
   } catch (err) {
     next(err)
   }
@@ -115,7 +115,7 @@ router.post('/microsoft', async (req, res, next) => {
 
     const token = makeToken({ userId: user.id, role: user.role, isGuest: false })
     setTokenCookie(res, token)
-    res.json({ user: sanitizeUser(user) })
+    res.json({ user: sanitizeUser(user), token })
   } catch (err) {
     next(err)
   }
@@ -161,7 +161,7 @@ router.post('/guest', async (req, res, next) => {
     })
 
     setTokenCookie(res, token)
-    res.json({ user: { id, username, name, role: 'student' } })
+    res.json({ user: { id, username, name, role: 'student' }, token })
   } catch (err) {
     next(err)
   }
@@ -388,7 +388,7 @@ router.post('/teacher-token', requireAuth, requireRole('admin'), async (req, res
     )
 
     setTokenCookie(res, token)
-    res.json({ teacherId: teacher.id })
+    res.json({ teacherId: teacher.id, token })
   } catch (err) {
     next(err)
   }

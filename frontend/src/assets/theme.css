@@ -351,8 +351,16 @@ tr:hover td {
   background: var(--warning);
   color: #1e293b;
 }
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
   to {
   transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* Builder Sidebar */
@@ -395,4 +403,3 @@ tr:hover td {
 .sidebar-btn:active {
   transform: translateX(0);
 }
-

@@ -302,6 +302,7 @@ import { useRoute } from 'vue-router'
 import { useSubmissionsStore } from '../stores/submissions'
 import { useUiStore } from '../stores/ui'
 import { useLearningStore } from '../stores/learning'
+import { buildApiHeaders } from '../services/api'
 import { audioSynth } from '../utils/audioSynth'
 import MermaidDiagram from '../components/exercises/MermaidDiagram.vue'
 import NumberLine from '../components/exercises/NumberLine.vue'
@@ -533,11 +534,9 @@ async function sendToTutor() {
     // Use raw fetch for SSE
     const response = await fetch('/api/ai/tutor', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: buildApiHeaders('POST'),
       body: JSON.stringify({ question, context }),
-      credentials: 'include', // Since we use cookies now
+      credentials: 'include',
     })
 
     const reader = response.body?.getReader()
