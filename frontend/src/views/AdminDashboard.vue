@@ -290,7 +290,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { api } from '../services/api'
+import { api, buildApiHeaders } from '../services/api'
 import { useUiStore } from '../stores/ui'
 import { useClassesStore } from '../stores/classes'
 
@@ -360,8 +360,10 @@ async function deleteUser(id) {
 async function downloadBackup(type: string) {
   backupLoading.value = type
   try {
-    // credentials: 'include' automatically sends the session cookie — no manual token extraction needed
-    const res = await fetch(`/api/admin/backup?type=${type}`, { credentials: 'include' })
+    const res = await fetch(`/api/admin/backup?type=${type}`, {
+      credentials: 'include',
+      headers: buildApiHeaders('GET', false),
+    })
 
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}))

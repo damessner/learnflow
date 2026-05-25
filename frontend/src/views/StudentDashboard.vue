@@ -465,6 +465,7 @@ import { useCoursesStore } from '../stores/courses'
 import { useLearningStore } from '../stores/learning'
 import { useUiStore } from '../stores/ui'
 import { useAuthStore } from '../stores/auth'
+import { buildApiHeaders } from '../services/api'
 import { audioSynth } from '../utils/audioSynth'
 
 const classesStore = useClassesStore()
@@ -686,9 +687,7 @@ async function sendToProtege() {
   try {
     const response = await fetch('/api/ai/protege', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: buildApiHeaders('POST'),
       body: JSON.stringify({
         kcName: teaching.value.topic,
         kcDescription: teaching.value.description || teaching.value.topic,
