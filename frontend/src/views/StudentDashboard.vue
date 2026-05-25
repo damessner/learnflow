@@ -11,21 +11,9 @@
       "
     >
       <div>
-        <h2
-          style="
-            font-size: 2.2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin: 0;
-          "
-        >
-          Student Dashboard
-        </h2>
-        <p style="color: var(--text-muted); margin-top: 0.25rem">
-          Welcome back, <strong>{{ authStore.user?.name || 'Student' }}</strong
-          >!
+        <h2 class="page-title">Student Dashboard</h2>
+        <p class="page-subtitle">
+          Welcome back, <strong>{{ authStore.user?.name || 'Student' }}</strong>!
         </p>
       </div>
 

@@ -175,6 +175,7 @@ function navigateByRole() {
   border-radius: 50%;
   filter: blur(80px);
   opacity: 0.35;
+  animation: float 20s ease-in-out infinite;
 }
 
 .blob-1 {
@@ -183,6 +184,7 @@ function navigateByRole() {
   background: radial-gradient(circle, #818cf8, #4f46e5);
   top: -150px;
   left: -150px;
+  animation-delay: 0s;
 }
 
 .blob-2 {
@@ -191,6 +193,7 @@ function navigateByRole() {
   background: radial-gradient(circle, #06b6d4, #0ea5e9);
   bottom: -100px;
   right: -100px;
+  animation-delay: -7s;
 }
 
 [data-theme='dark'] .blob {
@@ -232,7 +235,19 @@ function navigateByRole() {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 2rem;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-xl);
+  position: relative;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--radius-lg) + 1px);
+  background: linear-gradient(135deg, var(--primary-soft), transparent, var(--primary-soft));
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .tab-switcher {
@@ -316,13 +331,15 @@ function navigateByRole() {
   font-weight: 600;
   padding: 0.65rem 1rem;
   border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
 .ms-btn:hover {
-  background: var(--bg-main);
+  background: var(--primary-light);
   border-color: var(--primary);
   color: var(--primary);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 </style>

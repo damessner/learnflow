@@ -1,43 +1,33 @@
 <template>
   <div class="page">
     <div style="display: flex; justify-content: space-between; align-items: center">
-      <h2> Teacher Dashboard</h2>
-      <div style="display:flex;gap:0.5rem">
-        <router-link to="/teacher/builder" class="btn-primary btn-lg" style="font-size:0.95rem;padding:0.5rem 1.2rem"> Create Worksheet</router-link>
-        <router-link to="/teacher/stories" class="btn-primary btn-lg" style="font-size:0.95rem;padding:0.5rem 1.2rem"> Stories</router-link>
+    <h2 class="page-title">Teacher Dashboard</h2>
+      <div class="flex gap-sm">
+        <router-link to="/teacher/builder" class="btn-primary btn-lg">Create Worksheet</router-link>
+        <router-link to="/teacher/stories" class="btn-primary btn-lg">Stories</router-link>
       </div>
     </div>
 
-    <div style="display: flex; gap: 0.5rem; margin: 1rem 0">
-      <button :class="{ 'btn-primary': tab === 'worksheets' }" @click="tab = 'worksheets'">
-        Worksheets
-      </button>
-      <button :class="{ 'btn-primary': tab === 'classes' }" @click="tab = 'classes'">
-        Classes
-      </button>
-      <button :class="{ 'btn-primary': tab === 'courses' }" @click="tab = 'courses'">
-        Courses
-      </button>
-      <button :class="{ 'btn-primary': tab === 'results' }" @click="tab = 'results'">
-        Results
-      </button>
-      <button :class="{ 'btn-primary': tab === 'analytics' }" @click="tab = 'analytics'">
-        Analytics
-      </button>
-      <button :class="{ 'btn-primary': tab === 'reports' }" @click="tab = 'reports'">
-        📊 Reports
+    <div class="tab-pills">
+      <button
+        v-for="t in tabs"
+        :key="t.key"
+        :class="['tab-pill', { active: tab === t.key }]"
+        @click="tab = t.key"
+      >
+        {{ t.label }}
       </button>
     </div>
 
     <template v-if="tab === 'worksheets'">
       <div class="card" style="margin-bottom: 1rem; padding: 0.75rem 1.25rem">
-        <div style="display: flex; gap: 0.5rem; align-items: center">
-          <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted)"
+        <div class="flex items-center gap-sm">
+          <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted); white-space: nowrap; margin: 0"
             >Search:</label
           >
           <input
             v-model="searchQuery"
-            placeholder="Filter worksheets by title, subject, or grade..."
+            placeholder="Filter by title, subject, or grade..."
             style="flex: 1; padding: 0.4rem 0.75rem"
           />
         </div>
@@ -45,9 +35,11 @@
 
       <div
         v-if="filteredWorksheets.length === 0"
-        style="color: var(--text-muted); text-align: center; padding: 2rem"
+        class="empty-state"
       >
-        No matching worksheets found
+        <div class="empty-state-icon">📝</div>
+        <div class="empty-state-title">No worksheets found</div>
+        <div class="empty-state-text">Create your first worksheet or adjust your search.</div>
       </div>
       <div v-for="ws in filteredWorksheets" :key="ws.id" class="card" style="margin-bottom: 0.5rem">
         <div style="display: flex; justify-content: space-between; align-items: center">
@@ -1349,6 +1341,14 @@ const uiStore = useUiStore()
 const coursesStore = useCoursesStore()
 
 const tab = ref('worksheets')
+const tabs = [
+  { key: 'worksheets', label: 'Worksheets' },
+  { key: 'classes', label: 'Classes' },
+  { key: 'courses', label: 'Courses' },
+  { key: 'results', label: 'Results' },
+  { key: 'analytics', label: 'Analytics' },
+  { key: 'reports', label: '📊 Reports' },
+]
 const classesList = ref([])
 const newClassName = ref('')
 const assignTarget = ref(null)
