@@ -62,7 +62,7 @@ export async function addXp(
     badges = []
   }
 
-  const newBadges = checkBadges(userId, newXp, newLevel, badges)
+  const newBadges = checkBadges(newXp, newLevel, currentGam?.streak_days || 0, badges)
   const allBadges = [...new Set([...badges, ...newBadges])]
 
   await knex('learning_gamification')
@@ -96,7 +96,7 @@ export async function updateStreak(userId: string): Promise<number> {
   }
 
   const streak = gam?.streak_days || 0
-  const lastActivity = gam?.updated_at ? new Date(gam.updated_at).toISOString().slice(0, 10) : null
+  const lastActivity = gam?.last_activity_date || null
 
   let newStreak = streak
 
@@ -114,7 +114,7 @@ export async function updateStreak(userId: string): Promise<number> {
 
   await knex('learning_gamification')
     .where({ user_id: userId })
-    .update({ streak_days: newStreak, updated_at: knex.fn.now() })
+    .update({ streak_days: newStreak, last_activity_date: today })
 
   return newStreak
 }
@@ -130,7 +130,7 @@ export async function checkAndAwardBadges(userId: string): Promise<string[]> {
     badges = []
   }
 
-  const newBadges = checkBadges(userId, gam?.xp || 0, gam?.level || 1, badges)
+  const newBadges = checkBadges(gam?.xp || 0, gam?.level || 1, gam?.streak_days || 0, badges)
 
   if (newBadges.length > 0) {
     const allBadges = [...new Set([...badges, ...newBadges])]
@@ -143,9 +143,9 @@ export async function checkAndAwardBadges(userId: string): Promise<string[]> {
 }
 
 function checkBadges(
-  userId: string,
   xp: number,
   level: number,
+  streakDays: number,
   existingBadges: string[],
 ): string[] {
   const earned: string[] = []
@@ -163,7 +163,7 @@ function checkBadges(
         conditionMet = level >= badge.condition.threshold
         break
       case 'streak':
-        conditionMet = checkStreakCondition(userId, badge.condition.threshold)
+        conditionMet = streakDays >= badge.condition.threshold
         break
       default:
         break
@@ -175,10 +175,6 @@ function checkBadges(
   }
 
   return earned
-}
-
-function checkStreakCondition(_userId: string, _threshold: number): boolean {
-  return false
 }
 
 export async function awardActivityBadges(userId: string, badgeType: string): Promise<string[]> {

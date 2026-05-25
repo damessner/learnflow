@@ -10,6 +10,7 @@ export const useSubmissionsStore = defineStore('submissions', () => {
   async function fetchAssignmentSubmission(assignmentId) {
     const data = await api.get(`/submissions/assignment/${assignmentId}`)
     currentSubmission.value = data
+    return data
   }
 
   async function saveProgress(assignmentId, answers) {

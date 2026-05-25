@@ -371,7 +371,8 @@ onMounted(async () => {
       for (const b of blocks.value) {
         if (answers[b.id] === undefined) {
           if (b.type === 'multiple_choice') answers[b.id] = []
-          else if (b.type === 'matching' || b.type === 'word_scramble') answers[b.id] = {}
+          else if (b.type === 'matching') answers[b.id] = {}
+          else if (b.type === 'word_scramble') answers[b.id] = []
           else if (b.type === 'single_choice') answers[b.id] = null
           else answers[b.id] = ''
         }

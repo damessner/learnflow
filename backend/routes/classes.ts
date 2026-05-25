@@ -51,6 +51,20 @@ router.post('/', requireAuth, requireRole('teacher', 'admin'), async (req, res, 
   }
 })
 
+router.get('/student-status', requireAuth, async (req, res, next) => {
+  try {
+    const knex = getKnex()
+    const enrolledClasses = await knex('class_students')
+      .join('classes', 'class_students.class_id', 'classes.id')
+      .where('class_students.student_id', req.user!.userId)
+      .select('classes.*', 'class_students.joined_at')
+
+    res.json({ classes: enrolledClasses })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const knex = getKnex()
@@ -332,20 +346,6 @@ router.post('/join', requireAuth, async (req, res, next) => {
       .ignore()
 
     res.json({ message: 'Joined class', class: cls })
-  } catch (err) {
-    next(err)
-  }
-})
-
-router.get('/student-status', requireAuth, async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    const enrolledClasses = await knex('class_students')
-      .join('classes', 'class_students.class_id', 'classes.id')
-      .where('class_students.student_id', req.user!.userId)
-      .select('classes.*', 'class_students.joined_at')
-
-    res.json({ classes: enrolledClasses })
   } catch (err) {
     next(err)
   }

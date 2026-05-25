@@ -199,7 +199,7 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
           const { done, value } = await reader.read()
           if (done) break
           const chunk = new TextDecoder().decode(value)
-          const lines = chunk.split('\\n').filter((l) => l.trim())
+          const lines = chunk.split('\n').filter((l) => l.trim())
           for (const line of lines) {
             try {
               const parsed = JSON.parse(line)
@@ -226,8 +226,7 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
           const { done, value } = await reader.read()
           if (done) break
           const chunk = new TextDecoder().decode(value)
-          // Gemini SSE sends `data: {"candidates": ...}`
-          const lines = chunk.split('\\n').filter((l) => l.startsWith('data: '))
+          const lines = chunk.split('\n').filter((l) => l.startsWith('data: '))
           for (const line of lines) {
             try {
               const json = line.replace('data: ', '')
@@ -296,7 +295,7 @@ Student asks/explains: ${message}`
           const { done, value } = await reader.read()
           if (done) break
           const chunk = new TextDecoder().decode(value)
-          const lines = chunk.split('\\n').filter((l) => l.trim())
+          const lines = chunk.split('\n').filter((l) => l.trim())
           for (const line of lines) {
             try {
               const parsed = JSON.parse(line)
@@ -323,7 +322,7 @@ Student asks/explains: ${message}`
           const { done, value } = await reader.read()
           if (done) break
           const chunk = new TextDecoder().decode(value)
-          const lines = chunk.split('\\n').filter((l) => l.startsWith('data: '))
+          const lines = chunk.split('\n').filter((l) => l.startsWith('data: '))
           for (const line of lines) {
             try {
               const json = line.replace('data: ', '')

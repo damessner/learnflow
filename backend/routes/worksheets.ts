@@ -42,6 +42,47 @@ router.get('/', requireAuth, async (req, res, next) => {
   }
 })
 
+router.get('/templates', requireAuth, async (_req, res, next) => {
+  try {
+    res.json({ templates: [] })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post(
+  '/templates/:id/clone',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const id = uuidv4()
+      const templateData = {
+        title: `Cloned Template ${req.params.id}`,
+        content: JSON.stringify({ blocks: [] }),
+      }
+
+      await knex('worksheets').insert({
+        id,
+        title: templateData.title,
+        description: '',
+        subject: '',
+        grade_level: '',
+        content: templateData.content,
+        total_points: 0,
+        created_by: req.user!.userId,
+        library_source: req.params.id,
+      })
+
+      const worksheet = await knex('worksheets').where({ id }).first()
+      res.status(201).json({ worksheet })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
+
 router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const knex = getKnex()
@@ -220,47 +261,6 @@ router.post(
 
       const duplicate = await knex('worksheets').where({ id }).first()
       res.status(201).json({ worksheet: duplicate })
-    } catch (err) {
-      next(err)
-    }
-  },
-)
-
-router.get('/templates', requireAuth, async (_req, res, next) => {
-  try {
-    res.json({ templates: [] })
-  } catch (err) {
-    next(err)
-  }
-})
-
-router.post(
-  '/templates/:id/clone',
-  requireAuth,
-  requireRole('teacher', 'admin'),
-  async (req, res, next) => {
-    try {
-      const knex = getKnex()
-      const id = uuidv4()
-      const templateData = {
-        title: `Cloned Template ${req.params.id}`,
-        content: JSON.stringify({ blocks: [] }),
-      }
-
-      await knex('worksheets').insert({
-        id,
-        title: templateData.title,
-        description: '',
-        subject: '',
-        grade_level: '',
-        content: templateData.content,
-        total_points: 0,
-        created_by: req.user!.userId,
-        library_source: req.params.id,
-      })
-
-      const worksheet = await knex('worksheets').where({ id }).first()
-      res.status(201).json({ worksheet })
     } catch (err) {
       next(err)
     }
