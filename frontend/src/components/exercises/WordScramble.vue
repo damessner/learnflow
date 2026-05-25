@@ -25,7 +25,7 @@
         v-if="!readonly"
         :value="(modelValue || [])[wi] || ''"
         :placeholder="block.sentence_mode ? 'Reorder' : 'Unscramble'"
-        @input="update(wi, $event.target.value)"
+        @input="onInput(wi, $event)"
         style="flex: 1"
       />
       <span v-else :style="{ flex: 1, fontWeight: 500 }">{{
@@ -62,7 +62,7 @@ function shuffleArray(arr: string[]): string[] {
 const scrambledWords = computed(() => {
   return (props.block?.words || []).map((w: { word: string }) => {
     if (props.block?.sentence_mode) {
-      return w.word.split(' ').sort(() => Math.random() - 0.5).join(' ')
+      return shuffleArray(w.word.split(' ')).join(' ')
     }
     return scrambleChars(w.word)
   })
@@ -76,5 +76,11 @@ function update(wi: number, value: string) {
   const updated = [...(props.modelValue || [])]
   updated[wi] = value
   emit('update:modelValue', updated)
+}
+
+function onInput(wi: number, event: Event) {
+  const target = event.target
+  if (!(target instanceof HTMLInputElement)) return
+  update(wi, target.value)
 }
 </script>

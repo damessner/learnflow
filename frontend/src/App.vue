@@ -101,7 +101,8 @@ async function changePassword() {
     showChangePassword.value = false
     passwordForm.value = { current: '', newPassword: '' }
   } catch (e) {
-    uiStore.showToast(e.message, 'error')
+    const message = e instanceof Error ? e.message : 'Failed to change password'
+    uiStore.showToast(message, 'error')
   }
 }
 </script>
