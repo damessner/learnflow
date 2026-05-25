@@ -18,7 +18,7 @@ const api = {
     }
 
     const opts: RequestInit = { method, headers, credentials: 'include' as RequestCredentials }
-    if (body) opts.body = JSON.stringify(body)
+    if (body !== null && body !== undefined) opts.body = JSON.stringify(body)
 
     const res = await fetch(`${BASE}${path}`, opts)
     const data = await res.json().catch(() => ({}))

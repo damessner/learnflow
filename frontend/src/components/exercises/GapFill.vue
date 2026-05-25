@@ -7,7 +7,7 @@
           v-else
           type="text"
           :value="segment.value"
-          @input="updateGap(segment.index, ($event.target as HTMLInputElement).value)"
+          @input="onGapInput(segment.index, $event)"
           style="display:inline;width:auto;min-width:80px;padding:0.2rem 0.5rem;border:1px dashed var(--primary);border-radius:4px"
         />
       </template>
@@ -47,5 +47,12 @@ function updateGap(i: number, value: string) {
   const updated = { ...(props.modelValue || {}) }
   updated[i] = value
   emit('update:modelValue', updated)
+}
+
+function onGapInput(i: number | undefined, event: Event) {
+  if (typeof i !== 'number') return
+  const target = event.target
+  if (!(target instanceof HTMLInputElement)) return
+  updateGap(i, target.value)
 }
 </script>
