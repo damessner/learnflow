@@ -2,6 +2,13 @@ import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import { requireAuth, requireRole } from '../middleware/requireAuth'
 import { z } from 'zod'
+import {
+  createSession,
+  sendPromptStructured,
+  sendPrompt,
+  getModelConfig,
+  isOpenCodeAvailable,
+} from '../services/opencode'
 
 const router = Router()
 
@@ -78,7 +85,20 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
     const { prompt, provider } = req.body
     const blocks: z.infer<typeof BlockSchema>[] = []
 
-    if (provider === 'ollama' && process.env.OLLAMA_URL) {
+    if (provider === 'opencode' && (await isOpenCodeAvailable())) {
+      try {
+        const sessionId = await createSession('Worksheet Generation')
+        const systemPrompt = `Create an educational worksheet with interactive exercise blocks. Each block has id, type, points, and type-specific fields. For "single_choice", include a "correct" field (integer index of correct option, 0-indexed). For "multiple_choice", include a "correct" field (array of integer indices of correct options, 0-indexed). For concepts involving processes, hierarchies, or relationships, include a "mermaid" field with valid Mermaid.js syntax and an "alt_text" field describing the diagram.`
+        const result = await sendPromptStructured(sessionId, prompt, GenerationSchema as unknown as Record<string, unknown>, {
+          system: systemPrompt,
+          model: getModelConfig(),
+        })
+        const validated = GenerationSchema.parse(result)
+        blocks.push(...validated.blocks)
+      } catch (e) {
+        console.error('OpenCode generation failed:', e)
+      }
+    } else if (provider === 'ollama' && process.env.OLLAMA_URL) {
       const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -182,7 +202,16 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
 3. Keep it brief (1-3 sentences).
 4. Be encouraging.`
 
-    if (process.env.OLLAMA_URL) {
+    if ((await isOpenCodeAvailable()) && !process.env.OLLAMA_URL && !process.env.GEMINI_API_KEY) {
+      try {
+        const sessionId = await createSession('Socratic Tutor')
+        const text = await sendPrompt(sessionId, question, { system: systemPrompt, model: getModelConfig() })
+        res.write(`data: ${JSON.stringify({ text })}\n\n`)
+      } catch (e) {
+        console.error('OpenCode tutor error:', e)
+        res.write(`data: ${JSON.stringify({ text: 'AI tutor encountered an error.' })}\n\n`)
+      }
+    } else if (process.env.OLLAMA_URL) {
       const ollamaRes = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -278,7 +307,16 @@ Rules (Protégé Effect / Feynman Technique):
 
 Student asks/explains: ${message}`
 
-    if (process.env.OLLAMA_URL) {
+    if ((await isOpenCodeAvailable()) && !process.env.OLLAMA_URL && !process.env.GEMINI_API_KEY) {
+      try {
+        const sessionId = await createSession('Protege Student')
+        const text = await sendPrompt(sessionId, message, { system: systemPrompt, model: getModelConfig() })
+        res.write(`data: ${JSON.stringify({ text })}\n\n`)
+      } catch (e) {
+        console.error('OpenCode protege error:', e)
+        res.write(`data: ${JSON.stringify({ text: 'Uh... I got confused. Can you try explaining again?' })}\n\n`)
+      }
+    } else if (process.env.OLLAMA_URL) {
       const ollamaRes = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -401,6 +439,7 @@ router.post(
         includeVocab,
         includeGrammar,
       } = req.body
+      const provider = req.body.provider
 
       if (!topic) {
         res.status(400).json({ error: 'Topic required' })
@@ -473,7 +512,23 @@ Return ONLY valid JSON with this structure:
 
 Mix reading comprehension, vocabulary, and grammar exercises. All content in German.`
 
-      if (process.env.OLLAMA_URL) {
+      if (provider === 'opencode' && (await isOpenCodeAvailable())) {
+        try {
+          const sessionId = await createSession('Story Generation')
+          const result = await sendPromptStructured(sessionId, storyPrompt, GenerationSchema as unknown as Record<string, unknown>, {
+            model: getModelConfig(),
+          })
+          const parsed = result as { blocks?: z.infer<typeof BlockSchema>[] }
+          if (parsed.blocks) {
+            for (const b of parsed.blocks) {
+              if (!b.id) b.id = uuidv4()
+            }
+            blocks.push(...parsed.blocks)
+          }
+        } catch (e) {
+          console.error('OpenCode story generation failed:', e)
+        }
+      } else if (process.env.OLLAMA_URL) {
         const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

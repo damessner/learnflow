@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 model assignments {
@@ -302,6 +301,7 @@ model users {
   learning_planner                             learning_planner[]      
   learning_queue                               learning_queue[]        
   media_files                                  media_files[]           
+  student_knowledge_state                      student_knowledge_state[]
   peer_reviews_peer_reviews_reviewee_idTousers peer_reviews[]          @relation("peer_reviews_reviewee_idTousers") 
   peer_reviews_peer_reviews_reviewer_idTousers peer_reviews[]          @relation("peer_reviews_reviewer_idTousers") 
   ratings                                      ratings[]

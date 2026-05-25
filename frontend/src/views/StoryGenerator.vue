@@ -48,6 +48,15 @@
           <input type="checkbox" v-model="form.includeGrammar" /> Grammar exercises
         </label>
       </div>
+      <div class="form-group" style="margin-top: 0.5rem">
+        <label>AI Provider</label>
+        <select v-model="form.provider">
+          <option value="">Auto (backend default)</option>
+          <option value="opencode">OpenCode</option>
+          <option value="ollama">Ollama</option>
+          <option value="gemini">Gemini</option>
+        </select>
+      </div>
       <button
         class="btn-primary"
         style="width: 100%; margin-top: 1rem"
@@ -135,6 +144,7 @@ const form = ref({
   questionCount: 5,
   includeVocab: true,
   includeGrammar: true,
+  provider: '',
 })
 
 const gradeLevels = ref([])
