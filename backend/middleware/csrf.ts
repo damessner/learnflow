@@ -6,12 +6,12 @@ const CSRF_COOKIE = 'csrf_token'
 const CSRF_HEADER = 'x-csrf-token'
 
 export function csrfMiddleware(req: Request, res: Response, next: NextFunction): void {
-  // Issue a new CSRF token cookie if not present
+  const cookieExisted = !!req.cookies[CSRF_COOKIE]
+
   if (!req.cookies[CSRF_COOKIE]) {
     const token = crypto.randomBytes(32).toString('hex')
     res.cookie(CSRF_COOKIE, token, {
       httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
     })
@@ -23,9 +23,14 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction):
     return
   }
 
-  // Skip CSRF validation for requests with JWT Bearer token
-  // JWT Bearer is stored in localStorage, sent explicitly by JS,
-  // and not auto-sent by browsers — so it already provides CSRF protection.
+  // If no cookie existed before this request, it was just set in the response.
+  // The frontend reads document.cookie which is only updated on the NEXT request,
+  // so skip validation this once.
+  if (!cookieExisted) {
+    next()
+    return
+  }
+
   const authHeader = req.headers.authorization
   if (authHeader && authHeader.startsWith('Bearer ')) {
     next()

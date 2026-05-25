@@ -1,4 +1,4 @@
-import { Router, Response } from 'express'
+import { Router, Request, Response } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
@@ -44,10 +44,11 @@ function sanitizeUser(user: Record<string, unknown>) {
   return rest
 }
 
-function setTokenCookie(res: Response, token: string) {
+function setTokenCookie(req: Request, res: Response, token: string) {
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https'
   res.cookie('auth_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -75,7 +76,7 @@ router.post('/login', async (req, res, next) => {
     }
 
     const token = makeToken({ userId: user.id, role: user.role, isGuest: false })
-    setTokenCookie(res, token)
+    setTokenCookie(req, res, token)
     res.json({ user: sanitizeUser(user), token })
   } catch (err) {
     next(err)
@@ -114,7 +115,7 @@ router.post('/microsoft', async (req, res, next) => {
     }
 
     const token = makeToken({ userId: user.id, role: user.role, isGuest: false })
-    setTokenCookie(res, token)
+    setTokenCookie(req, res, token)
     res.json({ user: sanitizeUser(user), token })
   } catch (err) {
     next(err)
@@ -160,7 +161,7 @@ router.post('/guest', async (req, res, next) => {
       isGuest: true,
     })
 
-    setTokenCookie(res, token)
+    setTokenCookie(req, res, token)
     res.json({ user: { id, username, name, role: 'student' }, token })
   } catch (err) {
     next(err)
@@ -266,10 +267,11 @@ router.get('/config', (_req, res) => {
   res.json({ mode: process.env.MS_CLIENT_ID ? 'microsoft' : 'local' })
 })
 
-router.post('/logout', (_req, res) => {
+router.post('/logout', (req, res) => {
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https'
   res.clearCookie('auth_token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     path: '/',
   })
@@ -387,7 +389,7 @@ router.post('/teacher-token', requireAuth, requireRole('admin'), async (req, res
       { expiresIn: '7d' },
     )
 
-    setTokenCookie(res, token)
+    setTokenCookie(req, res, token)
     res.json({ teacherId: teacher.id, token })
   } catch (err) {
     next(err)
