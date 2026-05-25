@@ -705,7 +705,7 @@ async function sendToProtege() {
       const { done, value } = await reader.read()
       if (done) break
       const chunk = decoder.decode(value)
-      const lines = chunk.split('\\n').filter((l) => l.startsWith('data: '))
+      const lines = chunk.split('\n').filter((l) => l.startsWith('data: '))
       for (const line of lines) {
         if (line === 'data: [DONE]') break
         try {

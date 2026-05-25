@@ -73,7 +73,17 @@ router.get('/due', requireAuth, requireRole('student'), async (req, res, next) =
  */
 router.post('/review', requireAuth, requireRole('student'), async (req, res, next) => {
   try {
-    const { reviews } = req.body // array of { kc_id: string, rating: number }
+    const { reviews } = req.body
+    if (!Array.isArray(reviews) || reviews.length === 0) {
+      res.status(400).json({ error: 'reviews must be a non-empty array' })
+      return
+    }
+    for (const r of reviews) {
+      if (!r.kc_id || typeof r.rating !== 'number') {
+        res.status(400).json({ error: 'Each review must have kc_id (string) and rating (number)' })
+        return
+      }
+    }
     const { reviewKnowledgeComponent } = await import('../services/srs')
 
     for (const r of reviews) {
@@ -108,6 +118,10 @@ router.post('/review', requireAuth, requireRole('student'), async (req, res, nex
 router.post('/kcs', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
   try {
     const { id, name, subject, description } = req.body
+    if (!id || !name || !subject) {
+      res.status(400).json({ error: 'id, name, and subject are required' })
+      return
+    }
     const knex = getKnex()
 
     await knex('knowledge_components').insert({

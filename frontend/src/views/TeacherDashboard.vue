@@ -1381,7 +1381,7 @@ const filteredWorksheets = computed(() => {
   if (!q) return wsStore.worksheets
   return wsStore.worksheets.filter((ws) => {
     return (
-      ws.title.toLowerCase().includes(q) ||
+      (ws.title || '').toLowerCase().includes(q) ||
       (ws.subject && ws.subject.toLowerCase().includes(q)) ||
       (ws.grade_level && ws.grade_level.toLowerCase().includes(q))
     )

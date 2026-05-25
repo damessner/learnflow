@@ -292,7 +292,7 @@
                 🏆 Best Attempt:
                 <strong :style="{ color: ws.is_completed ? 'var(--success)' : 'var(--danger)' }">
                   {{ ws.best_score }} / {{ ws.max_score }} ({{
-                    Math.round((ws.best_score / (ws.max_score || 1)) * 100)
+                    Math.round((ws.best_score / (ws.max_score || 1)) * 100) || 0
                   }}%)
                 </strong>
               </span>

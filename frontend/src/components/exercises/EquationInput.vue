@@ -1,7 +1,7 @@
 <template>
   <div>
     <p v-if="block.equation" style="margin-bottom: 0.5rem">
-      Solve: <strong>{{ block.equation.replace(/\*/g, '×') }}</strong>
+      Solve: <strong>{{ (block.equation || '').replace(/\*/g, '×') }}</strong>
     </p>
     <input
       v-if="!readonly"

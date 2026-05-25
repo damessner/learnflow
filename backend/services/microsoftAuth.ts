@@ -6,6 +6,8 @@ interface JwtPayload {
   email: string
   oid: string
   tid: string
+  iss?: string
+  aud?: string
   iat: number
   exp: number
 }
@@ -29,7 +31,10 @@ export async function verifyMsToken(token: string): Promise<JwtPayload | null> {
   }
 
   try {
-    const decoded = jwt.verify(token, '') as JwtPayload
+    const decoded = jwt.decode(token) as JwtPayload
+    if (!decoded || !decoded.iss?.includes('login.microsoftonline.com')) return null
+    if (decoded.exp && decoded.exp * 1000 < Date.now()) return null
+    if (decoded.aud !== process.env.MS_CLIENT_ID) return null
     return decoded
   } catch {
     return null

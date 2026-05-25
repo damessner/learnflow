@@ -9,6 +9,8 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3001,
+        // JWT_SECRET, DB_DIALECT, DATABASE_URL must be set in .env file
+        // or in the server environment. See backend/.env.example
       },
       autorestart: true,
       watch: false,

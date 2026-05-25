@@ -4,11 +4,14 @@ export function corsMiddleware(req: Request, res: Response, next: NextFunction):
   const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000']
   const origin = req.headers.origin
 
-  if (origin && (allowedOrigins.includes(origin) || process.env.ALLOWED_ORIGINS === '*')) {
+  if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)
+  } else if (process.env.ALLOWED_ORIGINS === '*') {
+    res.setHeader('Access-Control-Allow-Origin', '*')
   } else if (process.env.NODE_ENV === 'production') {
+    const allowedProdOrigins = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()) || []
     const host = req.headers.host
-    if (host) {
+    if (host && allowedProdOrigins.some((o) => o === host || o === `https://${host}`)) {
       res.setHeader('Access-Control-Allow-Origin', `https://${host}`)
     }
   }

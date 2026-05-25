@@ -6,10 +6,10 @@ function getCsrfToken(): string | null {
 }
 
 const api = {
-  async request(method, path, body = null) {
-    const headers = { 'Content-Type': 'application/json' }
+  async request(method: string, path: string, body: unknown = null) {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     const token = localStorage.getItem('token')
-    if (token) headers.Authorization = `Bearer ${token}`
+    if (token) headers['Authorization'] = `Bearer ${token}`
 
     const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS'])
     if (!safeMethods.has(method.toUpperCase())) {
@@ -17,7 +17,7 @@ const api = {
       if (csrf) headers['X-CSRF-Token'] = csrf
     }
 
-    const opts = { method, headers, credentials: 'include' }
+    const opts: RequestInit = { method, headers, credentials: 'include' as RequestCredentials }
     if (body) opts.body = JSON.stringify(body)
 
     const res = await fetch(`${BASE}${path}`, opts)
@@ -26,23 +26,23 @@ const api = {
     return data
   },
 
-  get(path) {
+  get(path: string) {
     return this.request('GET', path)
   },
-  post(path, body) {
+  post(path: string, body?: unknown) {
     return this.request('POST', path, body)
   },
-  put(path, body) {
+  put(path: string, body?: unknown) {
     return this.request('PUT', path, body)
   },
-  del(path) {
+  del(path: string) {
     return this.request('DELETE', path)
   },
 
-  async upload(path, formData) {
-    const headers = {}
+  async upload(path: string, formData: FormData) {
+    const headers: Record<string, string> = {}
     const token = localStorage.getItem('token')
-    if (token) headers.Authorization = `Bearer ${token}`
+    if (token) headers['Authorization'] = `Bearer ${token}`
     const csrf = getCsrfToken()
     if (csrf) headers['X-CSRF-Token'] = csrf
 
@@ -50,7 +50,7 @@ const api = {
       method: 'POST',
       headers,
       body: formData,
-      credentials: 'include',
+      credentials: 'include' as RequestCredentials,
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(data.error || 'Upload failed')

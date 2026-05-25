@@ -5,6 +5,17 @@ import { requireAuth, requireRole } from '../middleware/requireAuth'
 
 const router = Router()
 
+function escapeCsvField(field: string): string {
+  const str = String(field ?? '')
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    return '"' + str.replace(/"/g, '""') + '"'
+  }
+  if (/^[=+\-@]/.test(str)) {
+    return "'" + str
+  }
+  return str
+}
+
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const knex = getKnex()
@@ -302,7 +313,7 @@ router.get(
           return sub && sub.score != null ? String(sub.score) : ''
         })
 
-        rows.push(`${s.name},${scores.join(',')}`)
+        rows.push(`${escapeCsvField(s.name)},${scores.join(',')}`)
       }
 
       res.setHeader('Content-Type', 'text/csv')

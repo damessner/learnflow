@@ -11,7 +11,10 @@ router.get('/worksheets', requireAuth, async (req, res, next) => {
     let query = knex('worksheets').where('in_library', 1)
 
     const { search, subject, grade_level, sort } = req.query
-    if (search) query = query.where('title', 'like', `%${search}%`)
+    if (search) {
+      const escaped = String(search).replace(/[%_]/g, '\\$&')
+      query = query.where('title', 'like', `%${escaped}%`)
+    }
     if (subject) query = query.where('subject', subject as string)
     if (grade_level) query = query.where('grade_level', grade_level as string)
 

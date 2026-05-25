@@ -313,7 +313,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           if (op === 'add') expectedResult = a + b
           else if (op === 'subtract') expectedResult = a - b
           else if (op === 'multiply') expectedResult = a * b
-          else if (op === 'divide') expectedResult = b !== 0 ? Math.round(a / b) : 0
+          else if (op === 'divide') expectedResult = b !== 0 ? a / b : 0
           earned = Number(ans) === expectedResult ? block.points : 0
           feedback.push(`Arithmetic: ${earned > 0 ? 'correct' : 'incorrect'}`)
           break

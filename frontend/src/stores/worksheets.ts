@@ -10,12 +10,12 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
 
   async function fetchMyWorksheets() {
     const data = await api.get('/worksheets')
-    worksheets.value = data.worksheets
+    worksheets.value = data.worksheets || []
   }
 
   async function fetchWorksheet(id) {
     const data = await api.get(`/worksheets/${id}`)
-    current.value = data.worksheet
+    current.value = data.worksheet || null
   }
 
   async function createWorksheet(payload) {
@@ -39,7 +39,7 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
 
   async function fetchTemplates() {
     const data = await api.get('/worksheets/templates')
-    templates.value = data.templates
+    templates.value = data.templates || []
   }
 
   async function cloneTemplate(id) {

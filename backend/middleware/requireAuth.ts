@@ -27,7 +27,12 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     return
   }
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as AuthUser
+    const secret = process.env.JWT_SECRET
+    if (!secret) {
+      res.status(500).json({ error: 'Server misconfiguration' })
+      return
+    }
+    const decoded = jwt.verify(token, secret) as AuthUser
     req.user = decoded
     next()
   } catch {

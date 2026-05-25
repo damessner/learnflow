@@ -129,7 +129,7 @@
           :key="wi"
           style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem"
         >
-          <span style="font-family: monospace; letter-spacing: 3px">{{ scramble(w.word) }}</span>
+          <span style="font-family: monospace; letter-spacing: 3px">{{ getScrambled(block.id, wi) }}</span>
           <input v-model="answers[block.id][wi]" placeholder="Unscramble" />
         </div>
       </template>
@@ -297,7 +297,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSubmissionsStore } from '../stores/submissions'
 import { useUiStore } from '../stores/ui'
@@ -388,7 +388,7 @@ onMounted(async () => {
       }
     }
 
-    autoSaveTimer = setInterval(saveProgress, 20000)
+    autoSaveTimer = setInterval(() => { saveProgress().catch(() => {}) }, 20000)
 
     try {
       await learningStore.fetchGamification()
@@ -437,13 +437,27 @@ function renderGaps(template, blockId) {
   return html
 }
 
-function scramble(word) {
+function scrambleWord(word) {
   const arr = word.split('')
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
   return arr.join('')
+}
+
+const scrambledCache = computed(() => {
+  const cache = {}
+  for (const block of blocks.value) {
+    if (block.type === 'word_scramble' && block.words) {
+      cache[block.id] = block.words.map((w) => scrambleWord(w.word))
+    }
+  }
+  return cache
+})
+
+function getScrambled(blockId, wordIndex) {
+  return scrambledCache.value[blockId]?.[wordIndex] || ''
 }
 
 function getProgressiveStyle(idx) {
@@ -530,7 +544,8 @@ async function sendToTutor() {
     if (!reader) throw new Error('No reader')
 
     const decoder = new TextDecoder()
-    while (true) {
+    let done_received = false
+    while (!done_received) {
       const { done, value } = await reader.read()
       if (done) break
 
@@ -539,6 +554,7 @@ async function sendToTutor() {
 
       for (const line of lines) {
         if (line === 'data: [DONE]') {
+          done_received = true
           break
         }
         try {

@@ -9,7 +9,7 @@ export const useClassesStore = defineStore('classes', () => {
 
   async function fetchClasses() {
     const data = await api.get('/classes')
-    classes.value = data.classes
+    classes.value = data.classes || []
   }
 
   async function fetchClass(id) {

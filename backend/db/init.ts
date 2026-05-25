@@ -33,6 +33,15 @@ export async function initDB(): Promise<void> {
       logger.info('Database already initialized (course features)')
     }
 
+    const hasSubjectColumn = await knex.schema.hasColumn('courses', 'subject')
+    if (!hasSubjectColumn) {
+      const { up: upCourseCategories } = require('./migrations/20260524_001_course_categories')
+      await upCourseCategories(knex)
+      logger.info('Database migration (course categories) completed')
+    } else {
+      logger.info('Database already initialized (course categories)')
+    }
+
     const hasPasswordSalt = await knex.schema.hasColumn('users', 'password_salt')
     if (!hasPasswordSalt) {
       const { up: upPasswordSalt } = require('./migrations/20260525_004_password_salt')

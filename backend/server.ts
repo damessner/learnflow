@@ -20,7 +20,7 @@ async function main(): Promise<void> {
 
   const shutdown = async () => {
     logger.info('Shutting down...')
-    server.close()
+    await new Promise<void>((resolve) => server.close(() => resolve()))
     await closeKnex()
     process.exit(0)
   }

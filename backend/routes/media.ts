@@ -17,9 +17,30 @@ const storage = multer.diskStorage({
   },
 })
 
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+  'audio/mpeg',
+  'audio/wav',
+  'audio/ogg',
+  'video/mp4',
+  'video/webm',
+  'application/pdf',
+])
+
 const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_MIME_TYPES.has(file.mimetype)) {
+      cb(null, true)
+    } else {
+      cb(new Error(`File type ${file.mimetype} is not allowed`))
+    }
+  },
 })
 
 const router = Router()

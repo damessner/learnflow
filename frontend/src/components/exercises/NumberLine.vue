@@ -70,6 +70,7 @@ const marker = computed(() => (props.block.markers || [])[0])
 function calcPos(val) {
   const min = props.block.min_value ?? 0
   const max = props.block.max_value ?? 100
+  if (max === min) return 50
   return ((val - min) / (max - min)) * 100
 }
 

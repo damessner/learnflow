@@ -15,17 +15,17 @@ export const useLearningStore = defineStore('learning', () => {
 
   async function fetchMastery() {
     const data = await api.get('/learning/student/mastery')
-    mastery.value = data.mastery
+    mastery.value = data.mastery || []
   }
 
   async function fetchSpacedQueue() {
     const data = await api.get('/learning/student/spaced-queue')
-    spacedQueue.value = data.queue
+    spacedQueue.value = data.queue || []
   }
 
   async function fetchPlanner(start, end) {
     const data = await api.get(`/learning/student/planner?start=${start || ''}&end=${end || ''}`)
-    planner.value = data.planner
+    planner.value = data.planner || []
   }
 
   async function updatePlanner(payload) {
@@ -39,12 +39,12 @@ export const useLearningStore = defineStore('learning', () => {
 
   async function fetchAtRisk() {
     const data = await api.get('/learning/teacher/at-risk')
-    atRisk.value = data.atRisk
+    atRisk.value = data.atRisk || []
   }
 
   async function fetchInterventions() {
     const data = await api.get('/learning/teacher/interventions')
-    interventions.value = data.interventions
+    interventions.value = data.interventions || []
   }
 
   async function fetchAnalytics() {
@@ -54,7 +54,7 @@ export const useLearningStore = defineStore('learning', () => {
 
   async function fetchMasteryMap() {
     const data = await api.get('/learning/teacher/mastery-map')
-    masteryMap.value = data.masteryMap
+    masteryMap.value = data.masteryMap || []
   }
 
   async function fetchDailyMix() {

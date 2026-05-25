@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
 const Login = () => import('../views/Login.vue')
 const StudentDashboard = () => import('../views/StudentDashboard.vue')
@@ -11,7 +11,7 @@ const TeacherRegistration = () => import('../views/TeacherRegistration.vue')
 const AdminDashboard = () => import('../views/AdminDashboard.vue')
 const StoryGenerator = () => import('../views/StoryGenerator.vue')
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: Login },
   {

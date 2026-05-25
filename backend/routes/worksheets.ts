@@ -287,6 +287,11 @@ router.post(
   async (req, res, next) => {
     try {
       const knex = getKnex()
+      const { class_name } = req.body
+      if (!class_name) {
+        res.status(400).json({ error: 'class_name is required' })
+        return
+      }
       const id = uuidv4()
       await knex('assignments').insert({
         id,
@@ -546,7 +551,7 @@ router.get(
           score: sub?.score ?? null,
           max_score: sub?.max_score ?? assignment.total_points ?? null,
           score_pct:
-            sub?.max_score && sub.max_score > 0
+            sub?.score != null && sub?.max_score && sub.max_score > 0
               ? Math.round((sub.score / sub.max_score) * 100)
               : null,
           feedback: sub?.feedback ?? null,

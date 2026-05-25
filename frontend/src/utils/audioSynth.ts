@@ -1,11 +1,9 @@
 class AudioSynth {
-  constructor() {
-    this.ctx = null
-  }
+  ctx: AudioContext | null = null
 
   initCtx() {
     if (!this.ctx) {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext
+      const AudioContextClass = window.AudioContext
       if (AudioContextClass) {
         this.ctx = new AudioContextClass()
       }

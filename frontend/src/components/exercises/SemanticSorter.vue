@@ -26,6 +26,7 @@ const emit = defineEmits(['update:modelValue'])
 function selectedCat(ci, word) {
   const val = props.modelValue || {}
   const catName = props.block.categories?.[ci]?.name
+  if (!catName) return false
   return (val[catName] || []).includes(word)
 }
 

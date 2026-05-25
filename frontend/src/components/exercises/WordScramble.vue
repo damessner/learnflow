@@ -19,14 +19,7 @@
           min-width: 120px;
           text-align: center;
         "
-        >{{
-          block.sentence_mode
-            ? w.word
-                .split(' ')
-                .sort(() => Math.random() - 0.5)
-                .join(' ')
-            : scrambleChars(w.word)
-        }}</span
+        >{{ getScrambled(wi) }}</span
       >
       <input
         v-if="!readonly"
@@ -43,10 +36,12 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 const props = defineProps({ block: Object, modelValue: Array, readonly: Boolean })
 const emit = defineEmits(['update:modelValue'])
 
-function scrambleChars(w) {
+function scrambleChars(w: string): string {
   const arr = String(w).split('')
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
@@ -55,7 +50,29 @@ function scrambleChars(w) {
   return arr.join('')
 }
 
-function update(wi, value) {
+function shuffleArray(arr: string[]): string[] {
+  const result = [...arr]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
+}
+
+const scrambledWords = computed(() => {
+  return (props.block?.words || []).map((w: { word: string }) => {
+    if (props.block?.sentence_mode) {
+      return w.word.split(' ').sort(() => Math.random() - 0.5).join(' ')
+    }
+    return scrambleChars(w.word)
+  })
+})
+
+function getScrambled(index: number): string {
+  return scrambledWords.value[index] || ''
+}
+
+function update(wi: number, value: string) {
   const updated = [...(props.modelValue || [])]
   updated[wi] = value
   emit('update:modelValue', updated)

@@ -463,8 +463,9 @@ async function saveSettings() {
     settingsSaved.value = true
   } catch (e) {
     uiStore.showToast(e.message, 'error')
+  } finally {
+    savingSettings.value = false
   }
-  savingSettings.value = false
 }
 </script>
 

@@ -162,8 +162,9 @@ async function generate() {
     uiStore.showToast(`Generated ${generatedBlocks.value.length} blocks!`, 'success')
   } catch (e) {
     uiStore.showToast(e.message, 'error')
+  } finally {
+    generating.value = false
   }
-  generating.value = false
 }
 
 async function saveAsWorksheet() {

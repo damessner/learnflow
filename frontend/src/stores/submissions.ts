@@ -24,7 +24,7 @@ export const useSubmissionsStore = defineStore('submissions', () => {
 
   async function fetchStudentSummary() {
     const data = await api.get('/submissions/student/summary')
-    summary.value = data.submissions
+    summary.value = data.submissions || []
   }
 
   async function submitFeedback(submissionId, feedback) {

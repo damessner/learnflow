@@ -34,11 +34,13 @@ function verifyPassword(password: string, storedHash: string, storedSalt: string
 }
 
 function makeToken(payload: object): string {
-  return jwt.sign(payload, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '7d' })
+  const secret = process.env.JWT_SECRET
+  if (!secret) throw new Error('JWT_SECRET environment variable is required')
+  return jwt.sign(payload, secret, { expiresIn: '7d' })
 }
 
 function sanitizeUser(user: Record<string, unknown>) {
-  const { password_hash: _password_hash, ...rest } = user
+  const { password_hash: _password_hash, password_salt: _password_salt, ...rest } = user
   return rest
 }
 
@@ -218,6 +220,10 @@ router.post('/change-password', requireAuth, async (req, res, next) => {
 
     const knex = getKnex()
     const user = await knex('users').where({ id: req.user!.userId }).first()
+    if (!user) {
+      res.status(404).json({ error: 'User not found' })
+      return
+    }
 
     if (!verifyPassword(current, user.password_hash, user.password_salt)) {
       res.status(401).json({ error: 'Current password is incorrect' })
@@ -282,10 +288,12 @@ router.get('/verify', async (req, res, _next) => {
       return
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as Record<
-      string,
-      unknown
-    >
+    const secret = process.env.JWT_SECRET
+    if (!secret) {
+      res.status(500).json({ error: 'Server misconfiguration' })
+      return
+    }
+    const decoded = jwt.verify(token, secret) as Record<string, unknown>
 
     const knex = getKnex()
     const user = await knex('users').where({ id: decoded.userId }).first()
@@ -332,7 +340,14 @@ router.put('/users/:id', requireAuth, requireRole('admin'), async (req, res, nex
     if (username) updateData.username = username
     if (email) updateData.email = email
     if (name) updateData.name = name
-    if (role) updateData.role = role
+    if (role) {
+      const validRoles = ['student', 'teacher', 'admin']
+      if (!validRoles.includes(role)) {
+        res.status(400).json({ error: `Invalid role. Must be one of: ${validRoles.join(', ')}` })
+        return
+      }
+      updateData.role = role
+    }
     if (password) {
       const { hash, salt } = hashNewPassword(password)
       updateData.password_hash = hash
@@ -368,7 +383,7 @@ router.post('/teacher-token', requireAuth, requireRole('admin'), async (req, res
 
     const token = jwt.sign(
       { userId: teacher.id, role: 'teacher', isGuest: false },
-      process.env.JWT_SECRET || 'dev-secret',
+      process.env.JWT_SECRET!,
       { expiresIn: '7d' },
     )
 

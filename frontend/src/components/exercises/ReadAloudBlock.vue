@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 const props = defineProps({ block: Object, readonly: Boolean })
 const emit = defineEmits(['update:modelValue'])
 const speaking = ref(false)
@@ -37,6 +37,12 @@ const recording = ref(false)
 const audioUrl = ref(null)
 let mediaRecorder = null
 let chunks = []
+
+onUnmounted(() => {
+  if (audioUrl.value) {
+    URL.revokeObjectURL(audioUrl.value)
+  }
+})
 
 function speak() {
   if (!('speechSynthesis' in window)) return

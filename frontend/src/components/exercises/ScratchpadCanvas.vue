@@ -18,20 +18,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const canvas = ref(null)
 let ctx = null
 let drawing = false
-
-onMounted(() => {
-  if (!canvas.value) return
-  ctx = canvas.value.getContext('2d')
-  canvas.value.addEventListener('mousedown', startDraw)
-  canvas.value.addEventListener('mousemove', draw)
-  canvas.value.addEventListener('mouseup', stopDraw)
-  canvas.value.addEventListener('mouseleave', stopDraw)
-})
 
 function startDraw(e) {
   drawing = true
@@ -50,6 +41,24 @@ function draw(e) {
 function stopDraw() {
   drawing = false
 }
+
+onMounted(() => {
+  if (!canvas.value) return
+  ctx = canvas.value.getContext('2d')
+  canvas.value.addEventListener('mousedown', startDraw)
+  canvas.value.addEventListener('mousemove', draw)
+  canvas.value.addEventListener('mouseup', stopDraw)
+  canvas.value.addEventListener('mouseleave', stopDraw)
+})
+
+onUnmounted(() => {
+  if (canvas.value) {
+    canvas.value.removeEventListener('mousedown', startDraw)
+    canvas.value.removeEventListener('mousemove', draw)
+    canvas.value.removeEventListener('mouseup', stopDraw)
+    canvas.value.removeEventListener('mouseleave', stopDraw)
+  }
+})
 function clear() {
   if (ctx) ctx.clearRect(0, 0, 400, 300)
 }

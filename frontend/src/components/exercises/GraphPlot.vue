@@ -89,11 +89,13 @@ const emit = defineEmits(['update:modelValue'])
 const gridLines = Array.from({ length: 5 }, (_, i) => i + 1)
 const userPoints = ref([])
 
-function calcPos(val, axis) {
+function calcPos(val: number, axis: string) {
   const pts = props.block.points_to_plot || []
   if (!pts.length) return 50
-  const max = Math.max(...pts.map((p) => p[axis])) + 1
-  const min = Math.min(...pts.map((p) => p[axis])) - 1
+  const values = pts.map((p: Record<string, number>) => p[axis])
+  const max = Math.max(...values) + 1
+  const min = Math.min(...values) - 1
+  if (max === min) return 50
   return ((val - min) / (max - min)) * 100
 }
 

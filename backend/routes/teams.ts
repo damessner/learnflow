@@ -17,7 +17,7 @@ router.post(
       const submissions = await knex('submissions')
         .join('users', 'submissions.user_id', 'users.id')
         .where('submissions.assignment_id', req.params.id)
-        .select('users.id', 'submissions.score')
+        .select('users.id', 'submissions.score', 'submissions.max_score')
 
       const sorted = [...submissions].sort(
         (a, b) => (a.score || 0) / (a.max_score || 1) - (b.score || 0) / (b.max_score || 1),

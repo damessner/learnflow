@@ -107,7 +107,15 @@ router.post('/assignment/:id/submit', requireAuth, async (req, res, next) => {
     const prevRatio = prevScore !== null && prevMaxScore > 0 ? prevScore / prevMaxScore : 0
 
     const assignment = await knex('assignments').where({ id: req.params.id }).first()
+    if (!assignment) {
+      res.status(404).json({ error: 'Assignment not found' })
+      return
+    }
     const worksheet = await knex('worksheets').where({ id: assignment.worksheet_id }).first()
+    if (!worksheet) {
+      res.status(404).json({ error: 'Worksheet not found' })
+      return
+    }
 
     let blocks: unknown[] = []
     try {
