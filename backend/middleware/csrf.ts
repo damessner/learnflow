@@ -15,11 +15,19 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction):
       sameSite: 'lax',
       path: '/',
     })
-    // Store on req so the same request can validate if needed
     req.cookies[CSRF_COOKIE] = token
   }
 
   if (SAFE_METHODS.has(req.method)) {
+    next()
+    return
+  }
+
+  // Skip CSRF validation for requests with JWT Bearer token
+  // JWT Bearer is stored in localStorage, sent explicitly by JS,
+  // and not auto-sent by browsers — so it already provides CSRF protection.
+  const authHeader = req.headers.authorization
+  if (authHeader && authHeader.startsWith('Bearer ')) {
     next()
     return
   }
