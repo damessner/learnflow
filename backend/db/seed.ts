@@ -3,9 +3,13 @@ import { v4 as uuidv4 } from 'uuid'
 import crypto from 'crypto'
 import logger from '../lib/logger'
 
-function hashPassword(password: string): string {
-  const salt = 'learnflow-salt'
+function hashPassword(password: string, salt: string): string {
   return crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256').toString('hex')
+}
+
+function hashNewPassword(password: string): { hash: string; salt: string } {
+  const salt = crypto.randomBytes(32).toString('hex')
+  return { hash: hashPassword(password, salt), salt }
 }
 
 async function userExists(knex: ReturnType<typeof getKnex>, username: string): Promise<boolean> {
@@ -19,34 +23,40 @@ export async function seedDB(): Promise<void> {
   logger.info('Seeding database...')
 
   if (!(await userExists(knex, 'admin'))) {
+    const { hash, salt } = hashNewPassword('admin123')
     await knex('users').insert({
       id: uuidv4(),
       username: 'admin',
       email: 'admin@learnflow.local',
       name: 'Admin',
-      password_hash: hashPassword('admin123'),
+      password_hash: hash,
+      password_salt: salt,
       role: 'admin',
     })
   }
 
   if (!(await userExists(knex, 'teacher'))) {
+    const { hash, salt } = hashNewPassword('teacher123')
     await knex('users').insert({
       id: uuidv4(),
       username: 'teacher',
       email: 'teacher@learnflow.local',
       name: 'Teacher',
-      password_hash: hashPassword('teacher123'),
+      password_hash: hash,
+      password_salt: salt,
       role: 'teacher',
     })
   }
 
   if (!(await userExists(knex, 'student'))) {
+    const { hash, salt } = hashNewPassword('student123')
     await knex('users').insert({
       id: uuidv4(),
       username: 'student',
       email: 'student@learnflow.local',
       name: 'Student',
-      password_hash: hashPassword('student123'),
+      password_hash: hash,
+      password_salt: salt,
       role: 'student',
     })
   }

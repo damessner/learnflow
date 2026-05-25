@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser'
 
 import { requestId } from './middleware/requestId'
 import { corsMiddleware } from './middleware/cors'
+import { csrfMiddleware } from './middleware/csrf'
 import { errorHandler } from './middleware/errorHandler'
 import logger from './lib/logger'
 
@@ -31,22 +32,22 @@ export function createApp(): express.Application {
     next()
   })
 
-  app.use(helmet())
-  app.use(corsMiddleware)
-
   app.use(
-    helmet.contentSecurityPolicy({
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
-        imgSrc: ["'self'", 'data:', 'blob:'],
-        mediaSrc: ["'self'", 'https://www.youtube.com'],
-        connectSrc: ["'self'", 'https://login.microsoftonline.com', 'https://graph.microsoft.com'],
-        fontSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+          imgSrc: ["'self'", 'data:', 'blob:'],
+          mediaSrc: ["'self'", 'https://www.youtube.com'],
+          connectSrc: ["'self'", 'https://login.microsoftonline.com', 'https://graph.microsoft.com'],
+          fontSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+        },
       },
     }),
   )
+  app.use(corsMiddleware)
 
   app.use(
     rateLimit({
@@ -59,6 +60,7 @@ export function createApp(): express.Application {
 
   app.use(express.json({ limit: '10mb' }))
   app.use(cookieParser())
+  app.use(csrfMiddleware)
 
   app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
 

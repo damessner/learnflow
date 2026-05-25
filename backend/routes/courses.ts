@@ -155,6 +155,31 @@ router.delete(
 )
 
 router.put(
+  '/:id/worksheets/reorder',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const worksheetIds: unknown = req.body.worksheetIds
+      if (!Array.isArray(worksheetIds)) {
+        res.status(400).json({ error: 'worksheetIds must be an array' })
+        return
+      }
+      const ids = worksheetIds.slice(0, 500) as string[]
+      for (let i = 0; i < ids.length; i++) {
+        await knex('course_worksheets')
+          .where({ course_id: req.params.id, worksheet_id: ids[i] })
+          .update({ order_index: i })
+      }
+      res.json({ message: 'Worksheets reordered' })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
+
+router.put(
   '/:id/worksheets/:worksheetId',
   requireAuth,
   requireRole('teacher', 'admin'),
@@ -175,26 +200,6 @@ router.put(
         .update(updateData)
 
       res.json({ message: 'Course worksheet settings updated' })
-    } catch (err) {
-      next(err)
-    }
-  },
-)
-
-router.put(
-  '/:id/worksheets/reorder',
-  requireAuth,
-  requireRole('teacher', 'admin'),
-  async (req, res, next) => {
-    try {
-      const knex = getKnex()
-      const { worksheetIds } = req.body
-      for (let i = 0; i < worksheetIds.length; i++) {
-        await knex('course_worksheets')
-          .where({ course_id: req.params.id, worksheet_id: worksheetIds[i] })
-          .update({ order_index: i })
-      }
-      res.json({ message: 'Worksheets reordered' })
     } catch (err) {
       next(err)
     }

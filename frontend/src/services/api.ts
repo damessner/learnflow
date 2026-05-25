@@ -1,10 +1,21 @@
 const BASE = '/api'
 
+function getCsrfToken(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/)
+  return match ? decodeURIComponent(match[1]) : null
+}
+
 const api = {
   async request(method, path, body = null) {
     const headers = { 'Content-Type': 'application/json' }
     const token = localStorage.getItem('token')
     if (token) headers.Authorization = `Bearer ${token}`
+
+    const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS'])
+    if (!safeMethods.has(method.toUpperCase())) {
+      const csrf = getCsrfToken()
+      if (csrf) headers['X-CSRF-Token'] = csrf
+    }
 
     const opts = { method, headers, credentials: 'include' }
     if (body) opts.body = JSON.stringify(body)
@@ -32,6 +43,8 @@ const api = {
     const headers = {}
     const token = localStorage.getItem('token')
     if (token) headers.Authorization = `Bearer ${token}`
+    const csrf = getCsrfToken()
+    if (csrf) headers['X-CSRF-Token'] = csrf
 
     const res = await fetch(`${BASE}${path}`, {
       method: 'POST',

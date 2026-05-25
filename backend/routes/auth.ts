@@ -9,9 +9,28 @@ import { validate } from '../middleware/validate'
 
 const router = Router()
 
-function hashPassword(password: string): string {
-  const salt = 'learnflow-salt'
+function hashPassword(password: string, salt: string): string {
   return crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256').toString('hex')
+}
+
+function generateSalt(): string {
+  return crypto.randomBytes(32).toString('hex')
+}
+
+/** Returns { hash, salt } for a new password. */
+function hashNewPassword(password: string): { hash: string; salt: string } {
+  const salt = generateSalt()
+  return { hash: hashPassword(password, salt), salt }
+}
+
+/** Verifies a password against a stored hash.
+ *  Falls back to the legacy static salt for accounts that pre-date per-user salts. */
+function verifyPassword(password: string, storedHash: string, storedSalt: string | null): boolean {
+  const LEGACY_SALT = 'learnflow-salt'
+  if (storedSalt) {
+    return hashPassword(password, storedSalt) === storedHash
+  }
+  return hashPassword(password, LEGACY_SALT) === storedHash
 }
 
 function makeToken(payload: object): string {
@@ -48,8 +67,7 @@ router.post('/login', async (req, res, next) => {
       return
     }
 
-    const hashed = hashPassword(password)
-    if (user.password_hash !== hashed) {
+    if (!verifyPassword(password, user.password_hash, user.password_salt)) {
       res.status(401).json({ error: 'Invalid credentials' })
       return
     }
@@ -71,7 +89,12 @@ router.post('/microsoft', async (req, res, next) => {
     }
 
     const knex = getKnex()
-    let user = await knex('users').where({ email }).orWhere({ ms_oid: oid }).first()
+    let user
+    if (oid) {
+      user = await knex('users').where({ email }).orWhere({ ms_oid: oid }).first()
+    } else {
+      user = await knex('users').where({ email }).first()
+    }
 
     if (!user) {
       const id = uuidv4()
@@ -81,7 +104,7 @@ router.post('/microsoft', async (req, res, next) => {
         username,
         email,
         name,
-        role: 'teacher',
+        role: 'student',
         ms_oid: oid || null,
         ms_tenant: tenant || null,
       })
@@ -111,12 +134,6 @@ router.post('/guest', async (req, res, next) => {
       return
     }
 
-    const assignments = await knex('assignments').where({ class_id: classRow.id }).first()
-    if (!assignments) {
-      res.status(404).json({ error: 'No assignment found for this class' })
-      return
-    }
-
     const id = uuidv4()
     const username = `guest_${Date.now()}`
     await knex('users').insert({
@@ -139,11 +156,10 @@ router.post('/guest', async (req, res, next) => {
       userId: id,
       role: 'student',
       isGuest: true,
-      assignmentId: assignments.id,
     })
 
     setTokenCookie(res, token)
-    res.json({ user: { id, username, name, role: 'student' }, assignmentId: assignments.id })
+    res.json({ user: { id, username, name, role: 'student' } })
   } catch (err) {
     next(err)
   }
@@ -173,12 +189,14 @@ router.post(
       }
 
       const id = uuidv4()
+      const { hash: password_hash, salt: password_salt } = hashNewPassword(password)
       await knex('users').insert({
         id,
         username,
         email,
         name,
-        password_hash: hashPassword(password),
+        password_hash,
+        password_salt,
         role: 'teacher',
       })
 
@@ -201,15 +219,17 @@ router.post('/change-password', requireAuth, async (req, res, next) => {
     const knex = getKnex()
     const user = await knex('users').where({ id: req.user!.userId }).first()
 
-    if (user.password_hash !== hashPassword(current)) {
+    if (!verifyPassword(current, user.password_hash, user.password_salt)) {
       res.status(401).json({ error: 'Current password is incorrect' })
       return
     }
 
+    const { hash: password_hash, salt: password_salt } = hashNewPassword(newPassword)
     await knex('users')
       .where({ id: req.user!.userId })
       .update({
-        password_hash: hashPassword(newPassword),
+        password_hash,
+        password_salt,
         updated_at: knex.fn.now(),
       })
 
@@ -244,7 +264,8 @@ router.post('/logout', (_req, res) => {
   res.clearCookie('auth_token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
+    path: '/',
   })
   res.json({ message: 'Logged out' })
 })
@@ -312,7 +333,11 @@ router.put('/users/:id', requireAuth, requireRole('admin'), async (req, res, nex
     if (email) updateData.email = email
     if (name) updateData.name = name
     if (role) updateData.role = role
-    if (password) updateData.password_hash = hashPassword(password)
+    if (password) {
+      const { hash, salt } = hashNewPassword(password)
+      updateData.password_hash = hash
+      updateData.password_salt = salt
+    }
 
     await knex('users').where({ id: req.params.id }).update(updateData)
     const user = await knex('users').where({ id: req.params.id }).first()
@@ -344,7 +369,7 @@ router.post('/teacher-token', requireAuth, requireRole('admin'), async (req, res
     const token = jwt.sign(
       { userId: teacher.id, role: 'teacher', isGuest: false },
       process.env.JWT_SECRET || 'dev-secret',
-      { expiresIn: '30d' },
+      { expiresIn: '7d' },
     )
 
     setTokenCookie(res, token)

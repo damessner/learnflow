@@ -32,6 +32,15 @@ export async function initDB(): Promise<void> {
     } else {
       logger.info('Database already initialized (course features)')
     }
+
+    const hasPasswordSalt = await knex.schema.hasColumn('users', 'password_salt')
+    if (!hasPasswordSalt) {
+      const { up: upPasswordSalt } = require('./migrations/20260525_004_password_salt')
+      await upPasswordSalt(knex)
+      logger.info('Database migration (password salt) completed')
+    } else {
+      logger.info('Database already initialized (password salt)')
+    }
   } catch (err) {
     logger.error({ err }, 'Database migration failed')
     throw err
