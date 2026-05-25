@@ -1,8 +1,9 @@
 import pluginVue from 'eslint-plugin-vue'
 import prettier from 'eslint-config-prettier'
-import tseslint from 'typescript-eslint'
+import vueParser from 'vue-eslint-parser'
+import tsParser from '@typescript-eslint/parser'
 
-export default tseslint.config(
+export default [
  {
    ignores: [
      'dist/**',
@@ -13,12 +14,12 @@ export default tseslint.config(
    ],
  },
  ...pluginVue.configs['flat/recommended'],
- ...tseslint.configs.recommended,
  {
    files: ['**/*.vue'],
    languageOptions: {
+     parser: vueParser,
      parserOptions: {
-       parser: tseslint.parser,
+       parser: tsParser,
        ecmaVersion: 2022,
        sourceType: 'module',
        extraFileExtensions: ['.vue'],
@@ -34,14 +35,14 @@ export default tseslint.config(
  {
    files: ['**/*.js', '**/*.ts'],
    languageOptions: {
-     parser: tseslint.parser,
+     parser: tsParser,
      parserOptions: {
        ecmaVersion: 2022,
        sourceType: 'module',
      },
    },
    rules: {
-     '@typescript-eslint/no-unused-vars': [
+     'no-unused-vars': [
        'warn',
        {
          argsIgnorePattern: '^_',
@@ -49,9 +50,8 @@ export default tseslint.config(
          caughtErrorsIgnorePattern: '^_',
        },
      ],
-     'no-unused-vars': 'off',
      'no-undef': 'off',
    },
  },
  prettier,
-)
+]
