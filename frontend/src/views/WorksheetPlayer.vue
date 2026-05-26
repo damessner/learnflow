@@ -392,6 +392,8 @@ onMounted(async () => {
     autoSaveTimer = setInterval(() => { saveProgress().catch(() => {}) }, 20000)
 
     try {
+
+    try {
       await learningStore.fetchGamification()
       gamXp.value = learningStore.gamification?.xp || 0
     } catch {
@@ -404,6 +406,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (autoSaveTimer) clearInterval(autoSaveTimer)
+  if (typeof window !== 'undefined') {
+    delete (window as Record<string, unknown>).__updateGap
+  }
 })
 
 function escapeHtmlAttr(str) {

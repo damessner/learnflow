@@ -18,13 +18,30 @@ export function isAcceptableVariant(s1: string, s2: string): boolean {
   const b = s2.trim().toLowerCase()
   if (a === b) return true
 
-  const chars = new Set(a)
-  let overlap = 0
-  for (const c of b) {
-    if (chars.has(c)) overlap++
+  return levenshteinRatio(a, b) >= 0.85
+}
+
+function levenshteinRatio(a: string, b: string): number {
+  const lenA = a.length
+  const lenB = b.length
+  if (lenA === 0 && lenB === 0) return 1
+  if (lenA === 0 || lenB === 0) return 0
+
+  const prev = new Array(lenB + 1)
+  const curr = new Array(lenB + 1)
+  for (let j = 0; j <= lenB; j++) prev[j] = j
+
+  for (let i = 1; i <= lenA; i++) {
+    curr[0] = i
+    for (let j = 1; j <= lenB; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost)
+    }
+    for (let j = 0; j <= lenB; j++) prev[j] = curr[j]
   }
-  const ratio = overlap / Math.max(a.length, b.length, 1)
-  return ratio >= 0.85
+
+  const distance = curr[lenB]
+  return 1 - distance / Math.max(lenA, lenB)
 }
 
 export function buildShortAnswerKeywords(keywords: string[]): string[] {
@@ -70,17 +87,16 @@ interface ScoreResult {
 
 function scoreGapFill(
   block: Block,
-  answer: { gaps?: string[]; answers?: Record<string, string> },
+  answer: { gaps?: string[]; answers?: Record<string, string> } | Record<string, string>,
 ): { score: number; maxScore: number; feedback: string } {
   if (!block.template) return { score: 0, maxScore: block.points, feedback: '' }
   const gapCount = (block.template.match(/\(\(.*?\)\)/g) || []).length
   let correct = 0
-  const userGaps = answer.gaps || []
-  const userAnswers: Record<string, string> = answer.answers || {}
+
   const gapKeys = Array.from({ length: gapCount }, (_, i) => String(i))
 
   for (let i = 0; i < gapCount; i++) {
-    const userVal = (userGaps[i] || userAnswers[gapKeys[i]] || '').trim().toLowerCase()
+    const userVal = (getGapValue(answer, i, gapKeys[i]) || '').trim().toLowerCase()
     const match = (block.template.match(new RegExp(`\\(\\([^)]+\\)\\)`, 'g')) || [])[i] || ''
     const expected = match.slice(2, -2).trim().toLowerCase()
     if (userVal === expected) correct++
@@ -88,6 +104,14 @@ function scoreGapFill(
 
   const earned = gapCount > 0 ? Math.round((correct / gapCount) * block.points) : 0
   return { score: earned, maxScore: block.points, feedback: `${correct}/${gapCount} correct` }
+}
+
+function getGapValue(answer: Record<string, unknown>, index: number, key: string): string {
+  if (Array.isArray(answer.gaps)) return String(answer.gaps[index] || '')
+  if (answer.answers && typeof answer.answers === 'object') {
+    return String((answer.answers as Record<string, string>)[key] || '')
+  }
+  return String(answer[key] || '')
 }
 
 export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>): ScoreResult {
@@ -104,7 +128,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
       let earned = 0
       switch (block.type) {
         case 'gap_fill': {
-          const r = scoreGapFill(block, (userAnswer || {}) as { gaps?: string[] })
+          const r = scoreGapFill(block, (userAnswer || {}) as Record<string, string>)
           earned = r.score
           feedback.push(`Gap fill: ${r.feedback}`)
           break

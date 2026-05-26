@@ -95,6 +95,23 @@ router.get('/:id', requireAuth, async (req, res, next) => {
     const result = { ...worksheet }
 
     if (req.user!.role === 'student') {
+      const isPublished = worksheet.is_published === 1
+
+      let enrolled = false
+      if (!isPublished) {
+        const assignment = await knex('assignments')
+          .join('class_students', 'assignments.class_id', 'class_students.class_id')
+          .where('assignments.worksheet_id', req.params.id)
+          .where('class_students.student_id', req.user!.userId)
+          .first()
+        enrolled = !!assignment
+      }
+
+      if (!isPublished && !enrolled) {
+        res.status(403).json({ error: 'You do not have access to this worksheet' })
+        return
+      }
+
       try {
         const content = JSON.parse(result.content)
         if (content.blocks) {

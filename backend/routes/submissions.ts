@@ -18,6 +18,16 @@ router.get('/assignment/:id', requireAuth, async (req, res, next) => {
       return
     }
 
+    if (req.user!.role === 'student' && assignment.class_id) {
+      const enrolled = await knex('class_students')
+        .where({ class_id: assignment.class_id, student_id: req.user!.userId })
+        .first()
+      if (!enrolled) {
+        res.status(403).json({ error: 'You are not enrolled in this class' })
+        return
+      }
+    }
+
     let submission = await knex('submissions')
       .where({ assignment_id: assignment.id, user_id: req.user!.userId })
       .first()
