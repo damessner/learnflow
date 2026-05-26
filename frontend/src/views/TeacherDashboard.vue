@@ -1423,19 +1423,16 @@ onMounted(async () => {
 
 async function loadReportIndex() {
   try {
-    const allAssignments = []
-    // Fetch assignments for every worksheet this teacher owns
-    for (const ws of wsStore.worksheets) {
+    const promises = wsStore.worksheets.map(async (ws) => {
       try {
         const data = await api.get(`/worksheets/${ws.id}/assignments`)
-        for (const a of data.assignments || []) {
-          allAssignments.push({ ...a, worksheet_title: ws.title })
-        }
+        return (data.assignments || []).map((a) => ({ ...a, worksheet_title: ws.title }))
       } catch {
-        /* ignore per-worksheet errors */
+        return []
       }
-    }
-    reportAssignments.value = allAssignments
+    })
+    const results = await Promise.all(promises)
+    reportAssignments.value = results.flat()
   } catch {
     /* */
   }
