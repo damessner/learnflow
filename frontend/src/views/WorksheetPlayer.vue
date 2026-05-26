@@ -389,11 +389,10 @@ onMounted(async () => {
       }
     }
 
-    autoSaveTimer = setInterval(() => { saveProgress().catch(() => {}) }, 20000)
-
     try {
-
-    try {
+      autoSaveTimer = setInterval(() => {
+        saveProgress().catch(() => {})
+      }, 20000)
       await learningStore.fetchGamification()
       gamXp.value = learningStore.gamification?.xp || 0
     } catch {
