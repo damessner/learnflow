@@ -52,9 +52,13 @@ const routes: RouteRecordRaw[] = [
   { path: '/admin', component: AdminDashboard, meta: { requiresAuth: true, role: 'admin' } },
 ]
 
+// Vite can expose an empty BASE_URL depending on how it was built/served.
+// Vue Router needs a sane base so internal navigations resolve correctly.
+const historyBase = import.meta.env.BASE_URL || '/'
+
 const router = createRouter({
   // Use Vite's BASE_URL so hard-refresh/deep links work when deployed under a sub-path.
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(historyBase),
   routes,
 })
 
