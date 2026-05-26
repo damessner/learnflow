@@ -64,14 +64,18 @@ router.onError((error, to) => {
     message.includes('Failed to fetch dynamically imported module') ||
     message.includes('Importing a module script failed')
 
-  if (!isChunkError || !to.fullPath) return
+  if (isChunkError && to.fullPath) {
+    const reloadKey = 'learnflow:chunk-reload'
+    const alreadyReloaded = sessionStorage.getItem(reloadKey) === to.fullPath
 
-  const reloadKey = 'learnflow:chunk-reload'
-  const alreadyReloaded = sessionStorage.getItem(reloadKey) === to.fullPath
-  if (alreadyReloaded) return
+    if (!alreadyReloaded) {
+      sessionStorage.setItem(reloadKey, to.fullPath)
+      window.location.assign(to.fullPath + (to.fullPath.includes('?') ? '&' : '?') + '_t=' + Date.now())
+      return
+    }
+  }
 
-  sessionStorage.setItem(reloadKey, to.fullPath)
-  window.location.assign(to.fullPath)
+  console.error('Navigation error:', error)
 })
 
 function getStoredUser() {
@@ -88,23 +92,26 @@ function getStoredUser() {
 
 router.beforeEach((to) => {
   const user = getStoredUser()
-  const isAuthenticated = !!user.role
+  const role = user.role
+  const isAuthenticated = !!role
 
   if (to.meta.requiresAuth && !isAuthenticated) return '/login'
 
   if (isAuthenticated) {
     if (to.path === '/login') {
-      if (user.role === 'student' || user.isGuest) return '/student'
-      if (user.role === 'admin') return '/admin'
-      return '/teacher'
+      if (role === 'student' || user.isGuest) return '/student'
+      if (role === 'admin') return '/admin'
+      if (role === 'teacher') return '/teacher'
+      return '/student'
     }
 
     if (to.meta.role) {
       const allowed = Array.isArray(to.meta.role) ? to.meta.role : [to.meta.role]
-      if (!allowed.includes(user.role)) {
-        if (user.role === 'student') return '/student'
-        if (user.role === 'admin') return '/admin'
-        return '/teacher'
+      if (!allowed.includes(role)) {
+        if (role === 'student') return '/student'
+        if (role === 'admin') return '/admin'
+        if (role === 'teacher') return '/teacher'
+        return '/login'
       }
     }
   }

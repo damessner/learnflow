@@ -19,12 +19,12 @@ export const useCoursesStore = defineStore('courses', () => {
 
   async function fetchCourse(id) {
     const data = await api.get(`/courses/${id}`)
-    currentCourse.value = data
+    currentCourse.value = data?.course || data || null
   }
 
   async function fetchStudentCourse(id) {
     const data = await api.get(`/courses/student/course/${id}`)
-    currentCourse.value = data
+    currentCourse.value = data?.course || data || null
   }
 
   async function createCourse(payload) {

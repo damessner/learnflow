@@ -11,16 +11,4 @@ export default defineConfig({
       '/uploads': { target: 'http://localhost:3001', changeOrigin: true },
     },
   },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules/mermaid')) return 'mermaid'
-          if (id.includes('node_modules/katex')) return 'katex'
-          if (id.includes('node_modules/cytoscape')) return 'cytoscape'
-          if (id.includes('node_modules/dagre') || id.includes('node_modules/d3')) return 'layout'
-        },
-      },
-    },
-  },
 })

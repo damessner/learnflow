@@ -86,6 +86,7 @@ onMounted(async () => {
 
 function renderGapPreview(template) {
   if (!template) return ''
-  return template.replace(/\(\((.*?)\)\)/g, '<u style="color:var(--primary)">$1</u>')
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+  return template.replace(/\(\((.*?)\)\)/g, (_m, c) => `<u style="color:var(--primary)">${esc(c)}</u>`)
 }
 </script>
