@@ -659,9 +659,7 @@ async function syncBuilderToRoute() {
     }
   } catch {
     uiStore.showToast('Failed to load worksheet', 'error')
-    isEditing.value = false
-    form.value = emptyForm()
-    blocks.value = []
+    resetBuilder()
   }
 }
 
@@ -679,9 +677,12 @@ onMounted(async () => {
   await syncBuilderToRoute()
 })
 
-// Non-immediate: only re-sync when the id param changes after initial mount
-// (needed if same component instance is ever reused across navigations)
-watch(() => route.params.id, syncBuilderToRoute)
+watch(
+  () => route.fullPath,
+  () => {
+    syncBuilderToRoute()
+  },
+)
 
 function genId() {
   return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)

@@ -35,7 +35,14 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: ['teacher', 'admin'] },
   },
   {
-    path: '/teacher/builder/:id?',
+    path: '/teacher/builder',
+    name: 'worksheet-builder-new',
+    component: WorksheetBuilder,
+    meta: { requiresAuth: true, role: ['teacher', 'admin'] },
+  },
+  {
+    path: '/teacher/builder/:id',
+    name: 'worksheet-builder-edit',
     component: WorksheetBuilder,
     meta: { requiresAuth: true, role: ['teacher', 'admin'] },
   },

@@ -47,8 +47,9 @@
 
     <main class="main-content">
       <router-view v-slot="{ Component, route }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" :key="route.fullPath" />
+        <!-- Avoid mode="out-in": it can leave the main area blank if leave/enter hooks stall. -->
+        <transition name="fade">
+          <component v-if="Component" :is="Component" :key="route.path" />
         </transition>
       </router-view>
     </main>
