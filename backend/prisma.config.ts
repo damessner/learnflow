@@ -3,12 +3,19 @@
 import 'dotenv/config'
 import { defineConfig } from 'prisma/config'
 
+const databaseUrl = process.env['DATABASE_URL']
+if (!databaseUrl) {
+  // Prisma (and tools that load this config) require a DATABASE_URL for the datasource.
+  // This file is still type-checked in CI even when the app uses SQLite via Knex.
+  throw new Error('DATABASE_URL environment variable is required for Prisma')
+}
+
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
     path: 'prisma/migrations',
   },
   datasource: {
-    url: process.env['DATABASE_URL'],
+    url: databaseUrl,
   },
 })
