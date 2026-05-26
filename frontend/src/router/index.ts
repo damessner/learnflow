@@ -1,15 +1,14 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-
-const Login = () => import('../views/Login.vue')
-const StudentDashboard = () => import('../views/StudentDashboard.vue')
-const TeacherDashboard = () => import('../views/TeacherDashboard.vue')
-const WorksheetPlayer = () => import('../views/WorksheetPlayer.vue')
-const WorksheetBuilder = () => import('../views/WorksheetBuilder.vue')
-const WorksheetPreview = () => import('../views/WorksheetPreview.vue')
-const CourseView = () => import('../views/CourseView.vue')
-const TeacherRegistration = () => import('../views/TeacherRegistration.vue')
-const AdminDashboard = () => import('../views/AdminDashboard.vue')
-const StoryGenerator = () => import('../views/StoryGenerator.vue')
+import Login from '../views/Login.vue'
+import StudentDashboard from '../views/StudentDashboard.vue'
+import TeacherDashboard from '../views/TeacherDashboard.vue'
+import WorksheetPlayer from '../views/WorksheetPlayer.vue'
+import WorksheetBuilder from '../views/WorksheetBuilder.vue'
+import WorksheetPreview from '../views/WorksheetPreview.vue'
+import CourseView from '../views/CourseView.vue'
+import TeacherRegistration from '../views/TeacherRegistration.vue'
+import AdminDashboard from '../views/AdminDashboard.vue'
+import StoryGenerator from '../views/StoryGenerator.vue'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },

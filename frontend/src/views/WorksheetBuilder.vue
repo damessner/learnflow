@@ -527,7 +527,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWorksheetsStore } from '../stores/worksheets'
 import { useUiStore } from '../stores/ui'
@@ -676,9 +676,15 @@ onMounted(async () => {
   } catch {
     /* */
   }
+  // Wait for the route to be fully resolved before syncing builder state.
+  // Using immediate:true on a watch fires before route is resolved on
+  // client-side navigation, which is why a hard-refresh was required.
+  await nextTick()
+  await syncBuilderToRoute()
 })
 
-watch(() => route.params.id, syncBuilderToRoute, { immediate: true })
+// Non-immediate: only re-sync when the id param changes after initial mount
+watch(() => route.params.id, syncBuilderToRoute)
 
 function genId() {
   return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)
