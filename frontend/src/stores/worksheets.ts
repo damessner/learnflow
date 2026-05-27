@@ -70,8 +70,8 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     return api.get(`/worksheets/assignments/${assignmentId}/stats`)
   }
 
-  async function aiGenerate(prompt, provider = 'ollama') {
-    return api.post('/ai/generate', { prompt, provider })
+  async function aiGenerate(prompt, provider = 'ollama', options = {}) {
+    return api.post('/ai/generate', { prompt, provider, ...options })
   }
 
   return {

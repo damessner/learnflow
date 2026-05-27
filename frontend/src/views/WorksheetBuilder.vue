@@ -117,6 +117,24 @@
             style="font-size: 0.75rem; margin-bottom: 0.35rem"
             @keydown.esc="aiOpen = false"
           ></textarea>
+          <textarea
+            v-model="aiLernziele"
+            rows="2"
+            placeholder="Lernziele (optional) — e.g. Students will be able to..."
+            style="font-size: 0.7rem; margin-bottom: 0.35rem"
+          ></textarea>
+          <div style="display: flex; gap: 0.25rem; margin-bottom: 0.35rem">
+            <select v-model="aiDifficulty" style="font-size: 0.65rem; padding: 0.2rem; flex: 1">
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+            <select v-model="aiLength" style="font-size: 0.65rem; padding: 0.2rem; flex: 1">
+              <option value="short">Short</option>
+              <option value="medium">Medium</option>
+              <option value="long">Long</option>
+            </select>
+          </div>
           <select
             v-model="aiProvider"
             style="font-size: 0.7rem; padding: 0.25rem; margin-bottom: 0.35rem"
@@ -546,6 +564,9 @@ const form = ref(emptyForm())
 const subjects = ref([])
 const gradeLevels = ref([])
 const aiPrompt = ref('')
+const aiLernziele = ref('')
+const aiDifficulty = ref('medium')
+const aiLength = ref('medium')
 const aiProvider = ref('ollama')
 const aiLoading = ref(false)
 const aiOpen = ref(false)
@@ -802,7 +823,11 @@ async function generateAI() {
   if (!aiPrompt.value.trim()) return
   aiLoading.value = true
   try {
-    const data = await store.aiGenerate(aiPrompt.value, aiProvider.value)
+    const data = await store.aiGenerate(aiPrompt.value, aiProvider.value, {
+      difficulty: aiDifficulty.value,
+      length: aiLength.value,
+      lernziele: aiLernziele.value.trim() || undefined,
+    })
     blocks.value.push(...mapLoadedBlocks(data.blocks))
     uiStore.showToast(`Generated ${data.blocks.length} blocks`, 'success')
   } catch (e) {

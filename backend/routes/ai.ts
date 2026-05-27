@@ -108,14 +108,55 @@ const GenerationSchema = z.object({
   blocks: z.array(BlockSchema),
 })
 
+function buildWorksheetPrompt(userPrompt: string, difficulty?: string, length?: string, lernziele?: string): string {
+  const parts: string[] = [userPrompt]
+
+  parts.push(``)
+  parts.push(`Difficulty: ${difficulty || 'medium'}. Length: ${length || 'medium'}.`)
+  if (lernziele) parts.push(`Learning objectives (Lernziele): ${lernziele}`)
+
+  parts.push(``)
+  parts.push(`You MUST return ONLY a JSON object with a "blocks" array. Each block is one exercise. Here are ALL supported block types and their required fields:`)
+  parts.push(``)
+  parts.push(`BLOCK TYPES:`)
+  parts.push(`- "text": { id, type: "text", points: 0, text: "content" }`)
+  parts.push(`- "gap_fill": { id, type: "gap_fill", points: N, template: "sentence with ((answer)) gaps" }`)
+  parts.push(`- "multiple_choice": { id, type: "multiple_choice", points: N, text: "question", options: ["a","b","c","d"], correct: [0,2] }`)
+  parts.push(`- "single_choice": { id, type: "single_choice", points: N, text: "question", options: ["a","b","c"], correct: 0 }`)
+  parts.push(`- "matching": { id, type: "matching", points: N, pairs: [["left1","right1"],["left2","right2"]] }`)
+  parts.push(`- "word_scramble": { id, type: "word_scramble", points: N, words: [{word:"example"},{word:"another"}] }`)
+  parts.push(`- "short_answer": { id, type: "short_answer", points: N, text: "question", keywords: ["key1","key2"] }`)
+  parts.push(`- "number_line": { id, type: "number_line", points: N, min_value: 0, max_value: 100, markers: [25,50,75] }`)
+  parts.push(`- "equation_entry": { id, type: "equation_entry", points: N, equation: "2x + 3 = 7", final_answer: "2" }`)
+  parts.push(`- "fraction_input": { id, type: "fraction_input", points: N, numerator: 1, denominator: 2 }`)
+  parts.push(`- "arithmetic_grid": { id, type: "arithmetic_grid", points: N, operand1: 12, operand2: 5, operation: "add" }`)
+  parts.push(`- "graph_plot": { id, type: "graph_plot", points: N, points_to_plot: [[1,2],[3,4]] }`)
+  parts.push(`- "geometry_shape": { id, type: "geometry_shape", points: N, shape_type: "triangle" }`)
+  parts.push(`- "word_problem": { id, type: "word_problem", points: N, problem_text: "...", steps: [{description:"Step 1",expected:"val1"}], final_answer: "answer" }`)
+  parts.push(`- "vocabulary": { id, type: "vocabulary", points: N, vocabulary: { pairs: [{l:"word",r:"translation"}], direction: "l2r" } }`)
+  parts.push(`- "read_aloud": { id, type: "read_aloud", points: 0, text: "passage" }`)
+  parts.push(``)
+  parts.push(`RULES:`)
+  parts.push(`- Every block MUST have a unique "id" field (uuid format)`)
+  parts.push(`- "points" should be 10 for main exercises, 5 for mini exercises, 0 for text/reading blocks`)
+  parts.push(`- For difficulty "easy": use simpler vocabulary, fewer options (2-3), lower point values`)
+  parts.push(`- For difficulty "hard": use complex vocabulary, more options (4-5), multi-step problems`)
+  parts.push(`- For length "short": generate 2-4 blocks`)
+  parts.push(`- For length "medium": generate 4-7 blocks`)
+  parts.push(`- For length "long": generate 7-12 blocks`)
+  parts.push(`- For "multiple_choice" and "single_choice", include "correct" field with the index/indices of the correct option(s)`)
+
+  return parts.join('\n')
+}
+
 router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
   try {
-    const { prompt, provider } = req.body
+    const { prompt, provider, difficulty, length, lernziele } = req.body
     const blocks: z.infer<typeof BlockSchema>[] = []
 
     if (provider === 'opencode' && getZenApiKey()) {
       try {
-        const systemPrompt = `Create an educational worksheet with interactive exercise blocks. Each block has id, type, points, and type-specific fields. For "single_choice", include a "correct" field (integer index of correct option, 0-indexed). For "multiple_choice", include a "correct" field (array of integer indices of correct options, 0-indexed). For concepts involving processes, hierarchies, or relationships, include a "mermaid" field with valid Mermaid.js syntax and an "alt_text" field describing the diagram.`
+        const systemPrompt = buildWorksheetPrompt(prompt, difficulty, length, lernziele)
         const response = await callZenChat(prompt, systemPrompt)
         const data = await response.json()
         if (response.ok) {
@@ -132,7 +173,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
     } else if (provider === 'opencode' && (await isOpenCodeAvailable())) {
       try {
         const sessionId = await createSession('Worksheet Generation')
-        const systemPrompt = `Create an educational worksheet with interactive exercise blocks. Each block has id, type, points, and type-specific fields. For "single_choice", include a "correct" field (integer index of correct option, 0-indexed). For "multiple_choice", include a "correct" field (array of integer indices of correct options, 0-indexed). For concepts involving processes, hierarchies, or relationships, include a "mermaid" field with valid Mermaid.js syntax and an "alt_text" field describing the diagram.`
+        const systemPrompt = buildWorksheetPrompt(prompt, difficulty, length, lernziele)
         const result = await sendPromptStructured(sessionId, prompt, GenerationSchema as unknown as Record<string, unknown>, {
           system: systemPrompt,
           model: await getModelConfig(),
@@ -148,7 +189,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: process.env.OLLAMA_MODEL || 'llama3',
-          prompt: `Create an educational worksheet with interactive exercise blocks from this prompt: "${prompt}". Return ONLY valid JSON with a "blocks" array. Each block has id, type, points, and type-specific fields matching this schema. For "single_choice", include a "correct" field (integer index of correct option, 0-indexed). For "multiple_choice", include a "correct" field (array of integer indices of correct options, 0-indexed). For concepts involving processes, hierarchies, or relationships, include a "mermaid" field with valid Mermaid.js syntax (graph TD/LR, flowchart, sequenceDiagram) and an "alt_text" field describing the diagram.`,
+          prompt: buildWorksheetPrompt(prompt, difficulty, length, lernziele),
           stream: false,
           format: 'json',
         }),
@@ -178,7 +219,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
               {
                 parts: [
                   {
-                    text: `Generate a JSON array of interactive worksheet blocks for an educational platform. Prompt: "${prompt}". Each block has id (uuid string), type (one of: gap_fill, multiple_choice, single_choice, matching, short_answer, text), points (number), and type-specific fields. For "single_choice", include a "correct" field (integer index of correct option, 0-indexed). For "multiple_choice", include a "correct" field (array of integer indices of correct options, 0-indexed). For abstract concepts, include a "mermaid" field with Mermaid.js syntax (graph TD/LR, flowchart, or sequenceDiagram) and an "alt_text" accessibility description. Return ONLY valid JSON with {"blocks": [...]}.`,
+                    text: buildWorksheetPrompt(prompt, difficulty, length, lernziele),
                   },
                 ],
               },
@@ -541,6 +582,9 @@ router.post(
         questionCount,
         includeVocab,
         includeGrammar,
+        difficulty,
+        length,
+        lernziele,
       } = req.body
       const provider = req.body.provider
 
@@ -557,6 +601,10 @@ Topic: "${topic}"
 ${grammarFocus ? `Grammar focus: ${grammarFocus}` : ''}
 ${vocabulary ? `Required vocabulary words: ${vocabulary}` : ''}
 ${questionCount ? `Generate ${questionCount} questions` : 'Generate 5-8 questions'}
+${lernziele ? `Learning objectives (Lernziele): ${lernziele}` : ''}
+Difficulty: ${difficulty || 'medium'}. Length: ${length || 'medium'}.
+For "easy": simpler vocabulary, shorter sentences. For "hard": complex vocabulary, multi-step comprehension.
+For "short": ~3-4 blocks. For "medium": ~5-8 blocks. For "long": ~8-14 blocks.
 
 Return ONLY valid JSON with this structure:
 {

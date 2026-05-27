@@ -48,6 +48,28 @@
           <input type="checkbox" v-model="form.includeGrammar" /> Grammar exercises
         </label>
       </div>
+      <div class="form-group">
+        <label>Lernziele (optional)</label>
+        <textarea v-model="form.lernziele" rows="2" placeholder="e.g. Students will be able to understand the main idea and identify key vocabulary..."></textarea>
+      </div>
+      <div style="display: flex; gap: 0.5rem">
+        <div class="form-group" style="flex: 1">
+          <label>Difficulty</label>
+          <select v-model="form.difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex: 1">
+          <label>Length</label>
+          <select v-model="form.length">
+            <option value="short">Short</option>
+            <option value="medium">Medium</option>
+            <option value="long">Long</option>
+          </select>
+        </div>
+      </div>
       <div class="form-group" style="margin-top: 0.5rem">
         <label>AI Provider</label>
         <select v-model="form.provider">
@@ -145,6 +167,9 @@ const form = ref({
   includeVocab: true,
   includeGrammar: true,
   provider: '',
+  lernziele: '',
+  difficulty: 'medium',
+  length: 'medium',
 })
 
 const gradeLevels = ref([])
