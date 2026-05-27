@@ -39,48 +39,6 @@
           </div>
         </div>
 
-        <!-- Block Toolbar -->
-        <div class="sidebar-section">
-          <h3 class="sidebar-heading">Questions</h3>
-          <div class="block-grid">
-            <button class="block-btn" @click="addBlock('text')"><span class="block-btn-icon">📄</span> Text</button>
-            <button class="block-btn" @click="addBlock('info_box')"><span class="block-btn-icon">💡</span> Info Box</button>
-            <button class="block-btn" @click="addBlock('gap_fill')"><span class="block-btn-icon">✏️</span> Gap Fill</button>
-            <button class="block-btn" @click="addBlock('multiple_choice')"><span class="block-btn-icon">✅</span> Multi Choice</button>
-            <button class="block-btn" @click="addBlock('single_choice')"><span class="block-btn-icon">☑️</span> Single Choice</button>
-            <button class="block-btn" @click="addBlock('short_answer')"><span class="block-btn-icon">📝</span> Short Answer</button>
-            <button class="block-btn" @click="addBlock('true_false')"><span class="block-btn-icon">⚖️</span> True/False</button>
-            <button class="block-btn" @click="addBlock('matching')"><span class="block-btn-icon">🔗</span> Matching</button>
-            <button class="block-btn" @click="addBlock('ordering')"><span class="block-btn-icon">🔢</span> Ordering</button>
-            <button class="block-btn" @click="addBlock('word_scramble')"><span class="block-btn-icon">🔤</span> Scramble</button>
-            <button class="block-btn" @click="addBlock('read_aloud')"><span class="block-btn-icon">🔊</span> Read Aloud</button>
-          </div>
-        </div>
-
-        <div class="sidebar-section">
-          <h3 class="sidebar-heading">Math</h3>
-          <div class="block-grid">
-            <button class="block-btn" @click="addBlock('arithmetic_grid')"><span class="block-btn-icon">➕</span> Arithmetic</button>
-            <button class="block-btn" @click="addBlock('equation_entry')"><span class="block-btn-icon">📐</span> Equation</button>
-            <button class="block-btn" @click="addBlock('fraction_input')"><span class="block-btn-icon">🧮</span> Fraction</button>
-            <button class="block-btn" @click="addBlock('number_line')"><span class="block-btn-icon">📏</span> Number Line</button>
-            <button class="block-btn" @click="addBlock('word_problem')"><span class="block-btn-icon">📖</span> Word Prob.</button>
-            <button class="block-btn" @click="addBlock('graph_plot')"><span class="block-btn-icon">📊</span> Graph Plot</button>
-            <button class="block-btn" @click="addBlock('geometry_shape')"><span class="block-btn-icon">🔷</span> Geometry</button>
-          </div>
-        </div>
-
-        <div class="sidebar-section">
-          <h3 class="sidebar-heading">Media</h3>
-          <div class="block-grid">
-            <button class="block-btn" @click="addBlock('media')"><span class="block-btn-icon">🖼️</span> Image</button>
-            <button class="block-btn" @click="addBlock('audio')"><span class="block-btn-icon">🎵</span> Audio</button>
-            <button class="block-btn" @click="addBlock('video')"><span class="block-btn-icon">🎬</span> Video</button>
-            <button class="block-btn" @click="addBlock('youtube')"><span class="block-btn-icon">📺</span> YouTube</button>
-            <button class="block-btn" @click="addBlock('drawing')"><span class="block-btn-icon">🎨</span> Drawing</button>
-          </div>
-        </div>
-
         <!-- AI Generator (collapsible) -->
         <div class="sidebar-section">
           <button class="collapse-toggle" @click="aiPanelOpen = !aiPanelOpen">
@@ -138,11 +96,6 @@
                 <option value="medium">Medium</option>
                 <option value="long">Long</option>
               </select>
-              <select v-model="aiProvider" style="font-size:0.65rem;padding:0.2rem;flex:1;min-width:60px">
-                <option value="opencode">OpenCode</option>
-                <option value="ollama">Ollama</option>
-                <option value="gemini">Gemini</option>
-              </select>
             </div>
             <button
               class="btn-primary"
@@ -152,6 +105,48 @@
             >
               {{ aiLoading ? 'Generating...' : 'Generate' }}
             </button>
+          </div>
+        </div>
+
+        <!-- Block Toolbar -->
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading">Questions</h3>
+          <div class="block-grid">
+            <button class="block-btn" @click="addBlock('text')"><span class="block-btn-icon">📄</span> Text</button>
+            <button class="block-btn" @click="addBlock('info_box')"><span class="block-btn-icon">💡</span> Info Box</button>
+            <button class="block-btn" @click="addBlock('gap_fill')"><span class="block-btn-icon">✏️</span> Gap Fill</button>
+            <button class="block-btn" @click="addBlock('multiple_choice')"><span class="block-btn-icon">✅</span> Multi Choice</button>
+            <button class="block-btn" @click="addBlock('single_choice')"><span class="block-btn-icon">☑️</span> Single Choice</button>
+            <button class="block-btn" @click="addBlock('short_answer')"><span class="block-btn-icon">📝</span> Short Answer</button>
+            <button class="block-btn" @click="addBlock('true_false')"><span class="block-btn-icon">⚖️</span> True/False</button>
+            <button class="block-btn" @click="addBlock('matching')"><span class="block-btn-icon">🔗</span> Matching</button>
+            <button class="block-btn" @click="addBlock('ordering')"><span class="block-btn-icon">🔢</span> Ordering</button>
+            <button class="block-btn" @click="addBlock('word_scramble')"><span class="block-btn-icon">🔤</span> Scramble</button>
+            <button class="block-btn" @click="addBlock('read_aloud')"><span class="block-btn-icon">🔊</span> Read Aloud</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading">Math</h3>
+          <div class="block-grid">
+            <button class="block-btn" @click="addBlock('arithmetic_grid')"><span class="block-btn-icon">➕</span> Arithmetic</button>
+            <button class="block-btn" @click="addBlock('equation_entry')"><span class="block-btn-icon">📐</span> Equation</button>
+            <button class="block-btn" @click="addBlock('fraction_input')"><span class="block-btn-icon">🧮</span> Fraction</button>
+            <button class="block-btn" @click="addBlock('number_line')"><span class="block-btn-icon">📏</span> Number Line</button>
+            <button class="block-btn" @click="addBlock('word_problem')"><span class="block-btn-icon">📖</span> Word Prob.</button>
+            <button class="block-btn" @click="addBlock('graph_plot')"><span class="block-btn-icon">📊</span> Graph Plot</button>
+            <button class="block-btn" @click="addBlock('geometry_shape')"><span class="block-btn-icon">🔷</span> Geometry</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading">Media</h3>
+          <div class="block-grid">
+            <button class="block-btn" @click="addBlock('media')"><span class="block-btn-icon">🖼️</span> Image</button>
+            <button class="block-btn" @click="addBlock('audio')"><span class="block-btn-icon">🎵</span> Audio</button>
+            <button class="block-btn" @click="addBlock('video')"><span class="block-btn-icon">🎬</span> Video</button>
+            <button class="block-btn" @click="addBlock('youtube')"><span class="block-btn-icon">📺</span> YouTube</button>
+            <button class="block-btn" @click="addBlock('drawing')"><span class="block-btn-icon">🎨</span> Drawing</button>
           </div>
         </div>
 
@@ -600,7 +595,7 @@ const aiPrompt = ref('')
 const aiLernziele = ref('')
 const aiDifficulty = ref('medium')
 const aiLength = ref('medium')
-const aiProvider = ref('ollama')
+const aiProvider = ref('gemini')
 const aiStyle = ref('practice')
 const aiLoading = ref(false)
 const conceptInput = ref('')
