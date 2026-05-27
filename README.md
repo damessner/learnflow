@@ -209,7 +209,7 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-### 🔄 Update (One-Liner)
+### 🔄 Update (One-Liner — works on first install too)
 
 ```bash
 cd /var/www/learnflow && bash deployment/update.sh

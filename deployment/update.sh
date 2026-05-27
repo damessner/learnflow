@@ -30,7 +30,12 @@ npm run build
 cd ..
 
 echo "Reloading PM2..."
-pm2 reload learnflow --update-env
+# Start if first run, reload otherwise — works out of the box
+if pm2 show learnflow &>/dev/null; then
+  pm2 reload learnflow --update-env
+else
+  pm2 start deployment/ecosystem.config.js --update-env
+fi
 pm2 save
 
 echo "=== Update complete ==="
