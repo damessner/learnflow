@@ -123,7 +123,7 @@ export async function generateNeuroVocabCourse(rawList: string): Promise<Block[]
       type: 'vocabulary',
       points: words.length * 2,
       vocabulary: {
-        pairs: words.map((w) => ({ l: w, r: `[${w}]` })),
+        pairs: words.map((w) => ({ l: w, r: `[translate: ${w}]` })),
         direction: 'l2r',
       },
       rawText: rawList,

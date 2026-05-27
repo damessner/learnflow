@@ -55,6 +55,24 @@ async function callZenChat(prompt: string, system?: string, stream = false, extr
   )
 }
 
+async function callZenChatStream(messages: { role: string; content: string }[]): Promise<Response> {
+  return fetchWithTimeout(
+    ZEN_API_URL,
+    {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getZenApiKey()}`,
+    },
+    body: JSON.stringify({
+      model: getZenModel(),
+      messages,
+      stream: true,
+    }),
+    },
+    STREAM_FETCH_TIMEOUT_MS,
+  )
+}
 const router = Router()
 
 export const SUBJECTS = [
@@ -97,6 +115,12 @@ const BlockSchema = z.object({
     'unit_conversion',
     'angle',
     'fraction_model',
+    'vocabulary',
+    'contextual_dialogue',
+    'semantic_sorter',
+    'flashcards',
+    'memory_match',
+    'drag_drop',
   ]),
   points: z.number().optional().default(1),
   title: z.string().optional(),
@@ -145,6 +169,14 @@ const BlockSchema = z.object({
   angle_type: z.string().optional(),
   model_type: z.string().optional(),
   show_labels: z.boolean().optional(),
+  direction: z.string().optional(),
+  vocabulary: z.object({ pairs: z.array(z.object({ l: z.string(), r: z.string() })), direction: z.string() }).optional(),
+  messages: z.array(z.object({ text: z.string(), isGap: z.boolean().optional(), answer: z.string().optional() })).optional(),
+  categories: z.array(z.object({ name: z.string(), words: z.array(z.string()) })).optional(),
+  cards: z.array(z.object({ front: z.string(), back: z.string(), image_url: z.string().optional(), audio_url: z.string().optional() })).optional(),
+  answers: z.record(z.string(), z.string()).optional(),
+  source_lang: z.string().optional(),
+  target_lang: z.string().optional(),
 })
 
 const GenerationSchema = z.object({
@@ -162,6 +194,9 @@ const GenerateRequestSchema = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
   style: z.enum(['practice', 'test', 'revision', 'challenge']).optional().default('practice'),
+  source_lang: z.string().optional(),
+  target_lang: z.string().optional(),
+  cefr_level: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']).optional(),
 })
 
 type GeneratedBlock = z.infer<typeof BlockSchema>
@@ -212,7 +247,10 @@ function buildWorksheetPrompt({
   title,
   description,
   style,
-}: GenerateRequest): string {
+  source_lang,
+  target_lang,
+  cefr_level,
+}: GenerateRequest & { source_lang?: string; target_lang?: string; cefr_level?: string }): string {
   const parts: string[] = []
 
   parts.push(`Create a teacher-usable worksheet that makes pupils actively work.`)
@@ -259,11 +297,14 @@ function buildWorksheetPrompt({
     parts.push(`- For grade 7-8: include algebra, proportional reasoning, probability, geometry proofs.`)
   } else if (subject === 'German' || subject === 'English') {
     parts.push(`- ALL content in ${subject === 'German' ? 'German' : 'English'}.`)
-    parts.push(`- Prefer gap_fill, multiple_choice, short_answer, matching, word_scramble, read_aloud blocks.`)
+    parts.push(`- Prefer gap_fill, multiple_choice, short_answer, matching, word_scramble, read_aloud blocks. For language learning, also use vocabulary, contextual_dialogue, semantic_sorter, flashcards, memory_match, drag_drop.`)
     parts.push(`- Include reading comprehension passages (read_aloud) with follow-up questions.`)
     parts.push(`- For grade 1-3: basic vocabulary, simple sentences, phonics/reading basics.`)
     parts.push(`- For grade 4-6: grammar exercises, text comprehension, vocabulary building, short writing.`)
     parts.push(`- For grade 7-8: literary analysis, complex grammar, argumentative writing, text interpretation.`)
+    parts.push(`- For language worksheets (German as foreign language, English as foreign language): include vocabulary, contextual_dialogue, semantic_sorter, flashcards, memory_match, drag_drop blocks.`)
+    parts.push(`- If language_pair is set (e.g. source_lang="de", target_lang="en"), ALL exercises and instructions should use the target language for output, with source language for vocabulary pairs. Vocabulary pair direction: source→target.`)
+    parts.push(`- If cefr_level is set (A1/A2/B1/B2/C1/C2), calibrate vocabulary complexity, sentence length, and grammar accordingly.`)
   } else if (subject === 'Science') {
     parts.push(`- Focus on scientific concepts, experiments, observations, and real-world applications.`)
     parts.push(`- Prefer multiple_choice, gap_fill, matching, short_answer, word_problem blocks.`)
@@ -276,6 +317,24 @@ function buildWorksheetPrompt({
     parts.push(`- Prefer multiple_choice, matching, gap_fill, short_answer, text blocks for source passages.`)
     parts.push(`- For geography: include map-related tasks, climate data analysis, cultural comparisons.`)
     parts.push(`- For history: include chronology, primary source interpretation, historical significance.`)
+  }
+
+  if (source_lang && target_lang) {
+    parts.push(`LANGUAGE PAIR: The student is learning ${target_lang} from ${source_lang}.`)
+    parts.push(`- All content, instructions, and exercises should be in ${target_lang}.`)
+    parts.push(`- Vocabulary pairs should be: source=${source_lang} word → target=${target_lang} translation.`)
+  }
+  if (cefr_level) {
+    parts.push(`CEFR LEVEL: ${cefr_level}`)
+    const cefrGuidance: Record<string, string> = {
+      'A1': '- Use very basic vocabulary (200-500 words). Simple present tense only. Short sentences (3-8 words). Everyday topics (family, food, colors, numbers).',
+      'A2': '- Use elementary vocabulary (500-1000 words). Present/past simple. Sentences up to 12 words. Daily life, shopping, directions.',
+      'B1': '- Use intermediate vocabulary (1000-2000 words). All basic tenses. Compound sentences. Opinions, plans, experiences.',
+      'B2': '- Use upper-intermediate vocabulary (2000-4000 words). Complex grammar including subjunctive. Abstract topics, arguments, professional contexts.',
+      'C1': '- Use advanced vocabulary. Idiomatic expressions. Nuanced arguments. Academic and professional language.',
+      'C2': '- Use near-native vocabulary. Subtle nuance. Literary and technical language. Complex rhetorical structures.',
+    }
+    parts.push(cefrGuidance[cefr_level] || '')
   }
 
   parts.push(``)
@@ -298,6 +357,12 @@ function buildWorksheetPrompt({
   parts.push(`- "word_problem": { id, type: "word_problem", points: N, problem_text: "...", steps: [{description:"Step 1",expected:"val1"}], final_answer: "answer" }`)
   parts.push(`- "read_aloud": { id, type: "read_aloud", points: 0, text: "short passage or source text" }`)
   parts.push(`- "info_box": { id, type: "info_box", points: 0, title: "Did you know?", text: "explanation", mermaid: "optional diagram code", alt_text: "diagram description" }`)
+  parts.push(`- "vocabulary": { id, type: "vocabulary", points: N, vocabulary: { pairs: [{l:"source_word",r:"translation"}], direction: "l2r" } }`)
+  parts.push(`- "contextual_dialogue": { id, type: "contextual_dialogue", points: N, messages: [{text:"Hi!", isGap:false},{text:"My name is ((name))", isGap:true, answer:"Peter"}] }`)
+  parts.push(`- "semantic_sorter": { id, type: "semantic_sorter", points: N, categories: [{name:"Nouns", words:["table","chair"]},{name:"Verbs",words:["run","eat"]}] }`)
+  parts.push(`- "flashcards": { id, type: "flashcards", points: N, cards: [{front:"Hund",back:"dog"},{front:"Katze",back:"cat"}] }`)
+  parts.push(`- "memory_match": { id, type: "memory_match", points: N, pairs: [["Hund","dog"],["Katze","cat"]] }`)
+  parts.push(`- "drag_drop": { id, type: "drag_drop", points: N, items: ["apple","banana"], answers: { "fruit":"apple", "yellow":"banana" } }`)
   parts.push(``)
   parts.push(`RULES:`)
   parts.push(`- Every block MUST have a unique "id" field (uuid format)`)
@@ -527,6 +592,51 @@ function normalizeGeneratedBlock(raw: unknown): GeneratedBlock | null {
       if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return null
       return { id, type, points: 0, text, numerator, denominator, model_type, show_labels }
     }
+    case 'vocabulary': {
+      const vocabulary = candidate.vocabulary as { pairs?: { l: string; r: string }[]; direction?: string } | undefined
+      if (!vocabulary || !Array.isArray(vocabulary.pairs) || vocabulary.pairs.length === 0) return null
+      return { id, type, points: clampPoints(candidate.points, vocabulary.pairs.length), vocabulary: { pairs: vocabulary.pairs, direction: vocabulary.direction || 'l2r' } }
+    }
+    case 'contextual_dialogue': {
+      const messages = Array.isArray(candidate.messages)
+        ? candidate.messages.filter((m): m is { text: string; isGap?: boolean; answer?: string } =>
+            !!m && typeof m === 'object' && typeof (m as { text?: unknown }).text === 'string')
+        : []
+      if (messages.length === 0) return null
+      return { id, type, points: clampPoints(candidate.points, messages.length), messages }
+    }
+    case 'semantic_sorter': {
+      const categories = Array.isArray(candidate.categories)
+        ? candidate.categories.filter((c): c is { name: string; words: string[] } =>
+            !!c && typeof c === 'object' && typeof (c as { name?: unknown }).name === 'string' && Array.isArray((c as { words?: unknown }).words))
+        : []
+      if (categories.length < 2) return null
+      return { id, type, points: clampPoints(candidate.points, 10), categories }
+    }
+    case 'flashcards': {
+      const cards = Array.isArray(candidate.cards)
+        ? candidate.cards.filter((c): c is { front: string; back: string; image_url?: string; audio_url?: string } =>
+            !!c && typeof c === 'object' && typeof (c as { front?: unknown }).front === 'string' && typeof (c as { back?: unknown }).back === 'string')
+        : []
+      if (cards.length === 0) return null
+      return { id, type, points: clampPoints(candidate.points, cards.length), cards }
+    }
+    case 'memory_match': {
+      const pairs = Array.isArray(candidate.pairs)
+        ? candidate.pairs
+            .filter((pair): pair is [string, string] => Array.isArray(pair) && pair.length === 2)
+            .map((pair) => [String(pair[0]).trim(), String(pair[1]).trim()] as [string, string])
+            .filter(([left, right]) => left && right)
+        : []
+      if (pairs.length < 2) return null
+      return { id, type, points: clampPoints(candidate.points, pairs.length), pairs }
+    }
+    case 'drag_drop': {
+      const items = asStringArray(candidate.items)
+      const answers = candidate.answers as Record<string, string> | undefined
+      if (items.length === 0 || !answers) return null
+      return { id, type, points: clampPoints(candidate.points, items.length), items, answers }
+    }
     default:
       return null
   }
@@ -603,6 +713,9 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
         title,
         description,
         style,
+        source_lang: request.source_lang,
+        target_lang: request.target_lang,
+        cefr_level: request.cefr_level,
       })
 
       const attemptPrompt = attempt > 1
@@ -1621,5 +1734,195 @@ Mix reading comprehension, vocabulary, and grammar exercises. All content in Ger
     }
   },
 )
+
+// ----- Language Learning Endpoints -----
+
+router.post('/language/writing', requireAuth, async (req, res, next) => {
+  try {
+    const { text, topic, target_lang, cefr_level } = req.body
+    if (!text || !target_lang) {
+      res.status(400).json({ error: 'text and target_lang required' })
+      return
+    }
+
+    const prompt = `You are an expert ${target_lang} language teacher. Review this student writing:
+    
+Topic: ${topic || 'General writing'}
+Target language: ${target_lang}
+${cefr_level ? `CEFR Level: ${cefr_level}` : ''}
+
+Student text:
+"""
+${text}
+"""
+
+Provide detailed feedback as JSON:
+{
+  "grammar_score": 0-100,
+  "vocabulary_score": 0-100,
+  "coherence_score": 0-100,
+  "overall_score": 0-100,
+  "corrections": [
+    {"original": "wrong text", "suggestion": "corrected text", "rule": "grammar rule name"}
+  ],
+  "strengths": ["what was done well"],
+  "rubric": "overall teacher feedback in a supportive tone, 2-4 sentences"
+}
+
+Return ONLY valid JSON.`
+
+    const provider = req.body.provider || 'gemini'
+    let result = null
+    
+    if (provider === 'opencode' && (await isOpenCodeAvailable())) {
+      try {
+        const sessionId = await createSession('Language Writing Feedback')
+        result = await sendPromptStructured(sessionId, prompt, z.object({
+          grammar_score: z.number(), vocabulary_score: z.number(), coherence_score: z.number(),
+          overall_score: z.number(), corrections: z.array(z.object({ original: z.string(), suggestion: z.string(), rule: z.string() })),
+          strengths: z.array(z.string()), rubric: z.string()
+        }) as unknown as Record<string, unknown>, { model: await getModelConfig() })
+      } catch { result = null }
+    }
+    
+    if (!result) {
+      try {
+        const zenRes = await callZenChat(prompt, undefined, false, { response_format: { type: 'json_object' } })
+        const data = await zenRes.json()
+        result = JSON.parse(data.choices?.[0]?.message?.content || '{}')
+      } catch { result = null }
+    }
+    
+    if (!result) {
+      res.status(503).json({ error: 'AI feedback unavailable' })
+      return
+    }
+    
+    res.json({ feedback: result })
+  } catch (err) { next(err) }
+})
+
+router.post('/language/conversation', requireAuth, async (req, res, next) => {
+  try {
+    const { scenario, target_lang, cefr_level, message, history } = req.body
+    if (!scenario || !target_lang || !message) {
+      res.status(400).json({ error: 'scenario, target_lang, and message required' })
+      return
+    }
+
+    const systemPrompt = `You are a role-play partner for language learning.
+Scenario: ${scenario}
+Target language: ${target_lang}
+${cefr_level ? `CEFR Level: ${cefr_level} — use vocabulary and grammar appropriate for this level` : ''}
+
+Rules:
+- Stay in character. Respond in ${target_lang} only.
+- If the student makes a grammar mistake, gently correct it in your response by modeling the correct form.
+- Keep responses concise (1-3 sentences).
+- Use vocabulary appropriate for ${cefr_level || 'the student\'s level'}.
+- Be encouraging and supportive.`
+
+    const messages = [
+      { role: 'system' as const, content: systemPrompt },
+      ...(Array.isArray(history) ? history.map((h: {role:string,text:string}) => ({ role: h.role === 'user' ? 'user' as const : 'assistant' as const, content: h.text })) : []),
+      { role: 'user' as const, content: message },
+    ]
+
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
+    res.flushHeaders()
+
+    try {
+      const stream = await callZenChatStream(messages)
+      if (!stream?.body) {
+        res.write('data: [DONE]\n\n')
+        res.end()
+        return
+      }
+      const reader = stream.body.getReader()
+      const decoder = new TextDecoder()
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n').filter(l => l.startsWith('data: '))
+        for (const line of lines) {
+          if (line === 'data: [DONE]') { res.write('data: [DONE]\n\n'); break }
+          try {
+            const json = JSON.parse(line.replace('data: ', ''))
+            const text = json.choices?.[0]?.delta?.content || ''
+            if (text) res.write(`data: ${JSON.stringify({ text })}\n\n`)
+          } catch {}
+        }
+      }
+    } catch {
+      res.write('data: [DONE]\n\n')
+    }
+    res.end()
+  } catch (err) { next(err) }
+})
+
+router.post('/language/glosses', requireAuth, async (req, res, next) => {
+  try {
+    const { text, target_lang, cefr_level, known_words } = req.body
+    if (!text || !target_lang) {
+      res.status(400).json({ error: 'text and target_lang required' })
+      return
+    }
+
+    const prompt = `You are a ${target_lang} language teacher. Given this text:
+"""
+${text}
+"""
+
+For a student at ${cefr_level || 'A2'} CEFR level${known_words?.length ? ` who already knows these words: ${known_words.join(', ')}` : ''}:
+
+Identify words that are LIKELY UNKNOWN to the student (above their CEFR level). For each:
+- Provide a translation to the student's likely native language (context-based)
+- Provide the base/dictionary form
+- Suggest whether to add to vocabulary study
+
+Return JSON:
+{
+  "unknown_words": [
+    {"word": "original word in text", "translation": "translation", "base_form": "dictionary form", "add_to_study": true}
+  ],
+  "suggestions": [
+    {"word": "word", "reason": "why worth studying"}
+  ]
+}
+
+Focus on words above ${cefr_level || 'A2'} level. Return ONLY JSON.`
+
+    const provider = req.body.provider || 'gemini'
+    let result = null
+    
+    if (provider === 'opencode' && (await isOpenCodeAvailable())) {
+      try {
+        const sessionId = await createSession('Language Glosses')
+        result = await sendPromptStructured(sessionId, prompt, z.object({
+          unknown_words: z.array(z.object({ word: z.string(), translation: z.string(), base_form: z.string(), add_to_study: z.boolean() })),
+          suggestions: z.array(z.object({ word: z.string(), reason: z.string() }))
+        }) as unknown as Record<string, unknown>, { model: await getModelConfig() })
+      } catch { result = null }
+    }
+    
+    if (!result) {
+      try {
+        const zenRes = await callZenChat(prompt, undefined, false, { response_format: { type: 'json_object' } })
+        const data = await zenRes.json()
+        result = JSON.parse(data.choices?.[0]?.message?.content || '{}')
+      } catch { result = null }
+    }
+    
+    if (!result) {
+      res.status(503).json({ error: 'AI glosses unavailable' })
+      return
+    }
+    
+    res.json(result)
+  } catch (err) { next(err) }
+})
 
 export default router

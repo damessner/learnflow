@@ -23,6 +23,7 @@ import aiRoutes from './routes/ai'
 import srsRoutes from './routes/srs'
 import adminRoutes from './routes/admin'
 import workspaceRoutes from './routes/workspaces'
+import languageRoutes from './routes/language'
 
 function uploadContentType(filePath: string): string | null {
   const ext = path.extname(filePath).toLowerCase()
@@ -112,6 +113,7 @@ export function createApp(): express.Application {
   app.use('/api/srs', srsRoutes)
   app.use('/api/admin', adminRoutes)
   app.use('/api/workspaces', workspaceRoutes)
+  app.use('/api/language', languageRoutes)
 
   app.use(errorHandler)
 

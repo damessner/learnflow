@@ -568,6 +568,30 @@
         <WordProblem v-if="!readonly" :block="block" v-model="answers[block.id]" />
       </template>
 
+      <template v-if="block.type === 'vocabulary'">
+        <Vocabulary v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      </template>
+
+      <template v-if="block.type === 'contextual_dialogue'">
+        <ContextualDialogue v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      </template>
+
+      <template v-if="block.type === 'semantic_sorter'">
+        <SemanticSorter v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      </template>
+
+      <template v-if="block.type === 'flashcards'">
+        <Flashcards :block="block" v-model="answers[block.id]" :readonly="readonly" />
+      </template>
+
+      <template v-if="block.type === 'memory_match'">
+        <MemoryMatch v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      </template>
+
+      <template v-if="block.type === 'drag_drop'">
+        <DragDrop v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      </template>
+
       <div
         v-if="!submitted"
         style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color)"
@@ -718,6 +742,12 @@ import ArithmeticGrid from '../components/exercises/ArithmeticGrid.vue'
 import GraphPlot from '../components/exercises/GraphPlot.vue'
 import GeometryShape from '../components/exercises/GeometryShape.vue'
 import WordProblem from '../components/exercises/WordProblem.vue'
+import Vocabulary from '../components/exercises/Vocabulary.vue'
+import ContextualDialogue from '../components/exercises/ContextualDialogue.vue'
+import SemanticSorter from '../components/exercises/SemanticSorter.vue'
+import Flashcards from '../components/exercises/Flashcards.vue'
+import MemoryMatch from '../components/exercises/MemoryMatch.vue'
+import DragDrop from '../components/exercises/DragDrop.vue'
 
 const route = useRoute()
 const store = useSubmissionsStore()
@@ -808,6 +838,10 @@ onMounted(async () => {
           else if (b.type === 'word_scramble') answers[b.id] = []
           else if (b.type === 'single_choice') answers[b.id] = null
           else if (b.type === 'gap_fill') answers[b.id] = {}
+          else if (b.type === 'vocabulary') answers[b.id] = {}
+          else if (b.type === 'contextual_dialogue') answers[b.id] = {}
+          else if (b.type === 'drag_drop') answers[b.id] = {}
+          else if (b.type === 'flashcards' || b.type === 'memory_match' || b.type === 'semantic_sorter') answers[b.id] = ''
           else answers[b.id] = ''
         }
       }

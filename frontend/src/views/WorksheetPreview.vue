@@ -67,6 +67,34 @@
       <template v-if="block.type === 'text'">
         <div style="white-space: pre-wrap">{{ block.text }}</div>
       </template>
+
+      <template v-if="block.type === 'vocabulary'">
+        <Vocabulary :block="block" :readonly="true" />
+      </template>
+
+      <template v-if="block.type === 'contextual_dialogue'">
+        <ContextualDialogue :block="block" :readonly="true" />
+      </template>
+
+      <template v-if="block.type === 'semantic_sorter'">
+        <SemanticSorter :block="block" :readonly="true" />
+      </template>
+
+      <template v-if="block.type === 'flashcards'">
+        <Flashcards :block="block" :readonly="true" />
+      </template>
+
+      <template v-if="block.type === 'memory_match'">
+        <div v-for="(pair, pi) in block.pairs" :key="pi">
+          🧩 {{ pair[0] }} ↔ {{ pair[1] }}
+        </div>
+      </template>
+
+      <template v-if="block.type === 'drag_drop'">
+        <div v-for="(item, ii) in block.items" :key="ii">
+          📦 {{ item }} → {{ Object.entries(block.answers || {}).find(([,v]) => v === item)?.[0] || '?' }}
+        </div>
+      </template>
     </div>
 
     <div class="card" style="margin-top: 1rem">
@@ -80,6 +108,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useWorksheetsStore } from '../stores/worksheets'
 import MermaidDiagram from '../components/exercises/MermaidDiagram.vue'
+import Vocabulary from '../components/exercises/Vocabulary.vue'
+import ContextualDialogue from '../components/exercises/ContextualDialogue.vue'
+import SemanticSorter from '../components/exercises/SemanticSorter.vue'
+import Flashcards from '../components/exercises/Flashcards.vue'
+import MemoryMatch from '../components/exercises/MemoryMatch.vue'
+import DragDrop from '../components/exercises/DragDrop.vue'
 
 const route = useRoute()
 const store = useWorksheetsStore()

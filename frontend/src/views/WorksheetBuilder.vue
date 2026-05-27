@@ -43,6 +43,46 @@
                 <label>Description</label>
                 <textarea v-model="form.description" rows="2" placeholder="Optional description" @input="autoExpand($event)"></textarea>
               </div>
+              <div v-if="isLanguageSubject" style="display:flex;gap:0.5rem;margin-top:0.5rem">
+                <div class="form-group" style="flex:1">
+                  <label>Source Lang</label>
+                  <select v-model="form.source_lang" style="font-size:0.75rem">
+                    <option value="">-- Auto --</option>
+                    <option value="de">Deutsch</option>
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="it">Italiano</option>
+                    <option value="nl">Nederlands</option>
+                    <option value="ru">Русский</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex:1">
+                  <label>Target Lang</label>
+                  <select v-model="form.target_lang" style="font-size:0.75rem">
+                    <option value="">-- Auto --</option>
+                    <option value="de">Deutsch</option>
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="it">Italiano</option>
+                    <option value="nl">Nederlands</option>
+                    <option value="ru">Русский</option>
+                  </select>
+                </div>
+              </div>
+              <div v-if="isLanguageSubject" class="form-group" style="margin-bottom:0">
+                <label>CEFR Level</label>
+                <select v-model="form.cefr_level" style="font-size:0.75rem">
+                  <option value="">-- Auto --</option>
+                  <option value="A1">A1 – Beginner</option>
+                  <option value="A2">A2 – Elementary</option>
+                  <option value="B1">B1 – Intermediate</option>
+                  <option value="B2">B2 – Upper Intermediate</option>
+                  <option value="C1">C1 – Advanced</option>
+                  <option value="C2">C2 – Proficient</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -145,6 +185,18 @@
             <button class="block-btn" @click="addBlock('ordering')"><span class="block-btn-icon">🔢</span> Ordering</button>
             <button class="block-btn" @click="addBlock('word_scramble')"><span class="block-btn-icon">🔤</span> Scramble</button>
             <button class="block-btn" @click="addBlock('read_aloud')"><span class="block-btn-icon">🔊</span> Read Aloud</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading">🗣️ Language</h3>
+          <div class="block-grid">
+            <button class="block-btn" @click="addBlock('vocabulary')"><span class="block-btn-icon">📚</span> Vocabulary</button>
+            <button class="block-btn" @click="addBlock('contextual_dialogue')"><span class="block-btn-icon">💬</span> Dialogue</button>
+            <button class="block-btn" @click="addBlock('semantic_sorter')"><span class="block-btn-icon">🗂️</span> Sorter</button>
+            <button class="block-btn" @click="addBlock('flashcards')"><span class="block-btn-icon">🃏</span> Flashcards</button>
+            <button class="block-btn" @click="addBlock('memory_match')"><span class="block-btn-icon">🧩</span> Memory</button>
+            <button class="block-btn" @click="addBlock('drag_drop')"><span class="block-btn-icon">↔️</span> Drag&amp;Drop</button>
           </div>
         </div>
 
@@ -721,7 +773,7 @@ const router = useRouter()
 const store = useWorksheetsStore()
 const uiStore = useUiStore()
 
-const emptyForm = () => ({ title: '', subject: '', grade_level: '', description: '' })
+const emptyForm = () => ({ title: '', subject: '', grade_level: '', description: '', source_lang: '', target_lang: '', cefr_level: '' })
 
 const isEditing = ref(false)
 const blocks = ref([])
@@ -956,6 +1008,10 @@ const differentiateTemplates = computed(() => {
     'Sport': ['Spielregeln', 'Aufwärmen', 'Fair Play'],
   }
   return map[s] || []
+})
+
+const isLanguageSubject = computed(() => {
+  return ['Deutsch', 'Englisch', 'English', 'Français', 'French', 'Español', 'Spanish', 'Italiano', 'Italian', 'Nederlands', 'Dutch'].includes(form.value.subject || '')
 })
 
 function getRouteWorksheetId() {
@@ -1273,6 +1329,31 @@ function addBlock(type) {
   if (type === 'ordering') {
     block.items = ['', '', '']
   }
+  if (type === 'vocabulary') {
+    block.points = 10
+    block.vocabulary = { pairs: [{ l: '', r: '' }, { l: '', r: '' }], direction: 'l2r' }
+  }
+  if (type === 'contextual_dialogue') {
+    block.points = 8
+    block.messages = [{ text: 'Hello!', isGap: false }, { text: 'My name is ((name)).', isGap: true, answer: '' }]
+  }
+  if (type === 'semantic_sorter') {
+    block.points = 6
+    block.categories = [{ name: 'Category 1', words: ['item1', 'item2'] }, { name: 'Category 2', words: ['item3'] }]
+  }
+  if (type === 'flashcards') {
+    block.points = 0
+    block.cards = [{ front: '', back: '', image_url: '', audio_url: '' }, { front: '', back: '', image_url: '', audio_url: '' }]
+  }
+  if (type === 'memory_match') {
+    block.points = 6
+    block.pairs = [['', ''], ['', ''], ['', '']]
+  }
+  if (type === 'drag_drop') {
+    block.points = 6
+    block.items = ['item1', 'item2']
+    block.answers = { slot1: 'item1', slot2: 'item2' }
+  }
   if (type === 'drawing') {
     block.canvas_width = 600
     block.canvas_height = 400
@@ -1418,6 +1499,9 @@ async function generateAI() {
       title: form.value.title || undefined,
       description: form.value.description || undefined,
       style: aiStyle.value,
+      source_lang: form.value.source_lang || undefined,
+      target_lang: form.value.target_lang || undefined,
+      cefr_level: form.value.cefr_level || undefined,
     })
     blocks.value.push(...mapLoadedBlocks(data.blocks))
     uiStore.showToast(`Generated ${data.blocks.length} blocks`, 'success')

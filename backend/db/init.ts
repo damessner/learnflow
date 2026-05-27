@@ -88,6 +88,24 @@ export async function initDB(): Promise<void> {
     } else {
       logger.info('Database already has mastery columns on remediation rounds')
     }
+
+    const hasVocabTable = await knex.schema.hasTable('vocabulary_items')
+    if (!hasVocabTable) {
+      const { up: upVocab } = require('./migrations/20260528_008_vocabulary_items')
+      await upVocab(knex)
+      logger.info('Database migration (vocabulary items) completed')
+    } else {
+      logger.info('Database already initialized (vocabulary items)')
+    }
+
+    const hasSourceLang = await knex.schema.hasColumn('worksheets', 'source_lang')
+    if (!hasSourceLang) {
+      const { up: upWorksheetLang } = require('./migrations/20260528_009_worksheet_language')
+      await upWorksheetLang(knex)
+      logger.info('Database migration (worksheet language columns) completed')
+    } else {
+      logger.info('Database already initialized (worksheet language columns)')
+    }
   } catch (err) {
     logger.error({ err }, 'Database migration failed')
     throw err

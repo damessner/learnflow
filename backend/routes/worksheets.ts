@@ -32,6 +32,9 @@ function trackedWorksheetSnapshot(worksheet: Record<string, unknown>) {
     tags: worksheet.tags || '',
     rubric_json: worksheet.rubric_json || '',
     in_library: worksheet.in_library || 0,
+    source_lang: worksheet.source_lang || null,
+    target_lang: worksheet.target_lang || null,
+    cefr_level: worksheet.cefr_level || null,
   })
 }
 
@@ -258,6 +261,9 @@ router.post(
         created_by: req.user!.userId,
         tags: req.body.tags || '',
         rubric_json: req.body.rubric_json || '',
+        source_lang: req.body.source_lang || null,
+        target_lang: req.body.target_lang || null,
+        cefr_level: req.body.cefr_level || null,
       })
 
       const worksheet = await knex('worksheets').where({ id }).first()
@@ -295,6 +301,9 @@ router.put('/:id', requireAuth, requireRole('teacher', 'admin'), async (req, res
       'tags',
       'rubric_json',
       'in_library',
+      'source_lang',
+      'target_lang',
+      'cefr_level',
     ]
     for (const f of fields) {
       if (req.body[f] !== undefined) updateData[f] = req.body[f]
@@ -780,11 +789,61 @@ router.post(
   requireRole('teacher', 'admin'),
   async (req, res, next) => {
     try {
-      const { rawList } = req.body
+      const { rawList, source_lang, target_lang, cefr_level } = req.body
       const words = (rawList || '')
         .split(/[\n,]+/)
         .filter(Boolean)
         .map((w: string) => w.trim())
+
+      if (words.length === 0) {
+        res.status(400).json({ error: 'No words provided' })
+        return
+      }
+
+      // Try AI translation if target_lang is specified
+      let translations: { l: string; r: string }[] = []
+      
+      if (target_lang) {
+        try {
+          // TODO: refactor callZenChat from routes/ai.ts into a shared service
+          const ZEN_API_URL = 'https://opencode.ai/zen/v1/chat/completions'
+          const apiKey = process.env.OPENCODE_ZEN_API_KEY
+          const model = process.env.OPENCODE_ZEN_MODEL || 'deepseek-v4-flash-free'
+
+          if (apiKey) {
+            const prompt = `Translate these words to ${target_lang}${cefr_level ? ` (CEFR ${cefr_level} level)` : ''}:
+${words.join(', ')}
+
+Return ONLY a JSON array of objects with "l" (original word) and "r" (translation):
+[{"l":"original","r":"translated"},...]
+
+Return ONLY valid JSON array.`
+
+            const zenRes = await fetch(ZEN_API_URL, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify({
+                model,
+                messages: [{ role: 'user', content: prompt }],
+                response_format: { type: 'json_object' },
+              }),
+              signal: AbortSignal.timeout(60000),
+            })
+            const data = await zenRes.json() as { choices?: { message?: { content?: string } }[] }
+            const raw = JSON.parse(data.choices?.[0]?.message?.content || '[]')
+            translations = Array.isArray(raw) ? raw : []
+          }
+        } catch {
+          // Fallback: keep original words with placeholder
+        }
+      }
+
+      if (translations.length === 0) {
+        translations = words.map((w: string) => ({ l: w, r: `[${w}]` }))
+      }
 
       const blocks = [
         {
@@ -792,7 +851,7 @@ router.post(
           type: 'vocabulary' as const,
           points: words.length * 2,
           vocabulary: {
-            pairs: words.map((w: string) => ({ l: w, r: `[${w}]` })),
+            pairs: translations,
             direction: 'l2r' as const,
           },
           rawText: rawList,
