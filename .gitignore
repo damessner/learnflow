@@ -5,3 +5,4 @@ dist/
 coverage/
 uploads/
 .vite/
+backend/data/
