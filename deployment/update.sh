@@ -16,6 +16,18 @@ if [ -f /tmp/learnflow.db.bak ]; then
   rm -f /tmp/learnflow.db.bak
 fi
 
+echo "Setting up Nginx (if not already configured)..."
+if [ ! -f /etc/nginx/sites-available/learnflow ]; then
+  sudo cp deployment/nginx.conf /etc/nginx/sites-available/learnflow
+fi
+if [ ! -L /etc/nginx/sites-enabled/learnflow ]; then
+  sudo ln -sf /etc/nginx/sites-available/learnflow /etc/nginx/sites-enabled/
+fi
+if [ -f /etc/nginx/sites-enabled/default ]; then
+  sudo rm -f /etc/nginx/sites-enabled/default
+fi
+sudo nginx -t && sudo systemctl reload nginx
+
 echo "Installing dependencies..."
 npm install --no-package-lock
 

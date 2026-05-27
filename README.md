@@ -196,14 +196,16 @@ npm install
 npm run build
 pm2 start ../deployment/ecosystem.config.js
 pm2 save
+cd ..
 
 # Frontend
-cd ../frontend
+cd frontend
 npm install
 npm run build
+cd ..
 
 # Nginx
-sudo cp ../deployment/nginx.conf /etc/nginx/sites-available/learnflow
+sudo cp deployment/nginx.conf /etc/nginx/sites-available/learnflow
 sudo ln -sf /etc/nginx/sites-available/learnflow /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
