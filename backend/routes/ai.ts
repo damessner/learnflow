@@ -20,7 +20,7 @@ function getZenModel(): string {
   return process.env.OPENCODE_ZEN_MODEL || 'deepseek-v4-flash-free'
 }
 
-async function callZenChat(prompt: string, system?: string, stream = false): Promise<Response> {
+async function callZenChat(prompt: string, system?: string, stream = false, extraBody: Record<string, unknown> = {}): Promise<Response> {
   const messages: { role: string; content: string }[] = []
   if (system) messages.push({ role: 'system', content: system })
   messages.push({ role: 'user', content: prompt })
@@ -34,6 +34,7 @@ async function callZenChat(prompt: string, system?: string, stream = false): Pro
       model: getZenModel(),
       messages,
       stream,
+      ...extraBody,
     }),
   })
 }
@@ -157,7 +158,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
     if (provider === 'opencode' && getZenApiKey()) {
       try {
         const systemPrompt = buildWorksheetPrompt(prompt, difficulty, length, lernziele)
-        const response = await callZenChat(prompt, systemPrompt)
+        const response = await callZenChat(prompt, systemPrompt, false, { response_format: { type: 'json_object' } })
         const data = await response.json()
         if (response.ok) {
           const text = data.choices?.[0]?.message?.content || '{}'
@@ -665,7 +666,7 @@ Mix reading comprehension, vocabulary, and grammar exercises. All content in Ger
 
       if (provider === 'opencode' && getZenApiKey()) {
         try {
-          const zenRes = await callZenChat(storyPrompt, undefined, false)
+          const zenRes = await callZenChat(storyPrompt, undefined, false, { response_format: { type: 'json_object' } })
           const data = await zenRes.json()
           if (zenRes.ok) {
             const text = data.choices?.[0]?.message?.content || '{}'
