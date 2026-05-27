@@ -5,6 +5,14 @@
       {{ worksheet.description }}
     </p>
 
+    <div v-if="assignment?.due_date" class="card" style="margin-bottom: 1rem; padding: 0.75rem 1rem">
+      <strong>Due:</strong>
+      <span :style="{ color: isOverdue && !submitted ? 'var(--danger)' : 'var(--text-main)', marginLeft: '0.35rem' }">
+        {{ new Date(assignment.due_date).toLocaleString() }}
+      </span>
+      <span v-if="isOverdue && !submitted" class="badge-danger badge" style="margin-left: 0.5rem">Overdue</span>
+    </div>
+
     <div
       v-if="submitted"
       class="card"
@@ -359,6 +367,7 @@ const uiStore = useUiStore()
 const learningStore = useLearningStore()
 
 const worksheet = ref(null)
+const assignment = ref(null)
 const blocks = ref([])
 const answers = reactive({})
 const submitted = ref(false)
@@ -378,6 +387,10 @@ function toggleInfoBox(id) {
 
 const progressiveMode = ref(false)
 const currentBlockIndex = ref(0)
+const isOverdue = computed(() => {
+  if (!assignment.value?.due_date) return false
+  return new Date(assignment.value.due_date) < new Date()
+})
 
 const tutorOpen = ref(false)
 const tutorInput = ref('')
@@ -396,6 +409,7 @@ onMounted(async () => {
   try {
     const data = await store.fetchAssignmentSubmission(route.params.id)
     worksheet.value = data.worksheet
+    assignment.value = data.assignment
     try {
       const content = JSON.parse(data.worksheet.content)
       blocks.value = content.blocks || []

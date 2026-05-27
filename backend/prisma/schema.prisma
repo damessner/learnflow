@@ -310,6 +310,7 @@ model users {
   submissions_submissions_user_idTousers       submissions[]           @relation("submissions_user_idTousers") 
   team_members                                 team_members[]
   worksheets                                   worksheets[]            
+  worksheet_versions                           worksheet_versions[]
 }
 
 model worksheets {
@@ -334,5 +335,28 @@ model worksheets {
   learning_planner  learning_planner[]
   learning_queue    learning_queue[]
   users             users               @relation(fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  worksheet_versions worksheet_versions[]
 
   }
+
+model worksheet_versions {
+  id             String    @id
+  worksheet_id   String
+  version_number Int
+  change_summary String?
+  created_by     String?
+  title          String
+  description    String?
+  subject        String?
+  grade_level    String?
+  content        String
+  total_points   Int?      @default(0)
+  tags           String?
+  rubric_json    String?
+  in_library     Int?      @default(0)
+  created_at     DateTime? @default(now())
+  users          users?    @relation(fields: [created_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  worksheets     worksheets @relation(fields: [worksheet_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([worksheet_id, version_number])
+}

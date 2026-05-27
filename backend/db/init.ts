@@ -50,6 +50,15 @@ export async function initDB(): Promise<void> {
     } else {
       logger.info('Database already initialized (password salt)')
     }
+
+    const hasWorksheetVersions = await knex.schema.hasTable('worksheet_versions')
+    if (!hasWorksheetVersions) {
+      const { up: upWorksheetVersions } = require('./migrations/20260527_005_worksheet_versions')
+      await upWorksheetVersions(knex)
+      logger.info('Database migration (worksheet versions) completed')
+    } else {
+      logger.info('Database already initialized (worksheet versions)')
+    }
   } catch (err) {
     logger.error({ err }, 'Database migration failed')
     throw err

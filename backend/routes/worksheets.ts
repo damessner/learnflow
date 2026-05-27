@@ -7,6 +7,61 @@ import { validate } from '../middleware/validate'
 
 const router = Router()
 
+function normalizeDueDateInput(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
+
+  const parsed = new Date(trimmed)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed.toISOString()
+}
+
+function trackedWorksheetSnapshot(worksheet: Record<string, unknown>) {
+  return JSON.stringify({
+    title: worksheet.title || '',
+    description: worksheet.description || '',
+    subject: worksheet.subject || '',
+    grade_level: worksheet.grade_level || '',
+    content: worksheet.content || '',
+    total_points: worksheet.total_points || 0,
+    is_published: worksheet.is_published || 0,
+    tags: worksheet.tags || '',
+    rubric_json: worksheet.rubric_json || '',
+    in_library: worksheet.in_library || 0,
+  })
+}
+
+async function createWorksheetVersion(
+  knex: ReturnType<typeof getKnex>,
+  worksheet: Record<string, unknown>,
+  createdBy: string,
+  changeSummary: string,
+) {
+  const versionRow = await knex('worksheet_versions')
+    .where({ worksheet_id: worksheet.id })
+    .max<{ maxVersion: number | null }>('version_number as maxVersion')
+    .first()
+
+  await knex('worksheet_versions').insert({
+    id: uuidv4(),
+    worksheet_id: worksheet.id,
+    version_number: Number(versionRow?.maxVersion || 0) + 1,
+    change_summary: changeSummary,
+    created_by: createdBy,
+    title: worksheet.title,
+    description: worksheet.description || '',
+    subject: worksheet.subject || '',
+    grade_level: worksheet.grade_level || '',
+    content: worksheet.content || JSON.stringify({ blocks: [] }),
+    total_points: worksheet.total_points || 0,
+    tags: worksheet.tags || '',
+    rubric_json: worksheet.rubric_json || '',
+    in_library: worksheet.in_library || 0,
+  })
+}
+
 router.get('/subjects', requireAuth, (_req, res) => {
   const { SUBJECTS } = require('./ai')
   res.json({ subjects: SUBJECTS })
@@ -149,6 +204,24 @@ const createWorksheetSchema = z.object({
   rubric_json: z.string().optional(),
 })
 
+const createAssignmentSchema = z.object({
+  class_name: z.string().min(1),
+  class_id: z.string().optional().nullable(),
+  due_date: z.string().optional().nullable(),
+  retry_policy: z.enum(['single', 'best', 'latest']).optional(),
+  max_attempts: z.number().int().min(1).max(20).optional(),
+  peer_review_enabled: z.boolean().optional(),
+  adaptive_difficulty: z.string().optional().nullable(),
+})
+
+const updateAssignmentSchema = z.object({
+  due_date: z.string().optional().nullable(),
+  retry_policy: z.enum(['single', 'best', 'latest']).optional(),
+  max_attempts: z.number().int().min(1).max(20).optional(),
+  peer_review_enabled: z.boolean().optional(),
+  adaptive_difficulty: z.string().optional().nullable(),
+})
+
 router.post(
   '/',
   requireAuth,
@@ -175,6 +248,7 @@ router.post(
       })
 
       const worksheet = await knex('worksheets').where({ id }).first()
+      await createWorksheetVersion(knex, worksheet, req.user!.userId, 'Initial version')
       res.status(201).json({ worksheet })
     } catch (err) {
       next(err)
@@ -195,6 +269,7 @@ router.put('/:id', requireAuth, requireRole('teacher', 'admin'), async (req, res
       return
     }
 
+    const previousSnapshot = trackedWorksheetSnapshot(worksheet)
     const updateData: Record<string, unknown> = { updated_at: knex.fn.now() }
     const fields = [
       'title',
@@ -214,6 +289,16 @@ router.put('/:id', requireAuth, requireRole('teacher', 'admin'), async (req, res
 
     await knex('worksheets').where({ id: req.params.id }).update(updateData)
     const updated = await knex('worksheets').where({ id: req.params.id }).first()
+    if (trackedWorksheetSnapshot(updated) !== previousSnapshot) {
+      await createWorksheetVersion(
+        knex,
+        updated,
+        req.user!.userId,
+        typeof req.body.change_summary === 'string' && req.body.change_summary.trim()
+          ? req.body.change_summary.trim()
+          : 'Updated worksheet',
+      )
+    }
     res.json({ worksheet: updated })
   } catch (err) {
     next(err)
@@ -297,10 +382,82 @@ router.get('/:id/assignments', requireAuth, async (req, res, next) => {
   }
 })
 
+router.get('/:id/versions', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
+  try {
+    const knex = getKnex()
+    const worksheet = await knex('worksheets').where({ id: req.params.id }).first()
+    if (!worksheet) {
+      res.status(404).json({ error: 'Worksheet not found' })
+      return
+    }
+    if (req.user!.role !== 'admin' && worksheet.created_by !== req.user!.userId) {
+      res.status(403).json({ error: 'Forbidden' })
+      return
+    }
+
+    const versions = await knex('worksheet_versions')
+      .where({ worksheet_id: req.params.id })
+      .orderBy('version_number', 'desc')
+
+    res.json({ versions })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post(
+  '/:id/versions/:versionId/restore',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const worksheet = await knex('worksheets').where({ id: req.params.id }).first()
+      if (!worksheet) {
+        res.status(404).json({ error: 'Worksheet not found' })
+        return
+      }
+      if (req.user!.role !== 'admin' && worksheet.created_by !== req.user!.userId) {
+        res.status(403).json({ error: 'Forbidden' })
+        return
+      }
+
+      const version = await knex('worksheet_versions')
+        .where({ id: req.params.versionId, worksheet_id: req.params.id })
+        .first()
+      if (!version) {
+        res.status(404).json({ error: 'Version not found' })
+        return
+      }
+
+      await knex('worksheets').where({ id: req.params.id }).update({
+        title: version.title,
+        description: version.description,
+        subject: version.subject,
+        grade_level: version.grade_level,
+        content: version.content,
+        total_points: version.total_points,
+        tags: version.tags,
+        rubric_json: version.rubric_json,
+        in_library: version.in_library,
+        updated_at: knex.fn.now(),
+      })
+
+      const restored = await knex('worksheets').where({ id: req.params.id }).first()
+      await createWorksheetVersion(knex, restored, req.user!.userId, `Restored version ${version.version_number}`)
+
+      res.json({ worksheet: restored })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
+
 router.post(
   '/:id/assignments',
   requireAuth,
   requireRole('teacher', 'admin'),
+  validate(createAssignmentSchema),
   async (req, res, next) => {
     try {
       const knex = getKnex()
@@ -315,7 +472,7 @@ router.post(
         worksheet_id: req.params.id,
         class_name: req.body.class_name,
         class_id: req.body.class_id || null,
-        due_date: req.body.due_date,
+        due_date: normalizeDueDateInput(req.body.due_date),
         created_by: req.user!.userId,
         retry_policy: req.body.retry_policy || 'single',
         max_attempts: req.body.max_attempts || 3,
@@ -325,6 +482,38 @@ router.post(
 
       const assignment = await knex('assignments').where({ id }).first()
       res.status(201).json({ assignment })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
+
+router.put(
+  '/:id/assignments/:assignmentId',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  validate(updateAssignmentSchema),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const assignment = await knex('assignments')
+        .where({ id: req.params.assignmentId, worksheet_id: req.params.id })
+        .first()
+      if (!assignment) {
+        res.status(404).json({ error: 'Assignment not found' })
+        return
+      }
+
+      const updateData: Record<string, unknown> = {}
+      if (req.body.due_date !== undefined) updateData.due_date = normalizeDueDateInput(req.body.due_date)
+      if (req.body.retry_policy !== undefined) updateData.retry_policy = req.body.retry_policy
+      if (req.body.max_attempts !== undefined) updateData.max_attempts = req.body.max_attempts
+      if (req.body.peer_review_enabled !== undefined) updateData.peer_review_enabled = req.body.peer_review_enabled ? 1 : 0
+      if (req.body.adaptive_difficulty !== undefined) updateData.adaptive_difficulty = req.body.adaptive_difficulty || null
+
+      await knex('assignments').where({ id: req.params.assignmentId }).update(updateData)
+      const updated = await knex('assignments').where({ id: req.params.assignmentId }).first()
+      res.json({ assignment: updated })
     } catch (err) {
       next(err)
     }

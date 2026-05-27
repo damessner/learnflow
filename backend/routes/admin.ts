@@ -9,6 +9,7 @@ const ALL_TABLES = [
   'users',
   'classes',
   'worksheets',
+  'worksheet_versions',
   'courses',
   'course_worksheets',
   'class_students',

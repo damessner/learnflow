@@ -238,7 +238,10 @@
           <router-link :to="`/student/assignment/${s.assignment_id}`" style="font-weight: 600">
             {{ s.worksheet_title }}
           </router-link>
-          <div>
+          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:flex-end">
+            <span v-if="s.due_date" :class="['badge', new Date(s.due_date) < new Date() && s.score == null ? 'badge-danger' : '']">
+              {{ new Date(s.due_date).toLocaleDateString() }}
+            </span>
             <span v-if="s.score != null" class="badge">{{ s.score }}/{{ s.max_score }}</span>
             <span v-else style="color: var(--warning); font-size: 0.85rem; font-weight: 500"
               >Not submitted</span

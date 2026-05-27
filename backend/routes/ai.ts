@@ -129,6 +129,20 @@ const GenerateRequestSchema = z.object({
 type GeneratedBlock = z.infer<typeof BlockSchema>
 type GenerateRequest = z.infer<typeof GenerateRequestSchema>
 
+const DifferentiateSchema = z.object({
+  concept: z.string().min(3),
+  subject: z.string().optional(),
+  grade_level: z.string().optional(),
+  language: z.string().optional(),
+  provider: z.string().optional().default('gemini'),
+})
+
+const DifferentiateResponseSchema = z.object({
+  basic: z.string(),
+  standard: z.string(),
+  advanced: z.string(),
+})
+
 const exerciseTypes = new Set([
   'gap_fill',
   'multiple_choice',
@@ -460,6 +474,27 @@ function getMinExerciseCount(length: GenerateRequest['length']): number {
   return counts[length || 'medium']
 }
 
+function buildDifferentiatePrompt({ concept, subject, grade_level, language }: z.infer<typeof DifferentiateSchema>): string {
+  const outputLanguage = language || (subject === 'English' ? 'English' : 'German')
+  return [
+    'You are an expert differentiated instruction assistant for LearnFlow.',
+    `Concept: ${concept}`,
+    subject ? `Subject: ${subject}` : '',
+    grade_level ? `Grade level: Grade ${grade_level}` : '',
+    `Output language: ${outputLanguage}`,
+    '',
+    'Generate three accurate explanations of the same concept:',
+    '- basic: simple vocabulary, 2-3 short sentences, concrete and accessible',
+    '- standard: grade-level explanation, 3-4 sentences, connects to prior knowledge',
+    '- advanced: more precise vocabulary, 4-5 sentences, includes nuance or edge case',
+    '',
+    'Return ONLY valid JSON with this exact shape:',
+    '{"basic":"...","standard":"...","advanced":"..."}',
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
 router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
   try {
     const request = GenerateRequestSchema.parse(req.body)
@@ -681,6 +716,92 @@ RULES:
     }
 
     res.json({ block })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/differentiate', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
+  try {
+    const request = DifferentiateSchema.parse(req.body)
+    const prompt = buildDifferentiatePrompt(request)
+    let result: z.infer<typeof DifferentiateResponseSchema> | null = null
+
+    if (request.provider === 'opencode' && getZenApiKey()) {
+      try {
+        const response = await callZenChat('Differentiate this concept and return JSON only.', prompt, false, {
+          response_format: { type: 'json_object' },
+        })
+        const data = await response.json()
+        if (response.ok) {
+          result = DifferentiateResponseSchema.parse(
+            JSON.parse(data.choices?.[0]?.message?.content || '{}'),
+          )
+        }
+      } catch (e) {
+        console.error('OpenCode Zen differentiation failed:', e)
+      }
+    } else if (request.provider === 'opencode' && (await isOpenCodeAvailable())) {
+      try {
+        const sessionId = await createSession('Concept Differentiation')
+        const structured = await sendPromptStructured(
+          sessionId,
+          request.concept,
+          DifferentiateResponseSchema as unknown as Record<string, unknown>,
+          {
+            system: prompt,
+            model: await getModelConfig(),
+          },
+        )
+        result = DifferentiateResponseSchema.parse(structured)
+      } catch (e) {
+        console.error('OpenCode differentiation failed:', e)
+      }
+    } else if (request.provider === 'ollama' && process.env.OLLAMA_URL) {
+      try {
+        const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: process.env.OLLAMA_MODEL || 'llama3',
+            prompt,
+            stream: false,
+            format: 'json',
+          }),
+        })
+        const data = await response.json()
+        result = DifferentiateResponseSchema.parse(JSON.parse(data.response || '{}'))
+      } catch (e) {
+        console.error('Ollama differentiation failed:', e)
+      }
+    } else if (process.env.GEMINI_API_KEY) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { responseMimeType: 'application/json' },
+            }),
+          },
+        )
+        const data = await response.json()
+        result = DifferentiateResponseSchema.parse(
+          JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'),
+        )
+      } catch (e) {
+        console.error('Gemini differentiation failed:', e)
+      }
+    }
+
+    if (!result) {
+      res.status(422).json({ error: 'Failed to differentiate concept' })
+      return
+    }
+
+    res.json(result)
   } catch (err) {
     next(err)
   }

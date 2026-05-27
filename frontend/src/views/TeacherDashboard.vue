@@ -61,6 +61,23 @@
           v-if="assignTarget && assignTarget.id === ws.id"
           style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color)"
         >
+          <div v-if="assignmentLoading[ws.id]" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem">Loading assignments…</div>
+          <div v-else-if="assignmentMap[ws.id]?.length" style="margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem">
+            <div
+              v-for="assignment in assignmentMap[ws.id]"
+              :key="assignment.id"
+              style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.5rem;border:1px solid var(--border-color);border-radius:6px"
+            >
+              <div style="font-size:0.82rem">
+                <div style="font-weight:600">{{ assignment.class_name || 'Class assignment' }}</div>
+                <div style="color:var(--text-muted)">
+                  Due: {{ assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : 'No deadline' }}
+                  · {{ assignment.retry_policy || 'single' }}
+                </div>
+              </div>
+              <button class="btn-sm" @click="prefillAssignmentEdit(assignment)">Edit</button>
+            </div>
+          </div>
           <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap">
             <select v-model="assignForm.class_id" style="width: 200px">
               <option value="">Select class...</option>
@@ -72,8 +89,11 @@
               <option value="best">Best</option>
               <option value="latest">Latest</option>
             </select>
-            <button class="btn-primary btn-sm" @click="doAssign(ws.id)">Assign</button>
-            <button class="btn-sm" @click="assignTarget = null">Cancel</button>
+            <button class="btn-primary btn-sm" @click="doAssign(ws.id)">{{ assignForm.assignment_id ? 'Update' : 'Assign' }}</button>
+            <button class="btn-sm" @click="clearAssignForm()">Cancel</button>
+          </div>
+          <div style="margin-top:0.4rem;font-size:0.75rem;color:var(--text-muted)">
+            {{ assignForm.assignment_id ? 'Editing existing schedule' : 'Create a new scheduled assignment' }}
           </div>
         </div>
       </div>
@@ -1508,7 +1528,9 @@ const tabs = [
 const classesList = ref([])
 const newClassName = ref('')
 const assignTarget = ref(null)
-const assignForm = ref({ class_id: '', class_name: '', due_date: '', retry_policy: 'single' })
+const assignForm = ref({ assignment_id: '', class_id: '', class_name: '', due_date: '', retry_policy: 'single' })
+const assignmentMap = ref({})
+const assignmentLoading = ref({})
 const selectedClass = ref(null)
 const classProgress = ref([])
 const selectedAssignment = ref(null)
@@ -1752,7 +1774,37 @@ async function deleteWs(id) {
 
 function assignWs(ws) {
   assignTarget.value = ws
-  assignForm.value = { class_id: '', class_name: '', due_date: '', retry_policy: 'single' }
+  clearAssignForm(false)
+  loadAssignmentsForWorksheet(ws.id)
+}
+
+function clearAssignForm(clearTarget = true) {
+  assignForm.value = { assignment_id: '', class_id: '', class_name: '', due_date: '', retry_policy: 'single' }
+  if (clearTarget) assignTarget.value = null
+}
+
+async function loadAssignmentsForWorksheet(wsId) {
+  assignmentLoading.value = { ...assignmentLoading.value, [wsId]: true }
+  try {
+    assignmentMap.value = {
+      ...assignmentMap.value,
+      [wsId]: await wsStore.fetchAssignments(wsId),
+    }
+  } catch {
+    assignmentMap.value = { ...assignmentMap.value, [wsId]: [] }
+  } finally {
+    assignmentLoading.value = { ...assignmentLoading.value, [wsId]: false }
+  }
+}
+
+function prefillAssignmentEdit(assignment) {
+  assignForm.value = {
+    assignment_id: assignment.id,
+    class_id: assignment.class_id || '',
+    class_name: assignment.class_name || '',
+    due_date: assignment.due_date ? String(assignment.due_date).slice(0, 10) : '',
+    retry_policy: assignment.retry_policy || 'single',
+  }
 }
 
 async function doAssign(wsId) {
@@ -1765,9 +1817,15 @@ async function doAssign(wsId) {
     if (selectedClassObj) {
       assignForm.value.class_name = selectedClassObj.name
     }
-    await wsStore.createAssignment(wsId, assignForm.value)
-    uiStore.showToast('Assignment created', 'success')
-    assignTarget.value = null
+    if (assignForm.value.assignment_id) {
+      await wsStore.updateAssignment(wsId, assignForm.value.assignment_id, assignForm.value)
+      uiStore.showToast('Assignment schedule updated', 'success')
+    } else {
+      await wsStore.createAssignment(wsId, assignForm.value)
+      uiStore.showToast('Assignment created', 'success')
+    }
+    await loadAssignmentsForWorksheet(wsId)
+    clearAssignForm()
   } catch (e) {
     uiStore.showToast(e.message, 'error')
   }

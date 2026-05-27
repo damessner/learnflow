@@ -26,6 +26,25 @@
           placeholder="Lernziele (optional)"
           style="font-size: 0.7rem; margin-bottom: 0.35rem"
         ></textarea>
+        <div style="display: flex; gap: 0.35rem; margin-bottom: 0.35rem">
+          <input
+            v-model="conceptInput"
+            placeholder="Differentiate concept..."
+            style="font-size: 0.7rem; flex: 1"
+          />
+          <button class="btn-sm" :disabled="differentiateLoading" @click="differentiateConcept()">
+            {{ differentiateLoading ? '...' : 'Levels' }}
+          </button>
+        </div>
+        <div v-if="differentiatedConcept" class="card" style="padding: 0.5rem; margin-bottom: 0.35rem; font-size: 0.72rem">
+          <strong>Basic</strong>
+          <p style="margin: 0.2rem 0 0.4rem; white-space: pre-wrap">{{ differentiatedConcept.basic }}</p>
+          <strong>Standard</strong>
+          <p style="margin: 0.2rem 0 0.4rem; white-space: pre-wrap">{{ differentiatedConcept.standard }}</p>
+          <strong>Advanced</strong>
+          <p style="margin: 0.2rem 0 0.4rem; white-space: pre-wrap">{{ differentiatedConcept.advanced }}</p>
+          <button class="btn-sm" @click="insertDifferentiatedInfoBox()">+ Add as Info Box</button>
+        </div>
         <div style="display: flex; gap: 0.25rem; margin-bottom: 0.35rem; flex-wrap: wrap">
           <select v-model="aiStyle" style="font-size: 0.65rem; padding: 0.2rem; flex: 1; min-width: 60px">
             <option value="practice">Practice</option>
@@ -179,6 +198,24 @@
         >
           <h2 style="margin: 0">{{ isEditing ? 'Edit Worksheet' : 'New Worksheet' }}</h2>
           <button class="btn-primary" @click="save">Save</button>
+        </div>
+
+        <div v-if="isEditing && versionHistory.length" class="card" style="margin-bottom: 1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+            <strong>Version History</strong>
+            <button class="btn-sm" :disabled="versionLoading" @click="loadVersions()">
+              {{ versionLoading ? 'Refreshing...' : 'Refresh' }}
+            </button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem;max-height:220px;overflow:auto">
+            <div v-for="version in versionHistory" :key="version.id" style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;padding:0.5rem;border:1px solid var(--border-color);border-radius:6px">
+              <div style="font-size:0.8rem">
+                <div style="font-weight:600">v{{ version.version_number }} · {{ version.change_summary || 'Saved version' }}</div>
+                <div style="color:var(--text-muted)">{{ formatVersionDate(version.created_at) }}</div>
+              </div>
+              <button class="btn-sm" @click="restoreVersion(version.id)">Restore</button>
+            </div>
+          </div>
         </div>
 
         <div class="card" style="margin-bottom: 1rem">
@@ -596,6 +633,11 @@ const aiLength = ref('medium')
 const aiProvider = ref('ollama')
 const aiStyle = ref('practice')
 const aiLoading = ref(false)
+const conceptInput = ref('')
+const differentiateLoading = ref(false)
+const differentiatedConcept = ref(null)
+const versionHistory = ref([])
+const versionLoading = ref(false)
 
 const blockIcons = {
   text: '📄',
@@ -681,6 +723,7 @@ async function syncBuilderToRoute() {
     isEditing.value = false
     form.value = emptyForm()
     blocks.value = []
+    versionHistory.value = []
     return
   }
   isEditing.value = true
@@ -704,6 +747,7 @@ async function syncBuilderToRoute() {
     } catch {
       blocks.value = []
     }
+    await loadVersions()
   } catch {
     uiStore.showToast('Failed to load worksheet', 'error')
     resetBuilder()
@@ -824,6 +868,83 @@ function moveBlock(idx, delta) {
   ;[blocks.value[idx], blocks.value[newIdx]] = [blocks.value[newIdx], blocks.value[idx]]
 }
 
+function resetBuilder() {
+  isEditing.value = false
+  form.value = emptyForm()
+  blocks.value = []
+  versionHistory.value = []
+  differentiatedConcept.value = null
+  conceptInput.value = ''
+}
+
+async function loadVersions() {
+  const worksheetId = getRouteWorksheetId()
+  if (!worksheetId) return
+  versionLoading.value = true
+  try {
+    versionHistory.value = await store.fetchWorksheetVersions(worksheetId)
+  } catch {
+    versionHistory.value = []
+  } finally {
+    versionLoading.value = false
+  }
+}
+
+function formatVersionDate(value) {
+  if (!value) return 'Unknown date'
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? 'Unknown date' : date.toLocaleString()
+}
+
+async function restoreVersion(versionId) {
+  const worksheetId = getRouteWorksheetId()
+  if (!worksheetId) return
+  if (!confirm('Restore this worksheet version? Current content will be replaced.')) return
+  try {
+    await store.restoreWorksheetVersion(worksheetId, versionId)
+    await syncBuilderToRoute()
+    uiStore.showToast('Worksheet version restored', 'success')
+  } catch (e) {
+    uiStore.showToast(e.message || 'Failed to restore version', 'error')
+  }
+}
+
+async function differentiateConcept() {
+  if (!conceptInput.value.trim()) return
+  if (!form.value.subject || !form.value.grade_level) {
+    uiStore.showToast('Please select subject and grade level first', 'error')
+    return
+  }
+  differentiateLoading.value = true
+  try {
+    differentiatedConcept.value = await store.aiDifferentiateConcept({
+      concept: conceptInput.value.trim(),
+      subject: form.value.subject,
+      grade_level: form.value.grade_level,
+      provider: aiProvider.value,
+    })
+    uiStore.showToast('Differentiated explanations ready', 'success')
+  } catch (e) {
+    uiStore.showToast(e.message || 'Failed to differentiate concept', 'error')
+  } finally {
+    differentiateLoading.value = false
+  }
+}
+
+function insertDifferentiatedInfoBox() {
+  if (!differentiatedConcept.value) return
+  blocks.value.unshift({
+    id: genId(),
+    type: 'info_box',
+    points: 0,
+    title: conceptInput.value.trim() || 'Differentiated concept support',
+    text: `Basic:\n${differentiatedConcept.value.basic}\n\nStandard:\n${differentiatedConcept.value.standard}\n\nAdvanced:\n${differentiatedConcept.value.advanced}`,
+    mermaid: '',
+    alt_text: '',
+  })
+  uiStore.showToast('Info box added', 'success')
+}
+
 async function save() {
   const worksheetId = getRouteWorksheetId()
   const mappedBlocks = blocks.value.map((b) => {
@@ -838,10 +959,16 @@ async function save() {
   })
   const content = JSON.stringify({ blocks: mappedBlocks })
   const totalPoints = blocks.value.reduce((s, b) => s + (b.points || 0), 0)
-  const payload = { ...form.value, content, total_points: totalPoints }
+  const payload = {
+    ...form.value,
+    content,
+    total_points: totalPoints,
+    change_summary: isEditing.value ? 'Updated from worksheet builder' : 'Initial version',
+  }
   try {
     if (isEditing.value && worksheetId) {
       await store.updateWorksheet(worksheetId, payload)
+      await loadVersions()
     } else {
       const ws = await store.createWorksheet(payload)
       router.push(`/teacher/builder/${ws.id}`)

@@ -61,6 +61,21 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     await api.del(`/worksheets/${wsId}/assignments/${assignmentId}`)
   }
 
+  async function updateAssignment(wsId, assignmentId, payload) {
+    const data = await api.put(`/worksheets/${wsId}/assignments/${assignmentId}`, payload)
+    return data.assignment
+  }
+
+  async function fetchWorksheetVersions(id) {
+    const data = await api.get(`/worksheets/${id}/versions`)
+    return data.versions || []
+  }
+
+  async function restoreWorksheetVersion(id, versionId) {
+    const data = await api.post(`/worksheets/${id}/versions/${versionId}/restore`)
+    return data.worksheet
+  }
+
   async function fetchAssignmentResults(assignmentId) {
     const data = await api.get(`/worksheets/assignments/${assignmentId}/results`)
     return data.submissions
@@ -82,6 +97,10 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     return api.post('/ai/check-answer', payload)
   }
 
+  async function aiDifferentiateConcept(payload) {
+    return api.post('/ai/differentiate', payload)
+  }
+
   return {
     worksheets,
     templates,
@@ -98,10 +117,14 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     createAssignment,
     fetchAssignments,
     deleteAssignment,
+    updateAssignment,
+    fetchWorksheetVersions,
+    restoreWorksheetVersion,
     fetchAssignmentResults,
     fetchAssignmentStats,
     aiGenerate,
     aiRegenerateBlock,
     aiCheckAnswer,
+    aiDifferentiateConcept,
   }
 })
