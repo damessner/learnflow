@@ -321,9 +321,24 @@
           <input v-model="settingsForm.ollama_model" placeholder="llama3" />
         </div>
         <div style="margin: 0.75rem 0; border-top: 1px dashed var(--border-color)"></div>
-        <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem">
-          <strong>OpenCode Server</strong> — run <code>opencode serve --port 4096</code> to connect any AI provider (DeepSeek, Claude, GPT, etc.). Select "OpenCode" in the Worksheet Builder.
+        <h4 style="margin-bottom: 0.5rem">OpenCode Zen (Cloud — no server needed)</h4>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.75rem">
+          Get a free API key at <a href="https://opencode.ai/auth" target="_blank">opencode.ai/auth</a>.
+          DeepSeek V4 Flash Free is available at no cost. Select "OpenCode" in the Worksheet Builder.
+        </p>
+        <div class="form-group">
+          <label>OpenCode Zen API Key</label>
+          <input v-model="settingsForm.opencode_zen_api_key" placeholder="oc_..." />
         </div>
+        <div class="form-group">
+          <label>Model (optional — defaults to deepseek-v4-flash-free)</label>
+          <input v-model="settingsForm.opencode_zen_model" placeholder="deepseek-v4-flash-free" />
+        </div>
+        <div style="margin: 0.75rem 0; border-top: 1px dashed var(--border-color)"></div>
+        <h4 style="margin-bottom: 0.5rem">OpenCode Server (local)</h4>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.75rem">
+          Run <code>opencode serve --port 4096</code> to connect any AI provider.
+        </p>
         <div class="form-group">
           <label>OpenCode URL</label>
           <input v-model="settingsForm.opencode_url" placeholder="http://127.0.0.1:4096" />
@@ -545,6 +560,8 @@ const settingsForm = ref({
   gemini_api_key: '',
   ollama_url: '',
   ollama_model: '',
+  opencode_zen_api_key: '',
+  opencode_zen_model: '',
   opencode_url: '',
   opencode_provider: '',
   opencode_model: '',

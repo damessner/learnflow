@@ -10,6 +10,34 @@ import {
   isOpenCodeAvailable,
 } from '../services/opencode'
 
+const ZEN_API_URL = 'https://opencode.ai/zen/v1/chat/completions'
+
+function getZenApiKey(): string | undefined {
+  return process.env.OPENCODE_ZEN_API_KEY
+}
+
+function getZenModel(): string {
+  return process.env.OPENCODE_ZEN_MODEL || 'deepseek-v4-flash-free'
+}
+
+async function callZenChat(prompt: string, system?: string, stream = false): Promise<Response> {
+  const messages: { role: string; content: string }[] = []
+  if (system) messages.push({ role: 'system', content: system })
+  messages.push({ role: 'user', content: prompt })
+  return fetch(ZEN_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getZenApiKey()}`,
+    },
+    body: JSON.stringify({
+      model: getZenModel(),
+      messages,
+      stream,
+    }),
+  })
+}
+
 const router = Router()
 
 export const SUBJECTS = [
@@ -85,7 +113,23 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
     const { prompt, provider } = req.body
     const blocks: z.infer<typeof BlockSchema>[] = []
 
-    if (provider === 'opencode' && (await isOpenCodeAvailable())) {
+    if (provider === 'opencode' && getZenApiKey()) {
+      try {
+        const systemPrompt = `Create an educational worksheet with interactive exercise blocks. Each block has id, type, points, and type-specific fields. For "single_choice", include a "correct" field (integer index of correct option, 0-indexed). For "multiple_choice", include a "correct" field (array of integer indices of correct options, 0-indexed). For concepts involving processes, hierarchies, or relationships, include a "mermaid" field with valid Mermaid.js syntax and an "alt_text" field describing the diagram.`
+        const response = await callZenChat(prompt, systemPrompt)
+        const data = await response.json()
+        if (response.ok) {
+          const text = data.choices?.[0]?.message?.content || '{}'
+          const parsed = JSON.parse(text)
+          const validated = GenerationSchema.parse(parsed)
+          blocks.push(...validated.blocks)
+        } else {
+          console.error('OpenCode Zen error:', data)
+        }
+      } catch (e) {
+        console.error('OpenCode Zen generation failed:', e)
+      }
+    } else if (provider === 'opencode' && (await isOpenCodeAvailable())) {
       try {
         const sessionId = await createSession('Worksheet Generation')
         const systemPrompt = `Create an educational worksheet with interactive exercise blocks. Each block has id, type, points, and type-specific fields. For "single_choice", include a "correct" field (integer index of correct option, 0-indexed). For "multiple_choice", include a "correct" field (array of integer indices of correct options, 0-indexed). For concepts involving processes, hierarchies, or relationships, include a "mermaid" field with valid Mermaid.js syntax and an "alt_text" field describing the diagram.`
@@ -202,7 +246,42 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
 3. Keep it brief (1-3 sentences).
 4. Be encouraging.`
 
-    if ((await isOpenCodeAvailable()) && !process.env.OLLAMA_URL && !process.env.GEMINI_API_KEY) {
+    if (process.env.DEEPSEEK_API_KEY) {
+      const deepseekRes = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: question },
+          ],
+          stream: true,
+        }),
+      })
+
+      const reader = deepseekRes.body?.getReader()
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          const chunk = new TextDecoder().decode(value)
+          const lines = chunk.split('\n').filter((l) => l.startsWith('data: '))
+          for (const line of lines) {
+            const json = line.replace('data: ', '').trim()
+            if (json === '[DONE]') continue
+            try {
+              const parsed = JSON.parse(json)
+              const text = parsed.choices?.[0]?.delta?.content || ''
+              if (text) res.write(`data: ${JSON.stringify({ text })}\n\n`)
+            } catch {}
+          }
+        }
+      }
+    } else if ((await isOpenCodeAvailable()) && !process.env.OLLAMA_URL && !process.env.GEMINI_API_KEY) {
       try {
         const sessionId = await createSession('Socratic Tutor')
         const text = await sendPrompt(sessionId, question, { system: systemPrompt, model: await getModelConfig() })
@@ -307,7 +386,31 @@ Rules (Protégé Effect / Feynman Technique):
 
 Student asks/explains: ${message}`
 
-    if ((await isOpenCodeAvailable()) && !process.env.OLLAMA_URL && !process.env.GEMINI_API_KEY) {
+    if (getZenApiKey()) {
+      try {
+        const zenRes = await callZenChat(message, systemPrompt, true)
+        const reader = zenRes.body?.getReader()
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            const chunk = new TextDecoder().decode(value)
+            const lines = chunk.split('\n').filter((l) => l.startsWith('data: '))
+            for (const line of lines) {
+              const json = line.replace('data: ', '').trim()
+              if (json === '[DONE]') continue
+              try {
+                const parsed = JSON.parse(json)
+                const text = parsed.choices?.[0]?.delta?.content || ''
+                if (text) res.write(`data: ${JSON.stringify({ text })}\n\n`)
+              } catch {}
+            }
+          }
+        }
+      } catch (e) {
+        console.error('OpenCode Zen tutor error:', e)
+      }
+    } else if ((await isOpenCodeAvailable()) && !process.env.OLLAMA_URL && !process.env.GEMINI_API_KEY) {
       try {
         const sessionId = await createSession('Protege Student')
         const text = await sendPrompt(sessionId, message, { system: systemPrompt, model: await getModelConfig() })
@@ -512,7 +615,24 @@ Return ONLY valid JSON with this structure:
 
 Mix reading comprehension, vocabulary, and grammar exercises. All content in German.`
 
-      if (provider === 'opencode' && (await isOpenCodeAvailable())) {
+      if (provider === 'opencode' && getZenApiKey()) {
+        try {
+          const zenRes = await callZenChat(storyPrompt, undefined, false)
+          const data = await zenRes.json()
+          if (zenRes.ok) {
+            const text = data.choices?.[0]?.message?.content || '{}'
+            const parsed = JSON.parse(text)
+            if (parsed.blocks) {
+              for (const b of parsed.blocks) {
+                if (!b.id) b.id = uuidv4()
+              }
+              blocks.push(...parsed.blocks)
+            }
+          }
+        } catch (e) {
+          console.error('OpenCode Zen story generation failed:', e)
+        }
+      } else if (provider === 'opencode' && (await isOpenCodeAvailable())) {
         try {
           const sessionId = await createSession('Story Generation')
           const result = await sendPromptStructured(sessionId, storyPrompt, GenerationSchema as unknown as Record<string, unknown>, {
