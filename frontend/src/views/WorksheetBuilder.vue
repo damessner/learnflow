@@ -127,15 +127,18 @@
         </div>
 
         <div class="sidebar-section">
-          <h3 class="sidebar-heading">Math</h3>
+          <h3 class="sidebar-heading">Mathematik</h3>
           <div class="block-grid">
-            <button class="block-btn" @click="addBlock('arithmetic_grid')"><span class="block-btn-icon">➕</span> Arithmetic</button>
-            <button class="block-btn" @click="addBlock('equation_entry')"><span class="block-btn-icon">📐</span> Equation</button>
-            <button class="block-btn" @click="addBlock('fraction_input')"><span class="block-btn-icon">🧮</span> Fraction</button>
-            <button class="block-btn" @click="addBlock('number_line')"><span class="block-btn-icon">📏</span> Number Line</button>
-            <button class="block-btn" @click="addBlock('word_problem')"><span class="block-btn-icon">📖</span> Word Prob.</button>
-            <button class="block-btn" @click="addBlock('graph_plot')"><span class="block-btn-icon">📊</span> Graph Plot</button>
-            <button class="block-btn" @click="addBlock('geometry_shape')"><span class="block-btn-icon">🔷</span> Geometry</button>
+            <button class="block-btn" @click="addBlock('fraction_input')"><span class="block-btn-icon">🧮</span> Bruch</button>
+            <button class="block-btn" @click="addBlock('percentage')"><span class="block-btn-icon">💯</span> Prozent</button>
+            <button class="block-btn" @click="addBlock('equation_entry')"><span class="block-btn-icon">=️⃣</span> Gleichung</button>
+            <button class="block-btn" @click="addBlock('unit_conversion')"><span class="block-btn-icon">🔄</span> Einheiten</button>
+            <button class="block-btn" @click="addBlock('number_line')"><span class="block-btn-icon">📏</span> Zahlenstrahl</button>
+            <button class="block-btn" @click="addBlock('angle')"><span class="block-btn-icon">📐</span> Winkel</button>
+            <button class="block-btn" @click="addBlock('arithmetic_grid')"><span class="block-btn-icon">➕</span> Grundrechnung</button>
+            <button class="block-btn" @click="addBlock('word_problem')"><span class="block-btn-icon">📖</span> Textaufgabe</button>
+            <button class="block-btn" @click="addBlock('graph_plot')"><span class="block-btn-icon">📊</span> Diagramm</button>
+            <button class="block-btn" @click="addBlock('geometry_shape')"><span class="block-btn-icon">🔷</span> Geometrie</button>
           </div>
         </div>
 
@@ -198,7 +201,7 @@
           <div class="block-card-header">
             <div class="block-card-title">
               <span class="block-type-icon">{{ blockIcons[block.type] || '📄' }}</span>
-              <strong>{{ block.type.replace(/_/g, ' ') }}</strong>
+              <strong>{{ germanBlockLabel[block.type] || block.type.replace(/_/g, ' ') }}</strong>
             </div>
             <div class="block-card-controls">
               <label class="pts-label">Pts:</label>
@@ -388,8 +391,8 @@
                   <input v-model.number="block.max_value" type="number" />
                 </div>
                 <div class="form-group" style="flex:1">
-                  <label>Correct</label>
-                  <input v-model="block.markers[0]" type="number" placeholder="Correct value" />
+                  <label>Markierung</label>
+                  <input v-model="block.markers[0]" type="number" placeholder="Markierung" />
                 </div>
               </div>
             </template>
@@ -397,12 +400,12 @@
             <!-- Equation Entry -->
             <template v-if="block.type === 'equation_entry'">
               <div class="form-group">
-                <label>Equation</label>
-                <input v-model="block.equation" placeholder="Equation (e.g. 3*x + 5 = 14)" />
+                <label>Gleichung</label>
+                <input v-model="block.equation" placeholder="Gleichung (z.B. 3*x + 5 = 14)" />
               </div>
               <div class="form-group" style="margin-bottom:0">
-                <label>Expected Answer</label>
-                <input v-model="block.final_answer" placeholder="Expected answer" />
+                <label>Lösung</label>
+                <input v-model="block.final_answer" placeholder="Lösung" />
               </div>
             </template>
 
@@ -410,13 +413,13 @@
             <template v-if="block.type === 'fraction_input'">
               <div style="display:flex;gap:0.5rem;align-items:center">
                 <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Numerator</label>
-                  <input v-model.number="block.numerator" type="number" placeholder="Num" />
+                  <label>Zähler</label>
+                  <input v-model.number="block.numerator" type="number" placeholder="Zähler" />
                 </div>
                 <span style="font-size:1.2rem;margin-top:1.2rem">/</span>
                 <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Denominator</label>
-                  <input v-model.number="block.denominator" type="number" placeholder="Den" />
+                  <label>Nenner</label>
+                  <input v-model.number="block.denominator" type="number" placeholder="Nenner" />
                 </div>
               </div>
             </template>
@@ -431,10 +434,10 @@
                 <div class="form-group" style="width:70px;margin-bottom:0">
                   <label>Op</label>
                   <select v-model="block.operation">
-                    <option value="add">+</option>
-                    <option value="subtract">−</option>
-                    <option value="multiply">×</option>
-                    <option value="divide">÷</option>
+                    <option value="add">Plus</option>
+                    <option value="subtract">Minus</option>
+                    <option value="multiply">Mal</option>
+                    <option value="divide">Geteilt</option>
                   </select>
                 </div>
                 <div class="form-group" style="flex:1;margin-bottom:0">
@@ -463,11 +466,66 @@
               <div class="form-group">
                 <label>Shape Type</label>
                 <select v-model="block.shape_type">
-                  <option value="triangle">Triangle</option>
-                  <option value="square">Square</option>
-                  <option value="rectangle">Rectangle</option>
-                  <option value="circle">Circle</option>
+                  <option value="triangle">Dreieck</option>
+                  <option value="square">Quadrat</option>
+                  <option value="rectangle">Rechteck</option>
+                  <option value="circle">Kreis</option>
                 </select>
+              </div>
+            </template>
+
+            <!-- Percentage -->
+            <template v-if="block.type === 'percentage'">
+              <div style="display:flex;gap:0.5rem">
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Prozent %</label>
+                  <input v-model.number="block.percentage_value" type="number" placeholder="Prozent" />
+                </div>
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Anteil</label>
+                  <input v-model.number="block.part_value" type="number" placeholder="Anteil" />
+                </div>
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Grundwert</label>
+                  <input v-model.number="block.whole_value" type="number" placeholder="Grundwert" />
+                </div>
+              </div>
+            </template>
+
+            <!-- Unit Conversion -->
+            <template v-if="block.type === 'unit_conversion'">
+              <div style="display:flex;gap:0.5rem;align-items:flex-end">
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Wert</label>
+                  <input v-model.number="block.value" type="number" placeholder="Wert" />
+                </div>
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Von</label>
+                  <input v-model="block.from_unit" placeholder="z.B. cm, kg, min" />
+                </div>
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Nach</label>
+                  <input v-model="block.to_unit" placeholder="z.B. m, g, h" />
+                </div>
+              </div>
+            </template>
+
+            <!-- Angle -->
+            <template v-if="block.type === 'angle'">
+              <div style="display:flex;gap:0.5rem;align-items:flex-end">
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Grad</label>
+                  <input v-model.number="block.expected_degrees" type="number" placeholder="Grad" />
+                </div>
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Typ</label>
+                  <select v-model="block.angle_type">
+                    <option value="measure">Messen</option>
+                    <option value="draw">Zeichnen</option>
+                    <option value="calculate">Berechnen</option>
+                    <option value="identify">Erkennen</option>
+                  </select>
+                </div>
               </div>
             </template>
 
@@ -616,12 +674,15 @@ const blockIcons = {
   matching: '🔗',
   word_scramble: '🔤',
   arithmetic_grid: '➕',
-  equation_entry: '📐',
+  equation_entry: '=️⃣',
   fraction_input: '🧮',
   number_line: '📏',
   word_problem: '📖',
   graph_plot: '📊',
   geometry_shape: '🔷',
+  percentage: '💯',
+  unit_conversion: '🔄',
+  angle: '📐',
   media: '🖼️',
   audio: '🎵',
   video: '🎬',
@@ -630,6 +691,19 @@ const blockIcons = {
   true_false: '⚖️',
   ordering: '🔢',
   drawing: '🎨',
+}
+
+const germanBlockLabel = {
+  arithmetic_grid: 'Grundrechnung',
+  equation_entry: 'Gleichung',
+  fraction_input: 'Bruch',
+  number_line: 'Zahlenstrahl',
+  word_problem: 'Textaufgabe',
+  graph_plot: 'Diagramm',
+  geometry_shape: 'Geometrie',
+  percentage: 'Prozent',
+  unit_conversion: 'Einheiten',
+  angle: 'Winkel',
 }
 
 function getRouteWorksheetId() {
@@ -689,6 +763,20 @@ function mapLoadedBlocks(rawBlocks) {
     }
     if (loaded.type === 'ordering') {
       loaded.items = loaded.items || ['', '', '']
+    }
+    if (loaded.type === 'percentage') {
+      loaded.percentage_value = loaded.percentage_value ?? 20
+      loaded.part_value = loaded.part_value ?? 10
+      loaded.whole_value = loaded.whole_value ?? 50
+    }
+    if (loaded.type === 'unit_conversion') {
+      loaded.value = loaded.value ?? 150
+      loaded.from_unit = loaded.from_unit ?? 'cm'
+      loaded.to_unit = loaded.to_unit ?? 'm'
+    }
+    if (loaded.type === 'angle') {
+      loaded.expected_degrees = loaded.expected_degrees ?? 90
+      loaded.angle_type = loaded.angle_type ?? 'identify'
     }
     if (loaded.type === 'drawing') {
       loaded.canvas_width = loaded.canvas_width ?? 600
@@ -847,6 +935,22 @@ function addBlock(type) {
   if (type === 'graph_plot') {
     block.points_to_plot = [[0, 0]]
     block.pointsStr = '[[0,0]]'
+  }
+  if (type === 'percentage') {
+    block.percentage_value = 20
+    block.part_value = 10
+    block.whole_value = 50
+  }
+  if (type === 'unit_conversion') {
+    block.points = 6
+    block.value = 150
+    block.from_unit = 'cm'
+    block.to_unit = 'm'
+  }
+  if (type === 'angle') {
+    block.points = 6
+    block.expected_degrees = 90
+    block.angle_type = 'identify'
   }
   if (type === 'geometry_shape') block.shape_type = 'triangle'
   if (type === 'word_problem') {

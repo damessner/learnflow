@@ -74,6 +74,12 @@ const BlockSchema = z.object({
     'geometry_shape',
     'word_problem',
     'info_box',
+    'true_false',
+    'ordering',
+    'drawing',
+    'percentage',
+    'unit_conversion',
+    'angle',
   ]),
   points: z.number().optional().default(1),
   title: z.string().optional(),
@@ -107,6 +113,19 @@ const BlockSchema = z.object({
   problem_text: z.string().optional(),
   steps: z.array(z.object({ description: z.string(), expected: z.string() })).optional(),
   final_answer: z.string().optional(),
+  correct_answer: z.boolean().optional(),
+  items: z.array(z.string()).optional(),
+  canvas_width: z.number().optional(),
+  canvas_height: z.number().optional(),
+  background_image: z.string().optional(),
+  percentage_value: z.number().optional(),
+  part_value: z.number().optional(),
+  whole_value: z.number().optional(),
+  value: z.number().optional(),
+  from_unit: z.string().optional(),
+  to_unit: z.string().optional(),
+  expected_degrees: z.number().optional(),
+  angle_type: z.string().optional(),
 })
 
 const GenerationSchema = z.object({
@@ -157,6 +176,11 @@ const exerciseTypes = new Set([
   'graph_plot',
   'geometry_shape',
   'word_problem',
+  'true_false',
+  'ordering',
+  'percentage',
+  'unit_conversion',
+  'angle',
 ])
 
 function buildWorksheetPrompt({
@@ -440,6 +464,42 @@ function normalizeGeneratedBlock(raw: unknown): GeneratedBlock | null {
       if (!problem_text || steps.length === 0 || !final_answer) return null
       return { id, type, points: clampPoints(candidate.points, 12), problem_text, steps, final_answer }
     }
+    case 'true_false': {
+      const correct_answer = typeof candidate.correct_answer === 'boolean' ? candidate.correct_answer : true
+      if (!text) return null
+      return { id, type, points: clampPoints(candidate.points, 6), text, correct_answer }
+    }
+    case 'ordering': {
+      const items = asStringArray(candidate.items)
+      if (items.length < 2) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, items }
+    }
+    case 'drawing': {
+      const canvas_width = typeof candidate.canvas_width === 'number' ? candidate.canvas_width : 600
+      const canvas_height = typeof candidate.canvas_height === 'number' ? candidate.canvas_height : 400
+      const background_image = typeof candidate.background_image === 'string' ? candidate.background_image.trim() : ''
+      return { id, type, points: 0, text, canvas_width, canvas_height, background_image }
+    }
+    case 'percentage': {
+      const percentage_value = typeof candidate.percentage_value === 'number' ? candidate.percentage_value : NaN
+      const part_value = typeof candidate.part_value === 'number' ? candidate.part_value : NaN
+      const whole_value = typeof candidate.whole_value === 'number' ? candidate.whole_value : NaN
+      if (!text) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, percentage_value, part_value, whole_value }
+    }
+    case 'unit_conversion': {
+      const value = typeof candidate.value === 'number' ? candidate.value : NaN
+      const from_unit = typeof candidate.from_unit === 'string' ? candidate.from_unit.trim() : ''
+      const to_unit = typeof candidate.to_unit === 'string' ? candidate.to_unit.trim() : ''
+      if (!Number.isFinite(value) || !from_unit || !to_unit) return null
+      return { id, type, points: clampPoints(candidate.points, 6), text, value, from_unit, to_unit }
+    }
+    case 'angle': {
+      const expected_degrees = typeof candidate.expected_degrees === 'number' ? candidate.expected_degrees : NaN
+      const angle_type = typeof candidate.angle_type === 'string' ? candidate.angle_type.trim() : 'measure'
+      if (!text) return null
+      return { id, type, points: clampPoints(candidate.points, 6), text, expected_degrees, angle_type }
+    }
     default:
       return null
   }
@@ -661,6 +721,12 @@ ${blockType === 'fraction_input' ? `{"id":"uuid","type":"fraction_input","points
 ${blockType === 'arithmetic_grid' ? `{"id":"uuid","type":"arithmetic_grid","points":N,"text":"instructions","operand1":23,"operand2":15,"operation":"add"}` : ''}
 ${blockType === 'graph_plot' ? `{"id":"uuid","type":"graph_plot","points":N,"text":"instructions","points_to_plot":[[0,0],[1,2]]}` : ''}
 ${blockType === 'geometry_shape' ? `{"id":"uuid","type":"geometry_shape","points":N,"text":"instructions","shape_type":"triangle"}` : ''}
+${blockType === 'true_false' ? `{"id":"uuid","type":"true_false","points":N,"text":"The earth is flat.","correct_answer":false}` : ''}
+${blockType === 'ordering' ? `{"id":"uuid","type":"ordering","points":N,"text":"Put these events in order","items":["first","second","third"]}` : ''}
+${blockType === 'drawing' ? `{"id":"uuid","type":"drawing","points":0,"text":"Draw a plant cell","canvas_width":600,"canvas_height":400}` : ''}
+${blockType === 'percentage' ? `{"id":"uuid","type":"percentage","points":N,"text":"Calculate 20% of 50","percentage_value":20,"part_value":10,"whole_value":50}` : ''}
+${blockType === 'unit_conversion' ? `{"id":"uuid","type":"unit_conversion","points":N,"text":"Convert 150 cm to meters","value":150,"from_unit":"cm","to_unit":"m"}` : ''}
+${blockType === 'angle' ? `{"id":"uuid","type":"angle","points":N,"text":"What type of angle is 90 degrees?","expected_degrees":90,"angle_type":"right"}` : ''}
 
 RULES:
 - The block MUST be educationally useful and grade-appropriate
