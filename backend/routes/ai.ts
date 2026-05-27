@@ -638,7 +638,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
         } catch (e) {
           console.error('Validation failed for Ollama:', e)
         }
-      } else if (process.env.GEMINI_API_KEY) {
+      } else if ((provider === 'gemini' || !['opencode', 'ollama'].includes(provider)) && process.env.GEMINI_API_KEY) {
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
           {
