@@ -22,54 +22,42 @@ jobs:
 
   backend-lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
-          cache-dependency-path: package-lock.json
       - run: npm install --no-package-lock
       - run: npm run lint
+        working-directory: backend
 
   frontend-lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
-          cache-dependency-path: package-lock.json
       - run: npm install --no-package-lock
       - run: npm run lint
+        working-directory: frontend
 
   backend-typecheck:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
-          cache-dependency-path: package-lock.json
       - run: npm install --no-package-lock
       - run: npx tsc --noEmit
+        working-directory: backend
 
   backend-test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     env:
       DB_DIALECT: better-sqlite3
       NODE_ENV: test
@@ -80,39 +68,33 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-          cache-dependency-path: package-lock.json
       - run: npm install --no-package-lock
       - run: npx vitest run --passWithNoTests
+        working-directory: backend
 
   frontend-test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
-          cache-dependency-path: package-lock.json
       - run: npm install --no-package-lock
       - run: npx vitest run --passWithNoTests
+        working-directory: frontend
 
   backend-build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
-          cache-dependency-path: package-lock.json
       - run: npm install --no-package-lock
       - run: npm run build
+        working-directory: backend
       - uses: actions/upload-artifact@v4
         with:
           name: backend-dist
@@ -120,18 +102,15 @@ jobs:
 
   frontend-build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
-          cache-dependency-path: package-lock.json
       - run: npm install --no-package-lock
       - run: npm run build
+        working-directory: frontend
       - uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
