@@ -88,6 +88,67 @@
     </template>
 
     <template v-if="tab === 'classes'">
+      <div class="card" style="margin-bottom: 1rem; padding: 1rem; border: 1px dashed var(--primary-soft)">
+        <div class="flex items-center gap-md" style="flex-wrap: wrap">
+          <div style="flex: 1; min-width: 200px">
+            <strong style="font-size: 0.95rem">📄 PDF Student Importer</strong>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.2rem">
+              Upload a class roster PDF (Namensliste format). Creates student accounts and classes automatically.
+            </p>
+          </div>
+          <input
+            ref="pdfInput"
+            type="file"
+            accept=".pdf,application/pdf"
+            style="display: none"
+            @change="onPdfSelected"
+          />
+          <button class="btn-primary" :disabled="importingPdf" @click="$refs.pdfInput.click()">
+            {{ importingPdf ? 'Importing...' : 'Upload PDF & Import' }}
+          </button>
+        </div>
+        <div v-if="importResult" class="divider" style="margin: 0.75rem 0"></div>
+        <div v-if="importResult" style="font-size: 0.85rem">
+          <div class="flex gap-md" style="flex-wrap: wrap">
+            <span class="badge-success badge">{{ importResult.studentsCreated }} students created</span>
+            <span class="badge-warning badge">{{ importResult.studentsSkipped }} skipped</span>
+            <span class="badge badge">{{ importResult.classesCreated }} classes created</span>
+            <span v-if="importResult.errorCount > 0" class="badge-danger badge">{{ importResult.errorCount }} errors</span>
+          </div>
+          <div v-if="importResult.classNames.length > 0" style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.8rem">
+            Classes: {{ importResult.classNames.join(', ') }}
+          </div>
+          <div v-if="credentialsList.length > 0" style="margin-top: 0.75rem">
+            <button class="btn-sm" @click="showCredentials = !showCredentials">
+              {{ showCredentials ? 'Hide' : 'Show' }} Student Passwords ({{ credentialsList.length }})
+            </button>
+            <div v-if="showCredentials" style="margin-top: 0.5rem; max-height: 400px; overflow-y: auto">
+              <table style="font-size: 0.75rem">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Class</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="c in credentialsList" :key="c.username">
+                    <td>{{ c.name }}</td>
+                    <td><code>{{ c.username }}</code></td>
+                    <td><code>{{ c.password }}</code></td>
+                    <td>{{ c.class }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div v-if="importErrors.length > 0" style="margin-top: 0.5rem; color: var(--danger); font-size: 0.8rem">
+            <p v-for="(err, i) in importErrors" :key="i">{{ err }}</p>
+          </div>
+        </div>
+      </div>
+
       <div v-if="classesList.length === 0" style="color: var(--text-muted)">No classes yet</div>
       <div
         v-for="c in classesList"
@@ -1374,6 +1435,40 @@ const newWorksheetToCourseId = ref('')
 const newStudentToCourseId = ref('')
 const editingCourseWorksheetSettings = ref(null)
 const allStudents = ref([])
+
+const importResult = ref(null)
+const credentialsList = ref([])
+const importErrors = ref([])
+const importingPdf = ref(false)
+const showCredentials = ref(false)
+
+async function onPdfSelected(e) {
+  const file = e.target?.files?.[0]
+  if (!file) return
+  importingPdf.value = true
+  importResult.value = null
+  credentialsList.value = []
+  importErrors.value = []
+  showCredentials.value = false
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const data = await api.upload('/classes/import-pdf', formData)
+    importResult.value = data.summary
+    credentialsList.value = data.credentials || []
+    importErrors.value = data.errors || []
+    if (data.summary?.studentsCreated > 0) {
+      uiStore.showToast(`${data.summary.studentsCreated} students imported`, 'success')
+      await classesStore.fetchClasses()
+      classesList.value = classesStore.classes
+    }
+  } catch (err) {
+    uiStore.showToast(err.message || 'Import failed', 'error')
+  } finally {
+    importingPdf.value = false
+    if (e.target) e.target.value = ''
+  }
+}
 
 const searchQuery = ref('')
 const filteredWorksheets = computed(() => {

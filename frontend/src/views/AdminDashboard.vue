@@ -71,6 +71,47 @@
     </template>
 
     <template v-if="tab === 'classes'">
+      <div class="card" style="margin-bottom: 1rem; padding: 1rem; border: 1px dashed var(--primary-soft)">
+        <div class="flex items-center gap-md" style="flex-wrap: wrap">
+          <div style="flex: 1; min-width: 200px">
+            <strong>📄 PDF Student Importer</strong>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.2rem">
+              Upload a class roster PDF to create student accounts and classes automatically.
+            </p>
+          </div>
+          <input ref="pdfInput" type="file" accept=".pdf" style="display:none" @change="onAdminPdfSelected" />
+          <button class="btn-primary" :disabled="adminImporting" @click="$refs.pdfInput.click()">
+            {{ adminImporting ? 'Importing...' : 'Upload PDF' }}
+          </button>
+        </div>
+        <div v-if="adminImportResult" class="divider" style="margin:0.75rem 0"></div>
+        <div v-if="adminImportResult" style="font-size:0.85rem">
+          <div class="flex gap-md" style="flex-wrap:wrap">
+            <span class="badge-success badge">{{ adminImportResult.studentsCreated }} students</span>
+            <span class="badge-warning badge">{{ adminImportResult.studentsSkipped }} skipped</span>
+            <span class="badge badge">{{ adminImportResult.classesCreated }} classes</span>
+            <span v-if="adminImportResult.errorCount > 0" class="badge-danger badge">{{ adminImportResult.errorCount }} errors</span>
+          </div>
+          <div v-if="adminCredentials.length > 0" style="margin-top:0.75rem">
+            <button class="btn-sm" @click="adminShowCreds = !adminShowCreds">
+              {{ adminShowCreds ? 'Hide' : 'Show' }} Passwords ({{ adminCredentials.length }})
+            </button>
+            <div v-if="adminShowCreds" style="margin-top:0.5rem; max-height:400px; overflow-y:auto">
+              <table style="font-size:0.75rem">
+                <thead><tr><th>Name</th><th>Username</th><th>Password</th><th>Class</th></tr></thead>
+                <tbody>
+                  <tr v-for="c in adminCredentials" :key="c.username">
+                    <td>{{ c.name }}</td>
+                    <td><code>{{ c.username }}</code></td>
+                    <td><code>{{ c.password }}</code></td>
+                    <td>{{ c.class }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
       <div v-if="allClasses.length === 0" style="color: var(--text-muted)">No classes</div>
       <div v-for="c in allClasses" :key="c.id" class="card" style="margin-bottom: 0.5rem">
         <strong>{{ c.name }}</strong>
@@ -300,6 +341,44 @@ const tab = ref('users')
 const users = ref([])
 const allClasses = ref([])
 const worksheetCount = ref(0)
+
+const adminImporting = ref(false)
+const adminImportResult = ref(null)
+const adminCredentials = ref([])
+const adminShowCreds = ref(false)
+
+async function onAdminPdfSelected(e) {
+  const file = e.target?.files?.[0]
+  if (!file) return
+  adminImporting.value = true
+  adminImportResult.value = null
+  adminCredentials.value = []
+  adminShowCreds.value = false
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch('/api/classes/import-pdf', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      body: formData,
+      credentials: 'include',
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Import failed')
+    adminImportResult.value = data.summary
+    adminCredentials.value = data.credentials || []
+    if (data.summary?.studentsCreated > 0) {
+      uiStore.showToast(`${data.summary.studentsCreated} students imported`, 'success')
+      await fetchClasses()
+    }
+  } catch (err) {
+    uiStore.showToast(err.message, 'error')
+  } finally {
+    adminImporting.value = false
+    if (e.target) e.target.value = ''
+  }
+}
+
 const newUser = ref({ name: '', email: '', username: '', password: '', role: 'teacher' })
 
 // ── Backup state ─────────────────────────────────────────────────────────────
