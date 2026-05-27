@@ -11,31 +11,39 @@
           <button class="btn-primary" @click="save" style="flex-shrink:0">Save</button>
         </div>
 
-        <!-- Settings -->
-        <div class="card sidebar-card">
-          <div class="form-group">
-            <label>Title</label>
-            <input v-model="form.title" placeholder="Worksheet title" />
-          </div>
-          <div style="display:flex;gap:0.5rem">
-            <div class="form-group" style="flex:1">
-              <label>Subject</label>
-              <select v-model="form.subject">
-                <option value="">-- Select --</option>
-                <option v-for="s in subjects" :key="s" :value="s">{{ s }}</option>
-              </select>
+        <!-- Settings (collapsible) -->
+        <div class="sidebar-section" style="margin-bottom:0">
+          <button class="collapse-toggle" @click="titlePanelOpen = !titlePanelOpen">
+            <span class="collapse-toggle-label">📋 Worksheet Settings</span>
+            <span class="collapse-arrow" :class="{ open: titlePanelOpen }">▾</span>
+          </button>
+          <div class="card sidebar-card" style="margin-top:0.25rem">
+            <div class="form-group" style="margin-bottom:0.35rem">
+              <label>Title</label>
+              <input v-model="form.title" placeholder="Worksheet title" />
             </div>
-            <div class="form-group" style="flex:1">
-              <label>Grade</label>
-              <select v-model="form.grade_level">
-                <option value="">-- Select --</option>
-                <option v-for="g in gradeLevels" :key="g" :value="g">Grade {{ g }}</option>
-              </select>
+            <div v-show="titlePanelOpen">
+              <div style="display:flex;gap:0.5rem">
+                <div class="form-group" style="flex:1">
+                  <label>Subject</label>
+                  <select v-model="form.subject">
+                    <option value="">-- Select --</option>
+                    <option v-for="s in subjects" :key="s" :value="s">{{ s }}</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex:1">
+                  <label>Grade</label>
+                  <select v-model="form.grade_level">
+                    <option value="">-- Select --</option>
+                    <option v-for="g in gradeLevels" :key="g" :value="g">Klasse {{ g }}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label>Description</label>
+                <textarea v-model="form.description" rows="2" placeholder="Optional description" @input="autoExpand($event)"></textarea>
+              </div>
             </div>
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label>Description</label>
-            <textarea v-model="form.description" rows="2" placeholder="Optional description" @input="autoExpand($event)"></textarea>
           </div>
         </div>
 
@@ -53,6 +61,12 @@
               style="font-size:0.75rem;margin-bottom:0.35rem"
               @input="autoExpand($event)"
             ></textarea>
+            <div v-if="lernzieleTemplates.length" style="margin-bottom:0.2rem">
+              <select style="font-size:0.68rem;padding:0.2rem;width:100%" @change="e => { if (e.target.value) { aiLernziele = e.target.value; e.target.value = '' } }">
+                <option value="">📚 Lernziel-Vorlage wählen…</option>
+                <option v-for="t in lernzieleTemplates" :key="t" :value="t">{{ t }}</option>
+              </select>
+            </div>
             <textarea
               v-model="aiLernziele"
               rows="2"
@@ -60,15 +74,23 @@
               style="font-size:0.7rem;margin-bottom:0.35rem"
               @input="autoExpand($event)"
             ></textarea>
-            <div style="display:flex;gap:0.35rem;margin-bottom:0.35rem">
-              <input
-                v-model="conceptInput"
-                placeholder="Differentiate concept..."
-                style="font-size:0.7rem;flex:1"
-              />
-              <button class="btn-sm" :disabled="differentiateLoading" @click="differentiateConcept()">
-                {{ differentiateLoading ? '...' : 'Levels' }}
-              </button>
+            <div style="margin-bottom:0.35rem">
+              <div v-if="differentiateTemplates.length" style="margin-bottom:0.2rem">
+                <select style="font-size:0.68rem;padding:0.2rem;width:100%" @change="e => { if (e.target.value) { conceptInput = e.target.value; e.target.value = '' } }">
+                  <option value="">🔀 Konzept-Vorlage wählen…</option>
+                  <option v-for="t in differentiateTemplates" :key="t" :value="t">{{ t }}</option>
+                </select>
+              </div>
+              <div style="display:flex;gap:0.35rem">
+                <input
+                  v-model="conceptInput"
+                  placeholder="Differentiate concept..."
+                  style="font-size:0.7rem;flex:1"
+                />
+                <button class="btn-sm" :disabled="differentiateLoading" @click="differentiateConcept()">
+                  {{ differentiateLoading ? '...' : 'Levels' }}
+                </button>
+              </div>
             </div>
             <div v-if="differentiatedConcept" class="card" style="padding:0.5rem;margin-bottom:0.35rem;font-size:0.72rem">
               <strong>Basic</strong>
@@ -688,7 +710,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useWorksheetsStore } from '../stores/worksheets'
 import { useUiStore } from '../stores/ui'
@@ -718,8 +740,131 @@ const differentiateLoading = ref(false)
 const differentiatedConcept = ref(null)
 const versionHistory = ref([])
 const versionLoading = ref(false)
-const aiPanelOpen = ref(true)
+const aiPanelOpen = ref(false)
+const titlePanelOpen = ref(false)
 const versionPanelOpen = ref(true)
+
+const lernzieleTemplates = computed(() => {
+  const s = form.value.subject
+  const map = {
+    'Mathematik': [
+      'Die Schüler/innen können Brüche addieren und subtrahieren.',
+      'Die Schüler/innen können Gleichungen mit einer Unbekannten lösen.',
+      'Die Schüler/innen können Flächen und Umfänge berechnen.',
+      'Die Schüler/innen können Prozentrechnung anwenden.',
+      'Die Schüler/innen können Dezimalzahlen multiplizieren und dividieren.',
+      'Die Schüler/innen können Dreisatz-Aufgaben lösen.',
+      'Die Schüler/innen können Winkel messen und benennen.',
+      'Die Schüler/innen können statistische Daten auswerten.',
+      'Die Schüler/innen können Potenzen und Wurzeln berechnen.',
+      'Die Schüler/innen können lineare Funktionen darstellen.',
+    ],
+    'Deutsch': [
+      'Die Schüler/innen können einen Text sinnerfassend lesen.',
+      'Die Schüler/innen können Satzglieder bestimmen.',
+      'Die Schüler/innen können Rechtschreibregeln anwenden.',
+      'Die Schüler/innen können einen Aufsatz strukturiert verfassen.',
+      'Die Schüler/innen können Wortarten erkennen und benennen.',
+      'Die Schüler/innen können direkte und indirekte Rede unterscheiden.',
+      'Die Schüler/innen können Texte zusammenfassen.',
+      'Die Schüler/innen können Groß- und Kleinschreibung korrekt anwenden.',
+      'Die Schüler/innen können Kommaregeln anwenden.',
+      'Die Schüler/innen können Metaphern und Stilmittel erkennen.',
+    ],
+    'Englisch': [
+      'Students can use the simple past tense correctly.',
+      'Students can describe people and places using adjectives.',
+      'Students can understand and answer questions about a text.',
+      'Students can use modal verbs (can, must, should).',
+      'Students can write a short informal letter or email.',
+      'Students can use the present perfect tense.',
+      'Students can talk about future plans using will/going to.',
+      'Students can use conditional sentences (if-clauses type 1).',
+      'Students can expand their vocabulary on the topic of daily life.',
+      'Students can use passive voice in simple sentences.',
+    ],
+    'Geschichte': [
+      'Die Schüler/innen können wichtige Ereignisse der Weltgeschichte einordnen.',
+      'Die Schüler/innen können historische Quellen analysieren.',
+      'Die Schüler/innen können Ursachen und Folgen historischer Ereignisse erklären.',
+      'Die Schüler/innen können die Entwicklung der Demokratie beschreiben.',
+      'Die Schüler/innen können das Leben im Mittelalter beschreiben.',
+      'Die Schüler/innen können die Ursachen des Ersten Weltkriegs nennen.',
+      'Die Schüler/innen können den Nationalsozialismus kritisch reflektieren.',
+      'Die Schüler/innen können die Bedeutung der Französischen Revolution erklären.',
+    ],
+    'Geographie': [
+      'Die Schüler/innen können Klimazonen der Erde beschreiben.',
+      'Die Schüler/innen können Karten lesen und interpretieren.',
+      'Die Schüler/innen können Naturkatastrophen erklären.',
+      'Die Schüler/innen können wirtschaftliche Unterschiede zwischen Ländern erklären.',
+      'Die Schüler/innen können den Wasserkreislauf beschreiben.',
+      'Die Schüler/innen können Bevölkerungsentwicklung analysieren.',
+      'Die Schüler/innen können Gebirgsbildung und Plattentektonik erklären.',
+    ],
+    'Biologie': [
+      'Die Schüler/innen können den Aufbau der Zelle beschreiben.',
+      'Die Schüler/innen können Fotosynthese und Zellatmung erklären.',
+      'Die Schüler/innen können Ökosysteme und Nahrungsketten beschreiben.',
+      'Die Schüler/innen können die Vererbungslehre anwenden.',
+      'Die Schüler/innen können den menschlichen Körper und seine Organe benennen.',
+      'Die Schüler/innen können Evolution und natürliche Selektion erklären.',
+      'Die Schüler/innen können Wirbeltiere und Wirbellose unterscheiden.',
+    ],
+    'Physik': [
+      'Die Schüler/innen können das Ohmsche Gesetz anwenden.',
+      'Die Schüler/innen können Kräfte und Bewegungen beschreiben.',
+      'Die Schüler/innen können Energieformen und Energieumwandlung erklären.',
+      'Die Schüler/innen können einfache Stromkreise zeichnen.',
+      'Die Schüler/innen können Aggregatzustände und Wärmeübertragung erklären.',
+      'Die Schüler/innen können Schall und Licht als Wellenphänomene beschreiben.',
+      'Die Schüler/innen können Hebelgesetze anwenden.',
+    ],
+    'Chemie': [
+      'Die Schüler/innen können das Periodensystem lesen.',
+      'Die Schüler/innen können chemische Reaktionsgleichungen aufstellen.',
+      'Die Schüler/innen können Säuren und Basen unterscheiden.',
+      'Die Schüler/innen können Atombau und Elektronenkonfiguration beschreiben.',
+      'Die Schüler/innen können organische Verbindungen benennen.',
+      'Die Schüler/innen können Oxidation und Reduktion erklären.',
+    ],
+    'Informatik': [
+      'Die Schüler/innen können einfache Algorithmen beschreiben.',
+      'Die Schüler/innen können Variablen und Schleifen in einer Programmiersprache verwenden.',
+      'Die Schüler/innen können Daten in Tabellen und Datenbanken organisieren.',
+      'Die Schüler/innen können Datenschutz und Datensicherheit erklären.',
+      'Die Schüler/innen können Binärzahlen umrechnen.',
+    ],
+    'Musik': [
+      'Die Schüler/innen können Noten lesen und schreiben.',
+      'Die Schüler/innen können Musikstile und Epochen unterscheiden.',
+      'Die Schüler/innen können Rhythmus und Takt erkennen.',
+      'Die Schüler/innen können Instrumente der Orchester benennen.',
+    ],
+    'Kunst': [
+      'Die Schüler/innen können Farbenlehre und Farbmischung anwenden.',
+      'Die Schüler/innen können Perspektive in Zeichnungen darstellen.',
+      'Die Schüler/innen können Kunststile und Epochen beschreiben.',
+      'Die Schüler/innen können eigene kreative Werke gestalten.',
+    ],
+    'Sport': [
+      'Die Schüler/innen können Spielregeln erklären und anwenden.',
+      'Die Schüler/innen können Aufwärm- und Dehnübungen durchführen.',
+      'Die Schüler/innen können fair play und Teamarbeit demonstrieren.',
+    ],
+    'Ethik': [
+      'Die Schüler/innen können ethische Dilemmata analysieren.',
+      'Die Schüler/innen können verschiedene Wertvorstellungen vergleichen.',
+      'Die Schüler/innen können Menschenrechte benennen und erklären.',
+    ],
+    'Religion': [
+      'Die Schüler/innen können Weltreligionen vergleichen.',
+      'Die Schüler/innen können religiöse Feste und Bräuche beschreiben.',
+      'Die Schüler/innen können biblische Texte interpretieren.',
+    ],
+  }
+  return map[s] || []
+})
 
 const blockIcons = {
   text: '📄',
@@ -764,6 +909,54 @@ const germanBlockLabel = {
   angle: 'Winkel',
   fraction_model: 'Bruchbild',
 }
+
+const differentiateTemplates = computed(() => {
+  const s = form.value.subject
+  const map = {
+    'Mathematik': [
+      'Brüche', 'Gleichungen', 'Prozentrechnung', 'Flächenberechnung', 'Dreisatz',
+      'Dezimalzahlen', 'Potenzen', 'Lineare Funktionen', 'Statistik', 'Geometrie',
+    ],
+    'Deutsch': [
+      'Satzglieder', 'Wortarten', 'Rechtschreibung', 'Aufsatz schreiben',
+      'Direkte Rede', 'Kommaregeln', 'Textanalyse', 'Stilmittel',
+    ],
+    'Englisch': [
+      'Simple Past', 'Present Perfect', 'Modal verbs', 'Passive voice',
+      'Conditional sentences', 'Reported speech', 'Adjectives and adverbs',
+    ],
+    'Geschichte': [
+      'Erster Weltkrieg', 'Zweiter Weltkrieg', 'Nationalsozialismus',
+      'Französische Revolution', 'Mittelalter', 'Antikes Rom', 'Demokratie',
+    ],
+    'Geographie': [
+      'Klimazonen', 'Plattentektonik', 'Wasserkreislauf', 'Bevölkerungsentwicklung',
+      'Wirtschaftsräume', 'Naturkatastrophen',
+    ],
+    'Biologie': [
+      'Zellaufbau', 'Fotosynthese', 'Ökosystem', 'Vererbung', 'Evolution',
+      'Menschlicher Körper', 'Nahrungskette',
+    ],
+    'Physik': [
+      'Ohmsches Gesetz', 'Kräfte und Bewegung', 'Energieumwandlung',
+      'Stromkreis', 'Wärmelehre', 'Optik', 'Hebelgesetz',
+    ],
+    'Chemie': [
+      'Periodensystem', 'Säuren und Basen', 'Atombau', 'Reaktionsgleichungen',
+      'Oxidation und Reduktion', 'Organische Chemie',
+    ],
+    'Informatik': [
+      'Algorithmen', 'Variablen und Schleifen', 'Datenbanken',
+      'Datenschutz', 'Binärsystem',
+    ],
+    'Musik': ['Noten lesen', 'Rhythmus', 'Musikepochen', 'Instrumente'],
+    'Kunst': ['Farbenlehre', 'Perspektive', 'Kunststile'],
+    'Ethik': ['Ethische Dilemmata', 'Menschenrechte', 'Wertvorstellungen'],
+    'Religion': ['Weltreligionen', 'Religiöse Feste', 'Biblische Texte'],
+    'Sport': ['Spielregeln', 'Aufwärmen', 'Fair Play'],
+  }
+  return map[s] || []
+})
 
 function getRouteWorksheetId() {
   if (!route.params.id) return null
