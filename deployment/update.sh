@@ -7,15 +7,16 @@ echo "=== LearnFlow Updater ==="
 echo "Pulling latest changes..."
 git pull origin main
 
+echo "Installing dependencies..."
+npm install --no-package-lock
+
 echo "Building backend..."
 cd backend
-npm install --no-package-lock
 npm run build
 cd ..
 
 echo "Building frontend..."
 cd frontend
-npm install --no-package-lock
 npm run build
 cd ..
 
