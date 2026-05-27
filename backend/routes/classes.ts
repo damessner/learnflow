@@ -1,7 +1,12 @@
 import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
+import multer from 'multer'
+import path from 'path'
+import fs from 'fs'
 import { getKnex } from '../db/knex'
 import { requireAuth, requireRole } from '../middleware/requireAuth'
+import { importStudentsFromPdf, setImportTeacherId } from '../services/studentImporter'
+import crypto from 'crypto'
 
 const router = Router()
 
@@ -228,6 +233,10 @@ router.post(
       const { name, email } = req.body
       const id = uuidv4()
       const username = `student_${Date.now()}`
+      const tempPassword = 'learnflow123'
+
+      const salt = crypto.randomBytes(32).toString('hex')
+      const hash = crypto.pbkdf2Sync(tempPassword, salt, 10000, 64, 'sha256').toString('hex')
 
       await knex('users').insert({
         id,
@@ -235,10 +244,12 @@ router.post(
         email: email || `${username}@local`,
         name,
         role: 'student',
+        password_hash: hash,
+        password_salt: salt,
       })
 
       const user = await knex('users').where({ id }).first()
-      res.status(201).json({ user })
+      res.status(201).json({ user, tempPassword })
     } catch (err) {
       next(err)
     }
@@ -325,9 +336,43 @@ router.get(
   },
 )
 
-router.post('/import-pdf', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
+const pdfUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === 'application/pdf') return cb(null, true)
+    cb(new Error('Only PDF files are accepted'))
+  },
+})
+
+router.post('/import-pdf', requireAuth, requireRole('teacher', 'admin'), pdfUpload.single('file'), async (req, res, next) => {
   try {
-    res.json({ message: 'PDF import endpoint ready' })
+    if (!req.file) {
+      res.status(400).json({ error: 'No PDF file uploaded' })
+      return
+    }
+
+    setImportTeacherId(req.user!.userId)
+    const summary = await importStudentsFromPdf(req.file.buffer)
+
+    res.json({
+      message: `Import complete: ${summary.studentsCreated} students created, ${summary.studentsSkipped} skipped`,
+      summary: {
+        classesCreated: summary.classesCreated,
+        classesSkipped: summary.classesSkipped,
+        studentsCreated: summary.studentsCreated,
+        studentsSkipped: summary.studentsSkipped,
+        classNames: summary.classNames,
+        errorCount: summary.errors.length,
+      },
+      credentials: summary.credentials.map((c) => ({
+        name: c.name,
+        username: c.username,
+        password: c.password,
+        class: c.className,
+      })),
+      errors: summary.errors.slice(0, 20),
+    })
   } catch (err) {
     next(err)
   }
