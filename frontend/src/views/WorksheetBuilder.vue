@@ -1816,6 +1816,7 @@ function insertDifferentiatedInfoBox() {
 async function save() {
   const worksheetId = getRouteWorksheetId()
   const mappedBlocks = blocks.value.map((b) => {
+    updateBlockPoints(b)
     const copy = { ...b }
     if (copy.type === 'short_answer') {
       copy.keywords = (copy.keywordsStr || '')

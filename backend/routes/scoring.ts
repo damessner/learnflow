@@ -158,7 +158,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           let matchCount = 0
           for (let i = 0; i < pairs.length; i++) {
             const key = String(i)
-            if (ans[key] && ans[key].trim().toLowerCase() === pairs[i][1].trim().toLowerCase()) {
+            if (ans[key] && ans[key].trim().toLowerCase() === (pairs[i][1] || '').trim().toLowerCase()) {
               matchCount++
             }
           }
@@ -212,7 +212,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           const ans = (userAnswer as string[]) || []
           let correct = 0
           for (let i = 0; i < words.length; i++) {
-            if (ans[i]?.trim().toLowerCase() === words[i].word.trim().toLowerCase()) correct++
+            if (ans[i]?.trim().toLowerCase() === (words[i].word || '').trim().toLowerCase()) correct++
           }
           earned = words.length > 0 ? Math.round((correct / words.length) * block.points) : 0
           feedback.push(`Word scramble: ${correct}/${words.length}`)
@@ -280,8 +280,8 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
             const userVal = (ans[String(i)] || '').trim().toLowerCase()
             const expected =
               direction === 'r2l'
-                ? pairs[i].l.trim().toLowerCase()
-                : pairs[i].r.trim().toLowerCase()
+                ? (pairs[i].l || '').trim().toLowerCase()
+                : (pairs[i].r || '').trim().toLowerCase()
             if (userVal === expected || isAcceptableVariant(userVal, expected)) pairCorrect++
           }
           earned = pairs.length > 0 ? Math.round((pairCorrect / pairs.length) * block.points) : 0
@@ -382,7 +382,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
             const userVal = String(userSteps[i] || userSteps[String(i)] || '')
               .trim()
               .toLowerCase()
-            const expVal = steps[i].expected.trim().toLowerCase()
+            const expVal = (steps[i].expected || '').trim().toLowerCase()
             if (userVal === expVal || checkSTEMMatch(userVal, expVal)) correct++
           }
           const finalAnsMatch =
