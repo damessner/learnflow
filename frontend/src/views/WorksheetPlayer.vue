@@ -123,6 +123,46 @@
         <div style="white-space: pre-wrap">{{ block.text }}</div>
       </template>
 
+      <template v-if="block.type === 'info_box'">
+        <div
+          @click="toggleInfoBox(block.id)"
+          style="
+            cursor: pointer;
+            background: var(--primary-light);
+            border: 1px solid var(--primary-soft);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            transition: all var(--transition);
+            user-select: none;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--primary)">
+            <span style="font-size: 1.1rem">💡</span>
+            <span style="flex: 1">{{ block.title || 'Click to learn more' }}</span>
+            <span style="font-size: 0.85rem; color: var(--text-muted)">{{ infoBoxOpen[block.id] ? '▼' : '▶' }}</span>
+          </div>
+          <div
+            v-if="infoBoxOpen[block.id]"
+            style="
+              margin-top: 0.75rem;
+              padding-top: 0.75rem;
+              border-top: 1px solid var(--primary-soft);
+              color: var(--text-main);
+              font-size: 0.9rem;
+              line-height: 1.7;
+            "
+          >
+            <div style="white-space: pre-wrap">{{ block.text }}</div>
+            <MermaidDiagram
+              v-if="block.mermaid"
+              :code="block.mermaid"
+              :alt-text="block.alt_text"
+              style="margin-top: 0.75rem"
+            />
+          </div>
+        </div>
+      </template>
+
       <template v-if="block.type === 'word_scramble'">
         <div
           v-for="(w, wi) in block.words || []"
@@ -330,6 +370,11 @@ const submitting = ref(false)
 const wagers = reactive({})
 const blockConfidence = reactive({})
 const gamXp = ref(null)
+const infoBoxOpen = reactive({})
+
+function toggleInfoBox(id) {
+  infoBoxOpen[id] = !infoBoxOpen[id]
+}
 
 const progressiveMode = ref(false)
 const currentBlockIndex = ref(0)

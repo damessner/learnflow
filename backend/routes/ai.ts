@@ -73,8 +73,10 @@ const BlockSchema = z.object({
     'graph_plot',
     'geometry_shape',
     'word_problem',
+    'info_box',
   ]),
   points: z.number().optional().default(1),
+  title: z.string().optional(),
   text: z.string().optional(),
   template: z.string().optional(),
   options: z.array(z.string()).optional(),
@@ -84,6 +86,8 @@ const BlockSchema = z.object({
   pairs: z.array(z.tuple([z.string(), z.string()])).optional(),
   words: z.array(z.object({ word: z.string() })).optional(),
   expected: z.array(z.string()).optional(),
+  keywords: z.array(z.string()).optional(),
+  sample_answer: z.string().optional(),
   kc_ids: z.array(z.string().uuid()).optional(),
   mermaid: z.string().optional(),
   alt_text: z.string().optional(),
@@ -109,12 +113,113 @@ const GenerationSchema = z.object({
   blocks: z.array(BlockSchema),
 })
 
-function buildWorksheetPrompt(userPrompt: string, difficulty?: string, length?: string, lernziele?: string): string {
-  const parts: string[] = [userPrompt]
+const GenerateRequestSchema = z.object({
+  prompt: z.string().min(3),
+  provider: z.string().optional().default('ollama'),
+  difficulty: z.enum(['easy', 'medium', 'hard']).optional().default('medium'),
+  length: z.enum(['short', 'medium', 'long']).optional().default('medium'),
+  lernziele: z.string().optional(),
+  subject: z.string().optional(),
+  grade_level: z.string().optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  style: z.enum(['practice', 'test', 'revision', 'challenge']).optional().default('practice'),
+})
+
+type GeneratedBlock = z.infer<typeof BlockSchema>
+type GenerateRequest = z.infer<typeof GenerateRequestSchema>
+
+const exerciseTypes = new Set([
+  'gap_fill',
+  'multiple_choice',
+  'single_choice',
+  'matching',
+  'word_scramble',
+  'short_answer',
+  'number_line',
+  'equation_entry',
+  'fraction_input',
+  'arithmetic_grid',
+  'graph_plot',
+  'geometry_shape',
+  'word_problem',
+])
+
+function buildWorksheetPrompt({
+  prompt: userPrompt,
+  difficulty,
+  length,
+  lernziele,
+  subject,
+  grade_level,
+  title,
+  description,
+  style,
+}: GenerateRequest): string {
+  const parts: string[] = []
+
+  parts.push(`Create a teacher-usable worksheet that makes pupils actively work.`)
+  parts.push(`The worksheet must feel classroom-ready, not like a rough draft.`)
+  parts.push(``)
+  parts.push(`WORKSHEET CONTEXT:`)
+  parts.push(`- Teacher request: ${userPrompt}`)
+  if (title) parts.push(`- Worksheet title: ${title}`)
+  if (subject) parts.push(`- Subject: ${subject}`)
+  if (grade_level) parts.push(`- Grade level: Grade ${grade_level}`)
+  if (description) parts.push(`- Existing worksheet description/context: ${description}`)
+  parts.push(`- Difficulty: ${difficulty || 'medium'}`)
+  parts.push(`- Length: ${length || 'medium'}`)
+  if (lernziele) parts.push(`- Learning objectives (Lernziele): ${lernziele}`)
+  if (style) parts.push(`- Worksheet style: ${style}`)
 
   parts.push(``)
-  parts.push(`Difficulty: ${difficulty || 'medium'}. Length: ${length || 'medium'}.`)
-  if (lernziele) parts.push(`Learning objectives (Lernziele): ${lernziele}`)
+  parts.push(`PEDAGOGICAL QUALITY RULES:`)
+  parts.push(`- The worksheet must require genuine thinking, writing, solving, comparing, explaining, or calculating.`)
+  parts.push(`- Avoid shallow filler, trivia, opinion-only prompts, or tasks that can be answered without working.`)
+  parts.push(`- Make each exercise self-contained: include enough information, numbers, text, and context to solve it.`)
+  parts.push(`- Use plausible distractors for choice questions; never make the correct answer obvious.`)
+  parts.push(`- Include a progression: warm-up or orientation, core practice, then at least one more demanding item.`)
+  parts.push(`- Prefer real exercises over long explanation blocks. Use at most one intro text/read_aloud/info_box block unless explicitly needed.`)
+  parts.push(`- Default language: German, unless the teacher request explicitly asks for another language or the subject is English.`)
+  parts.push(`- Match vocabulary, sentence length, and cognitive demand to the specified grade level.`)
+  parts.push(`- For hard worksheets, include transfer tasks, multi-step reasoning, and written explanation requirements.`)
+
+  parts.push(``)
+  parts.push(`STYLE-SPECIFIC GUIDANCE:`)
+  parts.push(`- Style "practice": focus on skill-building. Include scaffolded practice with gradual difficulty. Provide hints where helpful. Include an answer key section marker.`)
+  parts.push(`- Style "test": do NOT include answer keys or hints. Questions should assess mastery independently. Use a mix of recall, application, and reasoning.`)
+  parts.push(`- Style "revision": cover a broad range of previously taught topics. Each question should be concise. Prioritize variety over depth per topic. Good for exam prep.`)
+  parts.push(`- Style "challenge": push beyond grade level. Include transfer tasks, open-ended problems, multi-step reasoning, and creative application. Expect deeper written answers.`)
+
+  parts.push(``)
+  parts.push(`SUBJECT-SPECIFIC GUIDANCE:`)
+  if (subject === 'Mathematics') {
+    parts.push(`- Use real numbers, word problems, and step-by-step reasoning. Include diagrams via geometry_shape or graph_plot where relevant.`)
+    parts.push(`- Prefer equation_entry, fraction_input, arithmetic_grid, number_line, graph_plot, word_problem, geometry_shape blocks.`)
+    parts.push(`- Ensure answers are unambiguous numeric values or matching pairs.`)
+    parts.push(`- For grade 1-3: focus on basic operations, simple word problems, number sense.`)
+    parts.push(`- For grade 4-6: include fractions, decimals, area/perimeter, multi-step problems.`)
+    parts.push(`- For grade 7-8: include algebra, proportional reasoning, probability, geometry proofs.`)
+  } else if (subject === 'German' || subject === 'English') {
+    parts.push(`- ALL content in ${subject === 'German' ? 'German' : 'English'}.`)
+    parts.push(`- Prefer gap_fill, multiple_choice, short_answer, matching, word_scramble, read_aloud blocks.`)
+    parts.push(`- Include reading comprehension passages (read_aloud) with follow-up questions.`)
+    parts.push(`- For grade 1-3: basic vocabulary, simple sentences, phonics/reading basics.`)
+    parts.push(`- For grade 4-6: grammar exercises, text comprehension, vocabulary building, short writing.`)
+    parts.push(`- For grade 7-8: literary analysis, complex grammar, argumentative writing, text interpretation.`)
+  } else if (subject === 'Science') {
+    parts.push(`- Focus on scientific concepts, experiments, observations, and real-world applications.`)
+    parts.push(`- Prefer multiple_choice, gap_fill, matching, short_answer, word_problem blocks.`)
+    parts.push(`- Include experimental scenarios where students predict outcomes or explain observations.`)
+    parts.push(`- For grade 1-3: basic natural phenomena, living things, weather, simple experiments.`)
+    parts.push(`- For grade 4-6: ecosystems, energy, matter, human body, scientific method.`)
+    parts.push(`- For grade 7-8: physics basics, chemistry, biology systems, data analysis, scientific argumentation.`)
+  } else if (subject === 'History' || subject === 'Geography') {
+    parts.push(`- Include timelines, cause-effect relationships, and source analysis.`)
+    parts.push(`- Prefer multiple_choice, matching, gap_fill, short_answer, text blocks for source passages.`)
+    parts.push(`- For geography: include map-related tasks, climate data analysis, cultural comparisons.`)
+    parts.push(`- For history: include chronology, primary source interpretation, historical significance.`)
+  }
 
   parts.push(``)
   parts.push(`You MUST return ONLY a JSON object with a "blocks" array. Each block is one exercise. Here are ALL supported block types and their required fields:`)
@@ -134,122 +239,334 @@ function buildWorksheetPrompt(userPrompt: string, difficulty?: string, length?: 
   parts.push(`- "graph_plot": { id, type: "graph_plot", points: N, points_to_plot: [[1,2],[3,4]] }`)
   parts.push(`- "geometry_shape": { id, type: "geometry_shape", points: N, shape_type: "triangle" }`)
   parts.push(`- "word_problem": { id, type: "word_problem", points: N, problem_text: "...", steps: [{description:"Step 1",expected:"val1"}], final_answer: "answer" }`)
-  parts.push(`- "vocabulary": { id, type: "vocabulary", points: N, vocabulary: { pairs: [{l:"word",r:"translation"}], direction: "l2r" } }`)
-  parts.push(`- "read_aloud": { id, type: "read_aloud", points: 0, text: "passage" }`)
+  parts.push(`- "read_aloud": { id, type: "read_aloud", points: 0, text: "short passage or source text" }`)
+  parts.push(`- "info_box": { id, type: "info_box", points: 0, title: "Did you know?", text: "explanation", mermaid: "optional diagram code", alt_text: "diagram description" }`)
   parts.push(``)
   parts.push(`RULES:`)
   parts.push(`- Every block MUST have a unique "id" field (uuid format)`)
-  parts.push(`- "points" should be 10 for main exercises, 5 for mini exercises, 0 for text/reading blocks`)
-  parts.push(`- VARIETY: Use at least 3-4 different block types per worksheet. Mix formats: do NOT use the same type for every exercise. Combine reading, vocabulary, and assessment types.`)
-  parts.push(`- For difficulty "easy": use simpler vocabulary, fewer options (2-3), lower point values, prefer gap_fill, single_choice, matching`)
-  parts.push(`- For difficulty "hard": use complex vocabulary, more options (4-5), multi-step problems, prefer short_answer, word_problem, graph_plot, equation_entry`)
-  parts.push(`- For length "short": generate 2-4 blocks, use 2-3 different types`)
-  parts.push(`- For length "medium": generate 4-7 blocks, use 3-4 different types`)
-  parts.push(`- For length "long": generate 7-12 blocks, use 4-6 different types`)
+  parts.push(`- Use 0 points for text/read_aloud/info_box blocks; use 5-15 points for exercise blocks depending on complexity`)
+  parts.push(`- VARIETY: Use at least 3 different block types unless the teacher explicitly asks for a single format worksheet.`)
+  parts.push(`- For difficulty "easy": use guided practice, simpler wording, fewer distractors, and smaller steps.`)
+  parts.push(`- For difficulty "medium": use solid grade-level practice with a mix of recall, application, and short reasoning.`)
+  parts.push(`- For difficulty "hard": use multi-step reasoning, transfer tasks, precise vocabulary, and at least one demanding open task.`)
+  parts.push(`- For length "short": generate 3-5 blocks with at least 2 scored exercises`)
+  parts.push(`- For length "medium": generate 5-8 blocks with at least 4 scored exercises`)
+  parts.push(`- For length "long": generate 8-12 blocks with at least 6 scored exercises`)
   parts.push(`- For "multiple_choice" and "single_choice", include "correct" field with the index/indices of the correct option(s)`)
+  parts.push(`- For "short_answer", include "keywords" and optionally "sample_answer"`)
+  parts.push(`- For "gap_fill", the template MUST contain one or more ((correct answer)) placeholders`)
+  parts.push(`- Do not use unsupported block types`)
+  parts.push(``)
+  parts.push(`GOOD EXAMPLE:`)
+  parts.push(`{"blocks":[{"id":"11111111-1111-4111-8111-111111111111","type":"info_box","points":0,"title":"Merksatz","text":"Eine Bruchzahl beschreibt einen Teil eines Ganzen."},{"id":"22222222-2222-4222-8222-222222222222","type":"fraction_input","points":6,"text":"Schreibe den markierten Anteil als Bruch.","numerator":3,"denominator":4},{"id":"33333333-3333-4333-8333-333333333333","type":"single_choice","points":6,"text":"Welcher Bruch ist größer als 1/2?","options":["1/4","2/3","2/5"],"correct":1},{"id":"44444444-4444-4444-8444-444444444444","type":"short_answer","points":8,"text":"Erkläre in einem Satz, woran man erkennt, dass 3/4 größer ist als 2/4.","keywords":["gleicher Nenner","größerer Zähler"],"sample_answer":"Bei gleichem Nenner ist der Bruch mit dem größeren Zähler größer."}]}`)
 
   return parts.join('\n')
 }
 
+function clampPoints(value: unknown, fallback: number): number {
+  const numeric = typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : fallback
+  return Math.max(1, Math.min(20, numeric))
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .filter(Boolean)
+}
+
+function normalizeGeneratedBlock(raw: unknown): GeneratedBlock | null {
+  if (!raw || typeof raw !== 'object') return null
+
+  const candidate = raw as Record<string, unknown>
+  const type = typeof candidate.type === 'string' ? candidate.type : ''
+  if (!BlockSchema.shape.type.safeParse(type).success) return null
+
+  const id = typeof candidate.id === 'string' && z.string().uuid().safeParse(candidate.id).success ? candidate.id : uuidv4()
+  const text = typeof candidate.text === 'string' ? candidate.text.trim() : ''
+  const title = typeof candidate.title === 'string' ? candidate.title.trim() : ''
+
+  switch (type) {
+    case 'text':
+    case 'read_aloud': {
+      if (!text) return null
+      return { id, type, points: 0, text }
+    }
+    case 'info_box': {
+      if (!text) return null
+      return {
+        id,
+        type,
+        points: 0,
+        title: title || 'Wichtige Info',
+        text,
+        mermaid: typeof candidate.mermaid === 'string' ? candidate.mermaid.trim() : '',
+        alt_text: typeof candidate.alt_text === 'string' ? candidate.alt_text.trim() : '',
+      }
+    }
+    case 'gap_fill': {
+      const template = typeof candidate.template === 'string' ? candidate.template.trim() : ''
+      if (!template || !/\(\(.+?\)\)/.test(template)) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, template }
+    }
+    case 'single_choice': {
+      const options = asStringArray(candidate.options)
+      const correct = Array.isArray(candidate.correct) ? candidate.correct[0] : candidate.correct
+      if (!text || options.length < 2 || typeof correct !== 'number' || correct < 0 || correct >= options.length) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, options, correct }
+    }
+    case 'multiple_choice': {
+      const options = asStringArray(candidate.options)
+      const correct = Array.isArray(candidate.correct)
+        ? candidate.correct.filter((n): n is number => typeof n === 'number' && n >= 0 && n < options.length)
+        : typeof candidate.correct === 'number' && candidate.correct >= 0 && candidate.correct < options.length
+          ? [candidate.correct]
+          : []
+      if (!text || options.length < 3 || correct.length === 0) return null
+      return { id, type, points: clampPoints(candidate.points, 10), text, options, correct: [...new Set(correct)] }
+    }
+    case 'matching': {
+      const pairs = Array.isArray(candidate.pairs)
+        ? candidate.pairs
+            .filter((pair): pair is [string, string] => Array.isArray(pair) && pair.length === 2)
+            .map((pair) => [String(pair[0]).trim(), String(pair[1]).trim()] as [string, string])
+            .filter(([left, right]) => left && right)
+        : []
+      if (pairs.length < 2) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, pairs }
+    }
+    case 'word_scramble': {
+      const words = Array.isArray(candidate.words)
+        ? candidate.words
+            .map((entry) => {
+              if (typeof entry === 'string') return { word: entry.trim() }
+              if (entry && typeof entry === 'object' && typeof (entry as { word?: unknown }).word === 'string') {
+                return { word: (entry as { word: string }).word.trim() }
+              }
+              return { word: '' }
+            })
+            .filter((entry) => entry.word)
+        : []
+      if (words.length < 2) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, words }
+    }
+    case 'short_answer': {
+      const keywords = asStringArray(candidate.keywords)
+      if (!text || keywords.length === 0) return null
+      return {
+        id,
+        type,
+        points: clampPoints(candidate.points, 10),
+        text,
+        keywords,
+        sample_answer: typeof candidate.sample_answer === 'string' ? candidate.sample_answer.trim() : '',
+      }
+    }
+    case 'number_line': {
+      const min = typeof candidate.min_value === 'number' ? candidate.min_value : 0
+      const max = typeof candidate.max_value === 'number' ? candidate.max_value : 100
+      const markers = Array.isArray(candidate.markers)
+        ? candidate.markers.filter((n): n is number => typeof n === 'number' && n >= min && n <= max)
+        : []
+      if (max <= min || markers.length === 0) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, min_value: min, max_value: max, markers }
+    }
+    case 'equation_entry': {
+      const equation = typeof candidate.equation === 'string' ? candidate.equation.trim() : ''
+      const final_answer = typeof candidate.final_answer === 'string' ? candidate.final_answer.trim() : ''
+      if (!equation || !final_answer) return null
+      return { id, type, points: clampPoints(candidate.points, 10), text, equation, final_answer }
+    }
+    case 'fraction_input': {
+      const numerator = typeof candidate.numerator === 'number' ? candidate.numerator : NaN
+      const denominator = typeof candidate.denominator === 'number' ? candidate.denominator : NaN
+      if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return null
+      return { id, type, points: clampPoints(candidate.points, 6), text, numerator, denominator }
+    }
+    case 'arithmetic_grid': {
+      const operand1 = typeof candidate.operand1 === 'number' ? candidate.operand1 : NaN
+      const operand2 = typeof candidate.operand2 === 'number' ? candidate.operand2 : NaN
+      const operation = typeof candidate.operation === 'string' ? candidate.operation.trim() : 'add'
+      if (!Number.isFinite(operand1) || !Number.isFinite(operand2)) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, operand1, operand2, operation }
+    }
+    case 'graph_plot': {
+      const points = Array.isArray(candidate.points_to_plot)
+        ? candidate.points_to_plot
+            .filter((point): point is [number, number] =>
+              Array.isArray(point) && point.length === 2 && typeof point[0] === 'number' && typeof point[1] === 'number',
+            )
+            .map((point) => [point[0], point[1]] as [number, number])
+        : []
+      if (points.length === 0) return null
+      return { id, type, points: clampPoints(candidate.points, 10), text, points_to_plot: points }
+    }
+    case 'geometry_shape': {
+      const shape_type = typeof candidate.shape_type === 'string' ? candidate.shape_type.trim() : ''
+      if (!shape_type) return null
+      return { id, type, points: clampPoints(candidate.points, 7), text, shape_type }
+    }
+    case 'word_problem': {
+      const problem_text = typeof candidate.problem_text === 'string' ? candidate.problem_text.trim() : text
+      const steps = Array.isArray(candidate.steps)
+        ? candidate.steps
+            .filter((step): step is { description: string; expected: string } =>
+              !!step &&
+              typeof step === 'object' &&
+              typeof (step as { description?: unknown }).description === 'string' &&
+              typeof (step as { expected?: unknown }).expected === 'string',
+            )
+            .map((step) => ({
+              description: step.description.trim(),
+              expected: step.expected.trim(),
+            }))
+            .filter((step) => step.description && step.expected)
+        : []
+      const final_answer = typeof candidate.final_answer === 'string' ? candidate.final_answer.trim() : ''
+      if (!problem_text || steps.length === 0 || !final_answer) return null
+      return { id, type, points: clampPoints(candidate.points, 12), problem_text, steps, final_answer }
+    }
+    default:
+      return null
+  }
+}
+
+function normalizeGeneratedBlocks(rawBlocks: unknown, length: GenerateRequest['length']): GeneratedBlock[] {
+  const items = Array.isArray(rawBlocks) ? rawBlocks : []
+  const normalized = items
+    .map((block) => normalizeGeneratedBlock(block))
+    .filter((block): block is GeneratedBlock => !!block)
+
+  const uniqueBlocks: GeneratedBlock[] = []
+  const seen = new Set<string>()
+  for (const block of normalized) {
+    const key = `${block.type}:${block.text || block.template || block.problem_text || block.title || ''}`.trim().toLowerCase()
+    if (key && seen.has(key)) continue
+    if (key) seen.add(key)
+    uniqueBlocks.push(block)
+  }
+
+  const maxBlocks = { short: 6, medium: 10, long: 14 }
+  const maxByLength = { short: 5, medium: 8, long: 12 }
+  const limited = uniqueBlocks.slice(0, maxByLength[length || 'medium'])
+  const scoredExercises = limited.filter((block) => exerciseTypes.has(block.type))
+
+  if (scoredExercises.length === 0) return []
+  return limited
+}
+
+function getMinExerciseCount(length: GenerateRequest['length']): number {
+  const counts = { short: 2, medium: 4, long: 6 }
+  return counts[length || 'medium']
+}
+
 router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
   try {
-    const { prompt, provider, difficulty, length, lernziele } = req.body
-    const blocks: z.infer<typeof BlockSchema>[] = []
+    const request = GenerateRequestSchema.parse(req.body)
+    const { prompt, provider, difficulty, length, lernziele, subject, grade_level, title, description, style } = request
+    const maxAttempts = 2
+    let attempt = 0
+    let blocks: GeneratedBlock[] = []
 
-    if (provider === 'opencode' && getZenApiKey()) {
-      try {
-        const systemPrompt = buildWorksheetPrompt(prompt, difficulty, length, lernziele)
-        const response = await callZenChat(prompt, systemPrompt, false, { response_format: { type: 'json_object' } })
-        const data = await response.json()
-        if (response.ok) {
-          const text = data.choices?.[0]?.message?.content || '{}'
-          const parsed = JSON.parse(text)
-          const validated = GenerationSchema.parse(parsed)
-          blocks.push(...validated.blocks)
-        } else {
-          console.error('OpenCode Zen error:', data)
-        }
-      } catch (e) {
-        console.error('OpenCode Zen generation failed:', e)
-      }
-    } else if (provider === 'opencode' && (await isOpenCodeAvailable())) {
-      try {
-        const sessionId = await createSession('Worksheet Generation')
-        const systemPrompt = buildWorksheetPrompt(prompt, difficulty, length, lernziele)
-        const result = await sendPromptStructured(sessionId, prompt, GenerationSchema as unknown as Record<string, unknown>, {
-          system: systemPrompt,
-          model: await getModelConfig(),
-        })
-        const validated = GenerationSchema.parse(result)
-        blocks.push(...validated.blocks)
-      } catch (e) {
-        console.error('OpenCode generation failed:', e)
-      }
-    } else if (provider === 'ollama' && process.env.OLLAMA_URL) {
-      const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: process.env.OLLAMA_MODEL || 'llama3',
-          prompt: buildWorksheetPrompt(prompt, difficulty, length, lernziele),
-          stream: false,
-          format: 'json',
-        }),
+    while (attempt < maxAttempts && blocks.length < getMinExerciseCount(length)) {
+      attempt++
+      const worksheetPrompt = buildWorksheetPrompt({
+        prompt,
+        provider,
+        difficulty,
+        length,
+        lernziele,
+        subject,
+        grade_level,
+        title,
+        description,
+        style,
       })
-      const data = await response.json()
-      try {
-        const parsed = JSON.parse(data.response)
-        const validated = GenerationSchema.parse(parsed)
-        blocks.push(...validated.blocks)
-      } catch (e) {
-        console.error('Validation failed for Ollama:', e)
-        blocks.push({
-          id: uuidv4(),
-          type: 'text',
-          points: 0,
-          text: 'AI generation responded, but format was invalid.',
-        })
-      }
-    } else if (process.env.GEMINI_API_KEY) {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-        {
+
+      const attemptPrompt = attempt > 1
+        ? `${worksheetPrompt}\n\nIMPORTANT: Your previous attempt was rejected because it did not produce enough valid exercise blocks or had quality issues. Make sure to:\n- Include enough real exercise blocks (not just text/info)\n- Use at least 3 different exercise block types\n- Ensure answers are correct and options are plausible\n- Follow all format rules exactly`
+        : worksheetPrompt
+
+      if (provider === 'opencode' && getZenApiKey()) {
+        try {
+          const response = await callZenChat('Create the worksheet now and return only valid JSON.', attemptPrompt, false, {
+            response_format: { type: 'json_object' },
+          })
+          const data = await response.json()
+          if (response.ok) {
+            const text = data.choices?.[0]?.message?.content || '{}'
+            const parsed = JSON.parse(text)
+            blocks = normalizeGeneratedBlocks(parsed.blocks, length)
+          } else {
+            console.error('OpenCode Zen error:', data)
+          }
+        } catch (e) {
+          console.error('OpenCode Zen generation failed:', e)
+        }
+      } else if (provider === 'opencode' && (await isOpenCodeAvailable())) {
+        try {
+          const sessionId = await createSession('Worksheet Generation')
+          const result = await sendPromptStructured(sessionId, prompt, GenerationSchema as unknown as Record<string, unknown>, {
+            system: attemptPrompt,
+            model: await getModelConfig(),
+          })
+          blocks = normalizeGeneratedBlocks((result as { blocks?: unknown }).blocks, length)
+        } catch (e) {
+          console.error('OpenCode generation failed:', e)
+        }
+      } else if (provider === 'ollama' && process.env.OLLAMA_URL) {
+        const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: buildWorksheetPrompt(prompt, difficulty, length, lernziele),
-                  },
-                ],
-              },
-            ],
-            generationConfig: {
-              responseMimeType: 'application/json',
-            },
+            model: process.env.OLLAMA_MODEL || 'llama3',
+            prompt: attemptPrompt,
+            stream: false,
+            format: 'json',
           }),
-        },
-      )
-      const data = await response.json()
-      try {
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
-        const parsed = JSON.parse(text)
-        const validated = GenerationSchema.parse(parsed)
-        blocks.push(...validated.blocks)
-      } catch (e) {
-        console.error('Validation failed for Gemini:', e)
+        })
+        const data = await response.json()
+        try {
+          const parsed = JSON.parse(data.response)
+          blocks = normalizeGeneratedBlocks(parsed.blocks, length)
+        } catch (e) {
+          console.error('Validation failed for Ollama:', e)
+        }
+      } else if (process.env.GEMINI_API_KEY) {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: attemptPrompt,
+                    },
+                  ],
+                },
+              ],
+              generationConfig: {
+                responseMimeType: 'application/json',
+              },
+            }),
+          },
+        )
+        const data = await response.json()
+        try {
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
+          const parsed = JSON.parse(text)
+          blocks = normalizeGeneratedBlocks(parsed.blocks, length)
+        } catch (e) {
+          console.error('Validation failed for Gemini:', e)
+        }
       }
-    }
 
-    if (blocks.length === 0) {
-      blocks.push({
-        id: uuidv4(),
-        type: 'text',
-        points: 0,
-        text: 'AI failed to generate valid blocks. Please try a different prompt.',
-      })
+      if (blocks.length === 0 && attempt < maxAttempts - 1) {
+        console.log(`Retry ${attempt}: regenerating with stricter prompt...`)
+      }
     }
 
     // Ensure IDs and map correct formats
@@ -265,6 +582,290 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
     })
 
     res.json({ blocks })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/regenerate-block', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
+  try {
+    const { prompt, provider, blockType, difficulty, subject, grade_level, lernziele, style } = req.body
+    
+    if (!blockType) {
+      res.status(400).json({ error: 'blockType required' })
+      return
+    }
+
+    const blockPrompt = `Generate ONE block of type "${blockType}" for a worksheet.
+Teacher request: ${prompt || 'Generate a suitable exercise'}
+${subject ? `Subject: ${subject}` : ''}
+${grade_level ? `Grade level: ${grade_level}` : ''}
+${difficulty ? `Difficulty: ${difficulty}` : ''}
+${style ? `Worksheet style: ${style}` : ''}
+${lernziele ? `Learning objectives: ${lernziele}` : ''}
+
+Return ONLY a JSON object representing a single block matching these exact formats:
+${blockType === 'gap_fill' ? `{"id":"uuid","type":"gap_fill","points":N,"text":"instructions","template":"sentence with ((answer)) gaps"}` : ''}
+${blockType === 'multiple_choice' ? `{"id":"uuid","type":"multiple_choice","points":N,"text":"question","options":["a","b","c","d"],"correct":[0]}` : ''}
+${blockType === 'single_choice' ? `{"id":"uuid","type":"single_choice","points":N,"text":"question","options":["a","b","c"],"correct":0}` : ''}
+${blockType === 'short_answer' ? `{"id":"uuid","type":"short_answer","points":N,"text":"question","keywords":["key1","key2"],"sample_answer":"..."}` : ''}
+${blockType === 'matching' ? `{"id":"uuid","type":"matching","points":N,"pairs":[["left","right"]]}` : ''}
+${blockType === 'word_scramble' ? `{"id":"uuid","type":"word_scramble","points":N,"words":[{"word":"example"}]}` : ''}
+${blockType === 'word_problem' ? `{"id":"uuid","type":"word_problem","points":N,"problem_text":"...","steps":[{"description":"Step","expected":"val"}],"final_answer":"answer"}` : ''}
+${blockType === 'text' ? `{"id":"uuid","type":"text","points":0,"text":"content"}` : ''}
+${blockType === 'info_box' ? `{"id":"uuid","type":"info_box","points":0,"title":"headline","text":"explanation","mermaid":"optional diagram"}` : ''}
+
+RULES:
+- The block MUST be educationally useful and grade-appropriate
+- Include correct answers and plausible distractors where applicable
+- The id should be a UUID v4 string
+- Return ONLY the JSON object, no other text`
+
+    let block = null
+
+    if (provider === 'opencode' && getZenApiKey()) {
+      try {
+        const response = await callZenChat('Generate this block as valid JSON only.', blockPrompt, false, {
+          response_format: { type: 'json_object' },
+        })
+        const data = await response.json()
+        if (response.ok) {
+          const text = data.choices?.[0]?.message?.content || '{}'
+          const parsed = JSON.parse(text)
+          const validated = normalizeGeneratedBlock(parsed)
+          if (validated) block = validated
+        }
+      } catch (e) {
+        console.error('Block regeneration failed:', e)
+      }
+    } else if (provider === 'ollama' && process.env.OLLAMA_URL) {
+      try {
+        const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: process.env.OLLAMA_MODEL || 'llama3', prompt: blockPrompt, stream: false, format: 'json' }),
+        })
+        const data = await response.json()
+        const parsed = JSON.parse(data.response)
+        const validated = normalizeGeneratedBlock(parsed)
+        if (validated) block = validated
+      } catch (e) {
+        console.error('Ollama block regeneration failed:', e)
+      }
+    } else if (process.env.GEMINI_API_KEY) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: blockPrompt }] }],
+              generationConfig: { responseMimeType: 'application/json' },
+            }),
+          },
+        )
+        const data = await response.json()
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
+        const parsed = JSON.parse(text)
+        const validated = normalizeGeneratedBlock(parsed)
+        if (validated) block = validated
+      } catch (e) {
+        console.error('Gemini block regeneration failed:', e)
+      }
+    }
+
+    if (!block) {
+      res.status(422).json({ error: 'Failed to generate a valid block' })
+      return
+    }
+
+    res.json({ block })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ----- AI Checker for written answers -----
+
+const CheckAnswerSchema = z.object({
+  question: z.string().min(1),
+  answer: z.string().min(1),
+  blockType: z.enum(['short_answer', 'word_problem', 'text', 'read_aloud']).optional().default('short_answer'),
+  maxPoints: z.number().min(1).max(100).optional().default(10),
+  subject: z.string().optional(),
+  grade_level: z.string().optional(),
+  keywords: z.string().optional(),
+  sampleAnswer: z.string().optional(),
+  rubric: z.string().optional(),
+})
+
+type CheckAnswerResult = {
+  suggestedScore: number
+  confidence: 'high' | 'medium' | 'low'
+  explanation: string
+  strengths: string[]
+  missing: string[]
+  feedback: string
+}
+
+function buildCheckPrompt(req: z.infer<typeof CheckAnswerSchema>): string {
+  const { question, answer, maxPoints, subject, grade_level, keywords, sampleAnswer, rubric } = req
+  const parts: string[] = []
+
+  parts.push(`You are an expert teacher assistant grading a student's written answer.`)
+  parts.push(``)
+  parts.push(`QUESTION: "${question}"`)
+  parts.push(`STUDENT ANSWER: "${answer}"`)
+  parts.push(`MAXIMUM POINTS: ${maxPoints}`)
+  if (subject) parts.push(`SUBJECT: ${subject}`)
+  if (grade_level) parts.push(`GRADE LEVEL: Grade ${grade_level}`)
+  if (keywords) parts.push(`EXPECTED KEYWORDS: ${keywords}`)
+  if (sampleAnswer) parts.push(`SAMPLE CORRECT ANSWER: ${sampleAnswer}`)
+  if (rubric) parts.push(`RUBRIC/GRADING CRITERIA: ${rubric}`)
+
+  parts.push(``)
+  parts.push(`GRADING RULES:`)
+  parts.push(`- Be fair but honest. Award partial credit for partially correct answers.`)
+  parts.push(`- Consider grade-appropriate language and depth.`)
+  parts.push(`- If keywords are provided, the answer must include most of them for full credit.`)
+  parts.push(`- If a sample answer is provided, compare against it reasonably (not word-for-word).`)
+  parts.push(`- Deduct points for irrelevant, incorrect, or missing information.`)
+  parts.push(`- Return ONLY a JSON object with this exact structure:`)
+  parts.push(`{`)
+  parts.push(`  "suggestedScore": number (0 to ${maxPoints}),`)
+  parts.push(`  "confidence": "high" | "medium" | "low",`)
+  parts.push(`  "explanation": "brief reason for the score",`)
+  parts.push(`  "strengths": ["strength1", "strength2"],`)
+  parts.push(`  "missing": ["missing1", "missing2"],`)
+  parts.push(`  "feedback": "constructive feedback text for the student"`)
+  parts.push(`}`)
+  parts.push(``)
+  parts.push(`CONFIDENCE GUIDELINES:`)
+  parts.push(`- "high": clear-cut answer with objective criteria (keywords present/absent, comparison to sample answer)`)
+  parts.push(`- "medium": mostly clear but some subjective judgment needed`)
+  parts.push(`- "low": very subjective or answer requires significant teacher judgment`)
+  parts.push(`- NEVER return "high" confidence for answers requiring significant subjective evaluation.`)
+
+  return parts.join('\n')
+}
+
+router.post('/check-answer', requireAuth, async (req, res, next) => {
+  try {
+    const parsed = CheckAnswerSchema.parse(req.body)
+    const { answer, maxPoints } = parsed
+
+    // Step 1: Rule-based checks (fast, no AI needed)
+    const ruleScore = { earned: 0, reasons: [] as string[] }
+    
+    // Minimum length check
+    const wordCount = answer.split(/\s+/).filter(Boolean).length
+    if (wordCount < 3) {
+      ruleScore.reasons.push('Answer too short (fewer than 3 words)')
+    } else {
+      ruleScore.earned += Math.round(maxPoints * 0.2)
+      ruleScore.reasons.push('Minimum length met')
+    }
+
+    // Keyword check (if provided)
+    const keywordHits: string[] = []
+    const keywordMisses: string[] = []
+    if (parsed.keywords) {
+      const kws = parsed.keywords.split(',').map(k => k.trim().toLowerCase()).filter(Boolean)
+      const answerLower = answer.toLowerCase()
+      for (const kw of kws) {
+        if (answerLower.includes(kw)) {
+          keywordHits.push(kw)
+        } else {
+          keywordMisses.push(kw)
+        }
+      }
+      if (kws.length > 0) {
+        const ratio = keywordHits.length / kws.length
+        ruleScore.earned += Math.round(maxPoints * 0.4 * ratio)
+        if (keywordHits.length > 0) ruleScore.reasons.push(`Keywords found: ${keywordHits.length}/${kws.length}`)
+        if (keywordMisses.length > 0) ruleScore.reasons.push(`Keywords missing: ${keywordMisses.join(', ')}`)
+      }
+    }
+
+    // If we have keywords and they all match AND answer has good length, return rule-based result immediately
+    if (parsed.keywords && keywordMisses.length === 0 && wordCount >= 5) {
+      const score = Math.min(maxPoints, ruleScore.earned + Math.round(maxPoints * 0.4))
+      res.json({
+        suggestedScore: Math.max(0, Math.min(maxPoints, score)),
+        confidence: keywordMisses.length === 0 ? 'high' as const : 'medium' as const,
+        explanation: 'Rule-based check passed: all keywords present with sufficient length.',
+        strengths: keywordHits.length > 0 ? [`Includes required keywords: ${keywordHits.join(', ')}`] : ['Answer length is sufficient'],
+        missing: [],
+        feedback: 'Good work! Your answer includes the required concepts.' + (keywordMisses.length > 0 ? ` Check: ${keywordMisses.join(', ')}` : ''),
+      } satisfies CheckAnswerResult)
+      return
+    }
+
+    // Step 2: AI-based grading
+    const prompt = buildCheckPrompt(parsed)
+    let result: CheckAnswerResult | null = null
+
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { responseMimeType: 'application/json' },
+            }),
+          },
+        )
+        const data = await response.json()
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
+        const parsed = JSON.parse(text)
+        if (typeof parsed.suggestedScore === 'number' && typeof parsed.confidence === 'string') {
+          result = parsed as CheckAnswerResult
+        }
+      } catch (e) {
+        console.error('Gemini check-answer failed:', e)
+      }
+    } else if (getZenApiKey()) {
+      try {
+        const zenRes = await callZenChat('Grade this answer. Return only valid JSON.', prompt, false, {
+          response_format: { type: 'json_object' },
+        })
+        const data = await zenRes.json()
+        if (zenRes.ok) {
+          const text = data.choices?.[0]?.message?.content || '{}'
+          const parsed = JSON.parse(text)
+          if (typeof parsed.suggestedScore === 'number' && typeof parsed.confidence === 'string') {
+            result = parsed as CheckAnswerResult
+          }
+        }
+      } catch (e) {
+        console.error('Zen check-answer failed:', e)
+      }
+    }
+
+    // Fallback: blend rule-based with AI or return rule-based alone
+    if (!result) {
+      const finalScore = Math.max(0, Math.min(maxPoints, ruleScore.earned))
+      result = {
+        suggestedScore: finalScore,
+        confidence: 'low' as const,
+        explanation: ruleScore.reasons.join('; ') || 'AI grading unavailable, used basic checks.',
+        strengths: keywordHits.length > 0 ? [`Keywords present: ${keywordHits.join(', ')}`] : [],
+        missing: keywordMisses.length > 0 ? [`Missing keywords: ${keywordMisses.join(', ')}`] : ['AI grading unavailable for deeper evaluation'],
+        feedback: keywordMisses.length === 0
+          ? 'Answer submitted. AI grading was unavailable — please review manually.'
+          : `Your answer is missing some expected concepts: ${keywordMisses.join(', ')}. Consider revising.`,
+      }
+    } else {
+      // Blend: cap AI suggestion between reasonable bounds based on rule checks
+      const blended = Math.round((result.suggestedScore + ruleScore.earned) / 2)
+      result.suggestedScore = Math.max(0, Math.min(maxPoints, blended))
+    }
+
+    res.json(result satisfies CheckAnswerResult)
   } catch (err) {
     next(err)
   }

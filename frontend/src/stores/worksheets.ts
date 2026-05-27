@@ -74,6 +74,14 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     return api.post('/ai/generate', { prompt, provider, ...options })
   }
 
+  async function aiRegenerateBlock(payload) {
+    return api.post('/ai/regenerate-block', payload)
+  }
+
+  async function aiCheckAnswer(payload) {
+    return api.post('/ai/check-answer', payload)
+  }
+
   return {
     worksheets,
     templates,
@@ -93,5 +101,7 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     fetchAssignmentResults,
     fetchAssignmentStats,
     aiGenerate,
+    aiRegenerateBlock,
+    aiCheckAnswer,
   }
 })

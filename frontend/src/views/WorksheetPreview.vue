@@ -48,6 +48,17 @@
         ></textarea>
       </template>
 
+      <template v-if="block.type === 'info_box'">
+        <div style="background:var(--primary-light);border:1px solid var(--primary-soft);border-radius:var(--radius-md);padding:0.75rem 1rem">
+          <div style="display:flex;align-items:center;gap:0.5rem;font-weight:600;color:var(--primary)">
+            <span>💡</span>
+            <span>{{ block.title || 'Click to learn more' }}</span>
+          </div>
+          <div style="margin-top:0.5rem;font-size:0.9rem;color:var(--text-main);white-space:pre-wrap">{{ block.text }}</div>
+          <MermaidDiagram v-if="block.mermaid" :code="block.mermaid" :alt-text="block.alt_text" style="margin-top:0.5rem" />
+        </div>
+      </template>
+
       <template v-if="block.type === 'text'">
         <div style="white-space: pre-wrap">{{ block.text }}</div>
       </template>
@@ -63,6 +74,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useWorksheetsStore } from '../stores/worksheets'
+import MermaidDiagram from '../components/exercises/MermaidDiagram.vue'
 
 const route = useRoute()
 const store = useWorksheetsStore()

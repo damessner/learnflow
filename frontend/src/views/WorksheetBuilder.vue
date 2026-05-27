@@ -2,6 +2,72 @@
   <div class="page" style="padding-left: 0">
     <div style="display: flex; gap: 1.5rem">
       <div class="builder-sidebar">
+        <!-- AI Generator — always visible at top -->
+        <h3
+          style="
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+          "
+        >
+          🤖 AI Generator
+        </h3>
+        <textarea
+          v-model="aiPrompt"
+          rows="3"
+          placeholder="Describe the worksheet..."
+          style="font-size: 0.75rem; margin-bottom: 0.35rem"
+        ></textarea>
+        <textarea
+          v-model="aiLernziele"
+          rows="2"
+          placeholder="Lernziele (optional)"
+          style="font-size: 0.7rem; margin-bottom: 0.35rem"
+        ></textarea>
+        <div style="display: flex; gap: 0.25rem; margin-bottom: 0.35rem; flex-wrap: wrap">
+          <select v-model="aiStyle" style="font-size: 0.65rem; padding: 0.2rem; flex: 1; min-width: 60px">
+            <option value="practice">Practice</option>
+            <option value="test">Test</option>
+            <option value="revision">Revision</option>
+            <option value="challenge">Challenge</option>
+          </select>
+          <select v-model="aiDifficulty" style="font-size: 0.65rem; padding: 0.2rem; flex: 1; min-width: 50px">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+          <select v-model="aiLength" style="font-size: 0.65rem; padding: 0.2rem; flex: 1; min-width: 50px">
+            <option value="short">Short</option>
+            <option value="medium">Medium</option>
+            <option value="long">Long</option>
+          </select>
+          <select v-model="aiProvider" style="font-size: 0.65rem; padding: 0.2rem; flex: 1; min-width: 60px">
+            <option value="opencode">OpenCode</option>
+            <option value="ollama">Ollama</option>
+            <option value="gemini">Gemini</option>
+          </select>
+        </div>
+        <button
+          class="btn-primary"
+          :disabled="aiLoading"
+          @click="sidebarGenerate()"
+          style="width: 100%; font-size: 0.75rem; padding: 0.35rem"
+        >
+          {{ aiLoading ? 'Generating...' : 'Generate' }}
+        </button>
+
+        <div style="margin: 0.75rem 0; border-top: 1px solid var(--border-color)"></div>
+
+        <!-- Info Box -->
+        <button class="sidebar-btn" @click="addBlock('info_box')">
+          <span style="font-size: 1.1rem">💡</span> Info Box
+        </button>
+
+        <div style="margin: 0.5rem 0; border-top: 1px solid var(--border-color)"></div>
+
+        <!-- Blocks -->
         <h3
           style="
             font-size: 0.85rem;
@@ -100,58 +166,6 @@
           <span style="font-size: 1.1rem">📺</span> YouTube
         </button>
 
-        <div style="margin: 0.5rem 0; border-top: 1px solid var(--border-color)"></div>
-
-        <button
-          class="sidebar-btn"
-          @click="aiOpen = !aiOpen"
-          :style="aiOpen ? { background: 'var(--primary)', color: '#fff' } : {}"
-        >
-          <span style="font-size: 1.1rem">🤖</span> AI
-        </button>
-        <div v-if="aiOpen" style="padding: 0.25rem 0">
-          <textarea
-            v-model="aiPrompt"
-            rows="3"
-            placeholder="Describe the worksheet..."
-            style="font-size: 0.75rem; margin-bottom: 0.35rem"
-            @keydown.esc="aiOpen = false"
-          ></textarea>
-          <textarea
-            v-model="aiLernziele"
-            rows="2"
-            placeholder="Lernziele (optional) — e.g. Students will be able to..."
-            style="font-size: 0.7rem; margin-bottom: 0.35rem"
-          ></textarea>
-          <div style="display: flex; gap: 0.25rem; margin-bottom: 0.35rem">
-            <select v-model="aiDifficulty" style="font-size: 0.65rem; padding: 0.2rem; flex: 1">
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-            <select v-model="aiLength" style="font-size: 0.65rem; padding: 0.2rem; flex: 1">
-              <option value="short">Short</option>
-              <option value="medium">Medium</option>
-              <option value="long">Long</option>
-            </select>
-          </div>
-          <select
-            v-model="aiProvider"
-            style="font-size: 0.7rem; padding: 0.25rem; margin-bottom: 0.35rem"
-          >
-            <option value="ollama">Ollama</option>
-            <option value="gemini">Gemini</option>
-            <option value="opencode">OpenCode</option>
-          </select>
-          <button
-            class="btn-primary"
-            :disabled="aiLoading"
-            @click="sidebarGenerate()"
-            style="width: 100%; font-size: 0.75rem; padding: 0.35rem"
-          >
-            Generate
-          </button>
-        </div>
       </div>
 
       <div style="flex: 1; min-width: 0">
@@ -234,6 +248,11 @@
               <button class="btn-sm btn-danger" @click="removeBlock(idx)">×</button>
             </div>
           </div>
+            <div style="display:flex;gap:0.25rem;margin-top:0.25rem">
+              <button class="btn-sm" style="font-size:0.65rem;padding:0.15rem 0.4rem" @click="regenerateBlock(idx)" :disabled="aiLoading" title="Regenerate this block with AI">🔄 AI Regenerate</button>
+              <button class="btn-sm" style="font-size:0.65rem;padding:0.15rem 0.4rem" @click="regenerateBlockWithInstruction(idx, 'easier')" :disabled="aiLoading" title="Make this easier">🔽 Easier</button>
+              <button class="btn-sm" style="font-size:0.65rem;padding:0.15rem 0.4rem" @click="regenerateBlockWithInstruction(idx, 'harder')" :disabled="aiLoading" title="Make this harder">🔼 Harder</button>
+            </div>
 
           <div class="form-group" v-if="block.type !== 'text' && block.type !== 'read_aloud'">
             <textarea
@@ -309,6 +328,13 @@
 
           <template v-if="block.type === 'text' || block.type === 'read_aloud'">
             <textarea v-model="block.text" rows="3" placeholder="Enter text content..."></textarea>
+          </template>
+
+          <template v-if="block.type === 'info_box'">
+            <input v-model="block.title" placeholder="Clickable headline (e.g. 'Did you know?')" style="font-weight:600;margin-bottom:0.35rem" />
+            <textarea v-model="block.text" rows="3" placeholder="Info content shown when clicked..." style="margin-bottom:0.35rem"></textarea>
+            <input v-model="block.mermaid" placeholder="Mermaid.js diagram code (optional)" style="font-size:0.7rem;margin-bottom:0.25rem" />
+            <input v-model="block.alt_text" placeholder="Alt text for diagram (optional)" style="font-size:0.7rem" />
           </template>
 
           <template v-if="block.type === 'word_scramble'">
@@ -568,8 +594,8 @@ const aiLernziele = ref('')
 const aiDifficulty = ref('medium')
 const aiLength = ref('medium')
 const aiProvider = ref('ollama')
+const aiStyle = ref('practice')
 const aiLoading = ref(false)
-const aiOpen = ref(false)
 
 const blockIcons = {
   text: '📄',
@@ -775,6 +801,13 @@ function addBlock(type) {
     block.steps = [{ description: '', expected: '' }]
     block.final_answer = ''
   }
+  if (type === 'info_box') {
+    block.points = 0
+    block.title = 'Click to learn more'
+    block.text = 'Your explanation here...'
+    block.mermaid = ''
+    block.alt_text = ''
+  }
   if (type === 'media' || type === 'audio' || type === 'video' || type === 'youtube') {
     block.src = ''
     block.caption = ''
@@ -821,12 +854,21 @@ async function save() {
 
 async function generateAI() {
   if (!aiPrompt.value.trim()) return
+  if (!form.value.subject || !form.value.grade_level) {
+    uiStore.showToast('Please select subject and grade level first', 'error')
+    return
+  }
   aiLoading.value = true
   try {
     const data = await store.aiGenerate(aiPrompt.value, aiProvider.value, {
       difficulty: aiDifficulty.value,
       length: aiLength.value,
       lernziele: aiLernziele.value.trim() || undefined,
+      subject: form.value.subject,
+      grade_level: form.value.grade_level,
+      title: form.value.title || undefined,
+      description: form.value.description || undefined,
+      style: aiStyle.value,
     })
     blocks.value.push(...mapLoadedBlocks(data.blocks))
     uiStore.showToast(`Generated ${data.blocks.length} blocks`, 'success')
@@ -839,7 +881,57 @@ async function generateAI() {
 
 async function sidebarGenerate() {
   await generateAI()
-  aiOpen.value = false
+}
+
+async function regenerateBlock(idx) {
+  const block = blocks.value[idx]
+  if (!block) return
+  aiLoading.value = true
+  try {
+    const data = await store.aiRegenerateBlock({
+      blockType: block.type,
+      prompt: aiPrompt.value || undefined,
+      provider: aiProvider.value,
+      difficulty: aiDifficulty.value,
+      subject: form.value.subject || undefined,
+      grade_level: form.value.grade_level || undefined,
+      lernziele: aiLernziele.value.trim() || undefined,
+      style: aiStyle.value,
+    })
+    const mapped = mapLoadedBlocks([data.block])[0]
+    blocks.value[idx] = { ...blocks.value[idx], ...mapped }
+    uiStore.showToast(`Block "${block.type}" regenerated`, 'success')
+  } catch (e) {
+    uiStore.showToast(e.message || 'Failed to regenerate block', 'error')
+  } finally {
+    aiLoading.value = false
+  }
+}
+
+async function regenerateBlockWithInstruction(idx, instruction) {
+  const block = blocks.value[idx]
+  if (!block) return
+  aiLoading.value = true
+  try {
+    const prompt = `${aiPrompt.value ? aiPrompt.value + '. ' : ''}Regenerate to be ${instruction}. ${block.text || block.template || ''}`
+    const data = await store.aiRegenerateBlock({
+      blockType: block.type,
+      prompt,
+      provider: aiProvider.value,
+      difficulty: instruction === 'easier' ? 'easy' : instruction === 'harder' ? 'hard' : aiDifficulty.value,
+      subject: form.value.subject || undefined,
+      grade_level: form.value.grade_level || undefined,
+      lernziele: aiLernziele.value.trim() || undefined,
+      style: aiStyle.value,
+    })
+    const mapped = mapLoadedBlocks([data.block])[0]
+    blocks.value[idx] = { ...blocks.value[idx], ...mapped }
+    uiStore.showToast(`Block made ${instruction}`, 'success')
+  } catch (e) {
+    uiStore.showToast(e.message || 'Failed to regenerate block', 'error')
+  } finally {
+    aiLoading.value = false
+  }
 }
 
 function isYoutube(url) {

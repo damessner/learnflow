@@ -281,6 +281,100 @@
       </div>
     </template>
 
+    <template v-if="tab === 'ai-grader'">
+      <div class="card">
+        <h3>🤖 AI Answer Grader</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem">
+          Paste a student answer and get an AI-assisted grading suggestion. You can accept, edit, or reject it before saving.
+        </p>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap">
+          <div style="flex: 1; min-width: 280px">
+            <div class="form-group">
+              <label>Question / Prompt</label>
+              <textarea v-model="graderForm.question" rows="4" placeholder="Paste the question or task the student had to answer..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Student Answer</label>
+              <textarea v-model="graderForm.answer" rows="4" placeholder="Paste the student's written answer..."></textarea>
+            </div>
+          </div>
+          <div style="flex: 1; min-width: 240px">
+            <div class="form-group">
+              <label>Subject</label>
+              <select v-model="graderForm.subject">
+                <option value="">-- Any --</option>
+                <option v-for="s in graderSubjects" :key="s" :value="s">{{ s }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Grade Level</label>
+              <select v-model="graderForm.grade_level">
+                <option value="">-- Any --</option>
+                <option v-for="g in ['1','2','3','4','5','6','7','8']" :key="g" :value="g">Grade {{ g }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Max Points</label>
+              <input v-model.number="graderForm.maxPoints" type="number" min="1" max="100" />
+            </div>
+            <div class="form-group">
+              <label>Expected Keywords (comma-separated, optional)</label>
+              <input v-model="graderForm.keywords" placeholder="keyword1, keyword2" />
+            </div>
+            <div class="form-group">
+              <label>Sample Correct Answer (optional)</label>
+              <textarea v-model="graderForm.sampleAnswer" rows="2" placeholder="What a correct answer looks like..."></textarea>
+            </div>
+            <button class="btn-primary" :disabled="graderLoading || !graderForm.question || !graderForm.answer" @click="runAiGrader" style="width:100%;margin-top:0.5rem">
+              {{ graderLoading ? 'Checking...' : 'Check with AI' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="graderResult" class="card" style="margin-top: 1rem">
+        <h4>Grading Suggestion</h4>
+        <div style="display: flex; gap: 2rem; align-items: center; margin: 1rem 0">
+          <div style="text-align: center">
+            <div style="font-size: 2.5rem; font-weight: 700">{{ graderResult.suggestedScore }}/{{ graderForm.maxPoints }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted)">Suggested Score</div>
+          </div>
+          <div>
+            <span :class="['badge', confidenceClass(graderResult.confidence)]">
+              {{ graderResult.confidence }} confidence
+            </span>
+          </div>
+        </div>
+        <div style="margin: 0.75rem 0">
+          <strong>Explanation:</strong>
+          <p style="margin-top: 0.25rem; color: var(--text-muted); font-size: 0.9rem">{{ graderResult.explanation }}</p>
+        </div>
+        <div v-if="graderResult.strengths.length" style="margin: 0.5rem 0">
+          <strong style="color: var(--success)">✓ Strengths:</strong>
+          <ul style="margin: 0.25rem 0; font-size: 0.9rem">
+            <li v-for="s in graderResult.strengths" :key="s">{{ s }}</li>
+          </ul>
+        </div>
+        <div v-if="graderResult.missing.length" style="margin: 0.5rem 0">
+          <strong style="color: var(--danger)">✗ Missing / Could Improve:</strong>
+          <ul style="margin: 0.25rem 0; font-size: 0.9rem">
+            <li v-for="m in graderResult.missing" :key="m">{{ m }}</li>
+          </ul>
+        </div>
+        <div class="form-group" style="margin-top: 0.75rem">
+          <label>Suggested Feedback for Student</label>
+          <textarea v-model="graderFeedbackText" rows="2" style="font-size:0.9rem"></textarea>
+        </div>
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem">
+          <button class="btn-sm btn-primary" @click="copyFeedback">📋 Copy Feedback</button>
+          <button class="btn-sm" @click="graderResult = null">Clear</button>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem">
+          ⚠ AI grading is a suggestion — always review before assigning a final grade.
+        </p>
+      </div>
+    </template>
+
     <template v-if="tab === 'results'">
       <div v-if="!selectedAssignment" style="color: var(--text-muted)">
         Select a worksheet and assignment first
@@ -1407,6 +1501,7 @@ const tabs = [
   { key: 'classes', label: 'Classes' },
   { key: 'courses', label: 'Courses' },
   { key: 'results', label: 'Results' },
+  { key: 'ai-grader', label: '🤖 AI Grader' },
   { key: 'analytics', label: 'Analytics' },
   { key: 'reports', label: '📊 Reports' },
 ]
@@ -1435,6 +1530,54 @@ const newWorksheetToCourseId = ref('')
 const newStudentToCourseId = ref('')
 const editingCourseWorksheetSettings = ref(null)
 const allStudents = ref([])
+
+// AI Grader state
+const graderForm = ref({
+  question: '',
+  answer: '',
+  subject: '',
+  grade_level: '',
+  maxPoints: 10,
+  keywords: '',
+  sampleAnswer: '',
+})
+const graderResult = ref(null)
+const graderFeedbackText = ref('')
+const graderLoading = ref(false)
+const graderSubjects = ['Mathematics', 'German', 'English', 'Science', 'History', 'Geography', 'Art', 'Music']
+
+function confidenceClass(confidence) {
+  return { high: 'badge-success', medium: 'badge-warning', low: 'badge-danger' }[confidence] || 'badge'
+}
+
+async function runAiGrader() {
+  if (!graderForm.value.question.trim() || !graderForm.value.answer.trim()) return
+  graderLoading.value = true
+  graderResult.value = null
+  try {
+    const data = await wsStore.aiCheckAnswer({
+      question: graderForm.value.question,
+      answer: graderForm.value.answer,
+      subject: graderForm.value.subject || undefined,
+      grade_level: graderForm.value.grade_level || undefined,
+      maxPoints: graderForm.value.maxPoints || 10,
+      keywords: graderForm.value.keywords || undefined,
+      sampleAnswer: graderForm.value.sampleAnswer || undefined,
+    })
+    graderResult.value = data
+    graderFeedbackText.value = data.feedback || ''
+    uiStore.showToast('AI grading suggestion ready', 'success')
+  } catch (e) {
+    uiStore.showToast(e.message || 'AI grading failed', 'error')
+  } finally {
+    graderLoading.value = false
+  }
+}
+
+function copyFeedback() {
+  navigator.clipboard.writeText(graderFeedbackText.value)
+  uiStore.showToast('Feedback copied', 'success')
+}
 
 const importResult = ref(null)
 const credentialsList = ref([])

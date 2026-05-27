@@ -286,6 +286,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           break
         }
         case 'text':
+        case 'info_box':
         case 'media':
         case 'video':
         case 'audio':
