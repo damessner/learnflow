@@ -624,12 +624,15 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
 
 router.post('/regenerate-block', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
   try {
-    const { prompt, provider, blockType, difficulty, subject, grade_level, lernziele, style } = req.body
+    const { prompt, provider, blockType, difficulty, subject, grade_level, lernziele, style, currentBlock, worksheetContext } = req.body
     
     if (!blockType) {
       res.status(400).json({ error: 'blockType required' })
       return
     }
+
+    const currentBlockContext = currentBlock ? `Current block JSON to improve or replace:\n${JSON.stringify(currentBlock, null, 2)}` : ''
+    const worksheetContextText = worksheetContext ? `Worksheet context:\n${JSON.stringify(worksheetContext, null, 2)}` : ''
 
     const blockPrompt = `Generate ONE block of type "${blockType}" for a worksheet.
 Teacher request: ${prompt || 'Generate a suitable exercise'}
@@ -638,6 +641,8 @@ ${grade_level ? `Grade level: ${grade_level}` : ''}
 ${difficulty ? `Difficulty: ${difficulty}` : ''}
 ${style ? `Worksheet style: ${style}` : ''}
 ${lernziele ? `Learning objectives: ${lernziele}` : ''}
+${currentBlockContext}
+${worksheetContextText}
 
 Return ONLY a JSON object representing a single block matching these exact formats:
 ${blockType === 'gap_fill' ? `{"id":"uuid","type":"gap_fill","points":N,"text":"instructions","template":"sentence with ((answer)) gaps"}` : ''}
@@ -648,12 +653,21 @@ ${blockType === 'matching' ? `{"id":"uuid","type":"matching","points":N,"pairs":
 ${blockType === 'word_scramble' ? `{"id":"uuid","type":"word_scramble","points":N,"words":[{"word":"example"}]}` : ''}
 ${blockType === 'word_problem' ? `{"id":"uuid","type":"word_problem","points":N,"problem_text":"...","steps":[{"description":"Step","expected":"val"}],"final_answer":"answer"}` : ''}
 ${blockType === 'text' ? `{"id":"uuid","type":"text","points":0,"text":"content"}` : ''}
+${blockType === 'read_aloud' ? `{"id":"uuid","type":"read_aloud","points":0,"text":"short passage"}` : ''}
 ${blockType === 'info_box' ? `{"id":"uuid","type":"info_box","points":0,"title":"headline","text":"explanation","mermaid":"optional diagram"}` : ''}
+${blockType === 'number_line' ? `{"id":"uuid","type":"number_line","points":N,"text":"instructions","min_value":0,"max_value":100,"markers":[25,50,75]}` : ''}
+${blockType === 'equation_entry' ? `{"id":"uuid","type":"equation_entry","points":N,"text":"instructions","equation":"x + 3 = 5","final_answer":"2"}` : ''}
+${blockType === 'fraction_input' ? `{"id":"uuid","type":"fraction_input","points":N,"text":"instructions","numerator":1,"denominator":2}` : ''}
+${blockType === 'arithmetic_grid' ? `{"id":"uuid","type":"arithmetic_grid","points":N,"text":"instructions","operand1":23,"operand2":15,"operation":"add"}` : ''}
+${blockType === 'graph_plot' ? `{"id":"uuid","type":"graph_plot","points":N,"text":"instructions","points_to_plot":[[0,0],[1,2]]}` : ''}
+${blockType === 'geometry_shape' ? `{"id":"uuid","type":"geometry_shape","points":N,"text":"instructions","shape_type":"triangle"}` : ''}
 
 RULES:
 - The block MUST be educationally useful and grade-appropriate
 - Include correct answers and plausible distractors where applicable
 - The id should be a UUID v4 string
+- Follow the exact field shape for the requested block type
+- If current block context is provided, keep the same pedagogical intent but improve clarity/quality
 - Return ONLY the JSON object, no other text`
 
     let block = null

@@ -22,6 +22,13 @@
             >
               Dashboard
             </router-link>
+            <router-link
+              v-if="authStore.role === 'teacher' || authStore.role === 'admin'"
+              to="/teacher/workspace"
+              class="nav-link"
+            >
+              Workspace
+            </router-link>
             <router-link v-if="authStore.role === 'admin'" to="/admin" class="nav-link">
               Admin
             </router-link>

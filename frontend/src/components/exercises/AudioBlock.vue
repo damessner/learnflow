@@ -1,6 +1,8 @@
 <template>
   <div>
-    <audio v-if="block.src" :src="block.src" controls style="width: 100%"></audio>
+    <audio v-if="block.src" controls style="width: 100%">
+      <source :src="block.src" :type="mimeType" />
+    </audio>
     <div
       v-else
       style="
@@ -23,5 +25,17 @@
 </template>
 
 <script setup lang="ts">
-defineProps({ block: Object })
+import { computed } from 'vue'
+
+const props = defineProps({ block: Object })
+
+const mimeType = computed(() => {
+  const explicit = props.block?.mime_type
+  if (explicit) return explicit
+  const src = String(props.block?.src || '').toLowerCase()
+  if (src.endsWith('.wav')) return 'audio/wav'
+  if (src.endsWith('.ogg')) return 'audio/ogg'
+  if (src.endsWith('.m4a')) return 'audio/mp4'
+  return 'audio/mpeg'
+})
 </script>

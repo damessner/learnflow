@@ -9,6 +9,7 @@ import CourseView from '../views/CourseView.vue'
 import TeacherRegistration from '../views/TeacherRegistration.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import StoryGenerator from '../views/StoryGenerator.vue'
+import ClassWorkspace from '../views/ClassWorkspace.vue'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
@@ -32,6 +33,11 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/teacher',
     component: TeacherDashboard,
+    meta: { requiresAuth: true, role: ['teacher', 'admin'] },
+  },
+  {
+    path: '/teacher/workspace',
+    component: ClassWorkspace,
     meta: { requiresAuth: true, role: ['teacher', 'admin'] },
   },
   {

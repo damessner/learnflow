@@ -59,6 +59,15 @@ export async function initDB(): Promise<void> {
     } else {
       logger.info('Database already initialized (worksheet versions)')
     }
+
+    const hasWorkspaces = await knex.schema.hasTable('workspaces')
+    if (!hasWorkspaces) {
+      const { up: upWorkspaces } = require('./migrations/20260527_006_workspaces')
+      await upWorkspaces(knex)
+      logger.info('Database migration (workspaces) completed')
+    } else {
+      logger.info('Database already initialized (workspaces)')
+    }
   } catch (err) {
     logger.error({ err }, 'Database migration failed')
     throw err

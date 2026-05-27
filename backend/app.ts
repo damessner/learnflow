@@ -22,6 +22,29 @@ import libraryRoutes from './routes/library'
 import aiRoutes from './routes/ai'
 import srsRoutes from './routes/srs'
 import adminRoutes from './routes/admin'
+import workspaceRoutes from './routes/workspaces'
+
+function uploadContentType(filePath: string): string | null {
+  const ext = path.extname(filePath).toLowerCase()
+  const mimeMap: Record<string, string> = {
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
+    '.ogg': 'audio/ogg',
+    '.m4a': 'audio/mp4',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.mov': 'video/quicktime',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.svg': 'image/svg+xml',
+    '.pdf': 'application/pdf',
+  }
+
+  return mimeMap[ext] || null
+}
 
 export function createApp(): express.Application {
   const app = express()
@@ -62,7 +85,15 @@ export function createApp(): express.Application {
   app.use(cookieParser())
   app.use(csrfMiddleware)
 
-  app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
+  app.use(
+    '/uploads',
+    express.static(path.join(__dirname, '..', 'uploads'), {
+      setHeaders(res, filePath) {
+        const mimeType = uploadContentType(filePath)
+        if (mimeType) res.setHeader('Content-Type', mimeType)
+      },
+    }),
+  )
 
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })
@@ -80,6 +111,7 @@ export function createApp(): express.Application {
   app.use('/api/ai', aiRoutes)
   app.use('/api/srs', srsRoutes)
   app.use('/api/admin', adminRoutes)
+  app.use('/api/workspaces', workspaceRoutes)
 
   app.use(errorHandler)
 

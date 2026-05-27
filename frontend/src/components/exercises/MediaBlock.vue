@@ -8,11 +8,14 @@
     />
     <video
       v-else-if="block.src && isVideo"
-      :src="block.src"
       controls
       style="max-width: 100%; border-radius: var(--radius-sm)"
-    ></video>
-    <audio v-else-if="block.src && isAudio" :src="block.src" controls style="width: 100%"></audio>
+    >
+      <source :src="block.src" :type="mediaMimeType" />
+    </video>
+    <audio v-else-if="block.src && isAudio" controls style="width: 100%">
+      <source :src="block.src" :type="mediaMimeType" />
+    </audio>
     <div
       v-else
       style="
@@ -41,4 +44,14 @@ const props = defineProps({ block: Object })
 const isImage = computed(() => /\.(png|jpe?g|gif|webp|svg)/i.test(props.block.src || ''))
 const isVideo = computed(() => /\.(mp4|webm|ogg)/i.test(props.block.src || ''))
 const isAudio = computed(() => /\.(mp3|wav|ogg|flac)/i.test(props.block.src || ''))
+const mediaMimeType = computed(() => {
+  const explicit = props.block?.mime_type
+  if (explicit) return explicit
+  const src = String(props.block?.src || '').toLowerCase()
+  if (src.endsWith('.webm')) return 'video/webm'
+  if (src.endsWith('.mp4')) return 'video/mp4'
+  if (src.endsWith('.wav')) return 'audio/wav'
+  if (src.endsWith('.ogg')) return isVideo.value ? 'video/ogg' : 'audio/ogg'
+  return 'audio/mpeg'
+})
 </script>

@@ -2,10 +2,11 @@
   <div>
     <video
       v-if="block.src"
-      :src="block.src"
       controls
       style="max-width: 100%; border-radius: var(--radius-sm)"
-    ></video>
+    >
+      <source :src="block.src" :type="mimeType" />
+    </video>
     <div
       v-else
       style="
@@ -28,5 +29,16 @@
 </template>
 
 <script setup lang="ts">
-defineProps({ block: Object })
+import { computed } from 'vue'
+
+const props = defineProps({ block: Object })
+
+const mimeType = computed(() => {
+  const explicit = props.block?.mime_type
+  if (explicit) return explicit
+  const src = String(props.block?.src || '').toLowerCase()
+  if (src.endsWith('.webm')) return 'video/webm'
+  if (src.endsWith('.mov')) return 'video/quicktime'
+  return 'video/mp4'
+})
 </script>

@@ -1,608 +1,578 @@
 <template>
-  <div class="page" style="padding-left: 0">
-    <div style="display: flex; gap: 1.5rem">
-      <div class="builder-sidebar">
-        <!-- AI Generator — always visible at top -->
-        <h3
-          style="
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-          "
-        >
-          🤖 AI Generator
-        </h3>
-        <textarea
-          v-model="aiPrompt"
-          rows="3"
-          placeholder="Describe the worksheet..."
-          style="font-size: 0.75rem; margin-bottom: 0.35rem"
-        ></textarea>
-        <textarea
-          v-model="aiLernziele"
-          rows="2"
-          placeholder="Lernziele (optional)"
-          style="font-size: 0.7rem; margin-bottom: 0.35rem"
-        ></textarea>
-        <div style="display: flex; gap: 0.35rem; margin-bottom: 0.35rem">
-          <input
-            v-model="conceptInput"
-            placeholder="Differentiate concept..."
-            style="font-size: 0.7rem; flex: 1"
-          />
-          <button class="btn-sm" :disabled="differentiateLoading" @click="differentiateConcept()">
-            {{ differentiateLoading ? '...' : 'Levels' }}
-          </button>
-        </div>
-        <div v-if="differentiatedConcept" class="card" style="padding: 0.5rem; margin-bottom: 0.35rem; font-size: 0.72rem">
-          <strong>Basic</strong>
-          <p style="margin: 0.2rem 0 0.4rem; white-space: pre-wrap">{{ differentiatedConcept.basic }}</p>
-          <strong>Standard</strong>
-          <p style="margin: 0.2rem 0 0.4rem; white-space: pre-wrap">{{ differentiatedConcept.standard }}</p>
-          <strong>Advanced</strong>
-          <p style="margin: 0.2rem 0 0.4rem; white-space: pre-wrap">{{ differentiatedConcept.advanced }}</p>
-          <button class="btn-sm" @click="insertDifferentiatedInfoBox()">+ Add as Info Box</button>
-        </div>
-        <div style="display: flex; gap: 0.25rem; margin-bottom: 0.35rem; flex-wrap: wrap">
-          <select v-model="aiStyle" style="font-size: 0.65rem; padding: 0.2rem; flex: 1; min-width: 60px">
-            <option value="practice">Practice</option>
-            <option value="test">Test</option>
-            <option value="revision">Revision</option>
-            <option value="challenge">Challenge</option>
-          </select>
-          <select v-model="aiDifficulty" style="font-size: 0.65rem; padding: 0.2rem; flex: 1; min-width: 50px">
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-          <select v-model="aiLength" style="font-size: 0.65rem; padding: 0.2rem; flex: 1; min-width: 50px">
-            <option value="short">Short</option>
-            <option value="medium">Medium</option>
-            <option value="long">Long</option>
-          </select>
-          <select v-model="aiProvider" style="font-size: 0.65rem; padding: 0.2rem; flex: 1; min-width: 60px">
-            <option value="opencode">OpenCode</option>
-            <option value="ollama">Ollama</option>
-            <option value="gemini">Gemini</option>
-          </select>
-        </div>
-        <button
-          class="btn-primary"
-          :disabled="aiLoading"
-          @click="sidebarGenerate()"
-          style="width: 100%; font-size: 0.75rem; padding: 0.35rem"
-        >
-          {{ aiLoading ? 'Generating...' : 'Generate' }}
-        </button>
-
-        <div style="margin: 0.75rem 0; border-top: 1px solid var(--border-color)"></div>
-
-        <!-- Info Box -->
-        <button class="sidebar-btn" @click="addBlock('info_box')">
-          <span style="font-size: 1.1rem">💡</span> Info Box
-        </button>
-
-        <div style="margin: 0.5rem 0; border-top: 1px solid var(--border-color)"></div>
-
-        <!-- Blocks -->
-        <h3
-          style="
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-          "
-        >
-          Blocks
-        </h3>
-
-        <button class="sidebar-btn" @click="addBlock('text')">
-          <span style="font-size: 1.1rem">📄</span> Text
-        </button>
-        <button class="sidebar-btn" @click="addBlock('gap_fill')">
-          <span style="font-size: 1.1rem">✏️</span> Gap
-        </button>
-        <button class="sidebar-btn" @click="addBlock('multiple_choice')">
-          <span style="font-size: 1.1rem">✅</span> MC
-        </button>
-        <button class="sidebar-btn" @click="addBlock('single_choice')">
-          <span style="font-size: 1.1rem">☑️</span> SC
-        </button>
-        <button class="sidebar-btn" @click="addBlock('short_answer')">
-          <span style="font-size: 1.1rem">📝</span> Short
-        </button>
-        <button class="sidebar-btn" @click="addBlock('matching')">
-          <span style="font-size: 1.1rem">🔗</span> Match
-        </button>
-        <button class="sidebar-btn" @click="addBlock('word_scramble')">
-          <span style="font-size: 1.1rem">🔤</span> Scramble
-        </button>
-        <button class="sidebar-btn" @click="addBlock('read_aloud')">
-          <span style="font-size: 1.1rem">🔊</span> Read
-        </button>
-
-        <div style="margin: 0.5rem 0; border-top: 1px solid var(--border-color)"></div>
-        <h3
-          style="
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-          "
-        >
-          Math
-        </h3>
-
-        <button class="sidebar-btn" @click="addBlock('arithmetic_grid')">
-          <span style="font-size: 1.1rem">➕</span> Arith
-        </button>
-        <button class="sidebar-btn" @click="addBlock('equation_entry')">
-          <span style="font-size: 1.1rem">📐</span> Eqn
-        </button>
-        <button class="sidebar-btn" @click="addBlock('fraction_input')">
-          <span style="font-size: 1.1rem">🧮</span> Frac
-        </button>
-        <button class="sidebar-btn" @click="addBlock('number_line')">
-          <span style="font-size: 1.1rem">📏</span> #Line
-        </button>
-        <button class="sidebar-btn" @click="addBlock('word_problem')">
-          <span style="font-size: 1.1rem">📖</span> Word
-        </button>
-        <button class="sidebar-btn" @click="addBlock('graph_plot')">
-          <span style="font-size: 1.1rem">📊</span> Graph
-        </button>
-        <button class="sidebar-btn" @click="addBlock('geometry_shape')">
-          <span style="font-size: 1.1rem">🔷</span> Geo
-        </button>
-
-        <div style="margin: 0.5rem 0; border-top: 1px solid var(--border-color)"></div>
-        <h3
-          style="
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-          "
-        >
-          Media
-        </h3>
-
-        <button class="sidebar-btn" @click="addBlock('media')">
-          <span style="font-size: 1.1rem">🖼️</span> Image
-        </button>
-        <button class="sidebar-btn" @click="addBlock('audio')">
-          <span style="font-size: 1.1rem">🎵</span> Audio
-        </button>
-        <button class="sidebar-btn" @click="addBlock('video')">
-          <span style="font-size: 1.1rem">🎬</span> Video
-        </button>
-        <button class="sidebar-btn" @click="addBlock('youtube')">
-          <span style="font-size: 1.1rem">📺</span> YouTube
-        </button>
-
-      </div>
-
-      <div style="flex: 1; min-width: 0">
-        <div
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-          "
-        >
-          <h2 style="margin: 0">{{ isEditing ? 'Edit Worksheet' : 'New Worksheet' }}</h2>
-          <button class="btn-primary" @click="save">Save</button>
-        </div>
-
-        <div v-if="isEditing && versionHistory.length" class="card" style="margin-bottom: 1rem">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
-            <strong>Version History</strong>
-            <button class="btn-sm" :disabled="versionLoading" @click="loadVersions()">
-              {{ versionLoading ? 'Refreshing...' : 'Refresh' }}
-            </button>
+  <div class="page builder-page">
+    <div class="builder-layout">
+      <!-- ===== Left Sidebar (sticky) ===== -->
+      <aside class="builder-sidebar">
+        <!-- Header row -->
+        <div class="sidebar-header">
+          <div class="sidebar-header-title">
+            <h2>{{ isEditing ? '✏️ Edit Worksheet' : '📝 New Worksheet' }}</h2>
           </div>
-          <div style="display:flex;flex-direction:column;gap:0.4rem;max-height:220px;overflow:auto">
-            <div v-for="version in versionHistory" :key="version.id" style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;padding:0.5rem;border:1px solid var(--border-color);border-radius:6px">
-              <div style="font-size:0.8rem">
-                <div style="font-weight:600">v{{ version.version_number }} · {{ version.change_summary || 'Saved version' }}</div>
-                <div style="color:var(--text-muted)">{{ formatVersionDate(version.created_at) }}</div>
-              </div>
-              <button class="btn-sm" @click="restoreVersion(version.id)">Restore</button>
-            </div>
-          </div>
+          <button class="btn-primary" @click="save" style="flex-shrink:0">Save</button>
         </div>
 
-        <div class="card" style="margin-bottom: 1rem">
+        <!-- Settings -->
+        <div class="card sidebar-card">
           <div class="form-group">
             <label>Title</label>
             <input v-model="form.title" placeholder="Worksheet title" />
           </div>
-          <div style="display: flex; gap: 0.5rem">
-            <div class="form-group" style="flex: 1">
+          <div style="display:flex;gap:0.5rem">
+            <div class="form-group" style="flex:1">
               <label>Subject</label>
               <select v-model="form.subject">
                 <option value="">-- Select --</option>
                 <option v-for="s in subjects" :key="s" :value="s">{{ s }}</option>
               </select>
             </div>
-            <div class="form-group" style="flex: 1">
-              <label>Grade Level</label>
+            <div class="form-group" style="flex:1">
+              <label>Grade</label>
               <select v-model="form.grade_level">
                 <option value="">-- Select --</option>
                 <option v-for="g in gradeLevels" :key="g" :value="g">Grade {{ g }}</option>
               </select>
             </div>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-bottom:0">
             <label>Description</label>
-            <textarea v-model="form.description" rows="2" placeholder="Description"></textarea>
+            <textarea v-model="form.description" rows="2" placeholder="Optional description" @input="autoExpand($event)"></textarea>
           </div>
         </div>
 
-        <div
-          v-if="blocks.length === 0"
-          class="card"
-          style="text-align: center; color: var(--text-muted); padding: 3rem"
-        >
-          <div style="font-size: 3rem; margin-bottom: 0.5rem; opacity: 0.3">📝</div>
+        <!-- Block Toolbar -->
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading">Questions</h3>
+          <div class="block-grid">
+            <button class="block-btn" @click="addBlock('text')"><span class="block-btn-icon">📄</span> Text</button>
+            <button class="block-btn" @click="addBlock('info_box')"><span class="block-btn-icon">💡</span> Info Box</button>
+            <button class="block-btn" @click="addBlock('gap_fill')"><span class="block-btn-icon">✏️</span> Gap Fill</button>
+            <button class="block-btn" @click="addBlock('multiple_choice')"><span class="block-btn-icon">✅</span> Multi Choice</button>
+            <button class="block-btn" @click="addBlock('single_choice')"><span class="block-btn-icon">☑️</span> Single Choice</button>
+            <button class="block-btn" @click="addBlock('short_answer')"><span class="block-btn-icon">📝</span> Short Answer</button>
+            <button class="block-btn" @click="addBlock('true_false')"><span class="block-btn-icon">⚖️</span> True/False</button>
+            <button class="block-btn" @click="addBlock('matching')"><span class="block-btn-icon">🔗</span> Matching</button>
+            <button class="block-btn" @click="addBlock('ordering')"><span class="block-btn-icon">🔢</span> Ordering</button>
+            <button class="block-btn" @click="addBlock('word_scramble')"><span class="block-btn-icon">🔤</span> Scramble</button>
+            <button class="block-btn" @click="addBlock('read_aloud')"><span class="block-btn-icon">🔊</span> Read Aloud</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading">Math</h3>
+          <div class="block-grid">
+            <button class="block-btn" @click="addBlock('arithmetic_grid')"><span class="block-btn-icon">➕</span> Arithmetic</button>
+            <button class="block-btn" @click="addBlock('equation_entry')"><span class="block-btn-icon">📐</span> Equation</button>
+            <button class="block-btn" @click="addBlock('fraction_input')"><span class="block-btn-icon">🧮</span> Fraction</button>
+            <button class="block-btn" @click="addBlock('number_line')"><span class="block-btn-icon">📏</span> Number Line</button>
+            <button class="block-btn" @click="addBlock('word_problem')"><span class="block-btn-icon">📖</span> Word Prob.</button>
+            <button class="block-btn" @click="addBlock('graph_plot')"><span class="block-btn-icon">📊</span> Graph Plot</button>
+            <button class="block-btn" @click="addBlock('geometry_shape')"><span class="block-btn-icon">🔷</span> Geometry</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <h3 class="sidebar-heading">Media</h3>
+          <div class="block-grid">
+            <button class="block-btn" @click="addBlock('media')"><span class="block-btn-icon">🖼️</span> Image</button>
+            <button class="block-btn" @click="addBlock('audio')"><span class="block-btn-icon">🎵</span> Audio</button>
+            <button class="block-btn" @click="addBlock('video')"><span class="block-btn-icon">🎬</span> Video</button>
+            <button class="block-btn" @click="addBlock('youtube')"><span class="block-btn-icon">📺</span> YouTube</button>
+            <button class="block-btn" @click="addBlock('drawing')"><span class="block-btn-icon">🎨</span> Drawing</button>
+          </div>
+        </div>
+
+        <!-- AI Generator (collapsible) -->
+        <div class="sidebar-section">
+          <button class="collapse-toggle" @click="aiPanelOpen = !aiPanelOpen">
+            <span class="collapse-toggle-label">🤖 AI Generator</span>
+            <span class="collapse-arrow" :class="{ open: aiPanelOpen }">▾</span>
+          </button>
+          <div v-show="aiPanelOpen" class="collapse-content">
+            <textarea
+              v-model="aiPrompt"
+              rows="3"
+              placeholder="Describe the worksheet..."
+              style="font-size:0.75rem;margin-bottom:0.35rem"
+              @input="autoExpand($event)"
+            ></textarea>
+            <textarea
+              v-model="aiLernziele"
+              rows="2"
+              placeholder="Lernziele (optional)"
+              style="font-size:0.7rem;margin-bottom:0.35rem"
+              @input="autoExpand($event)"
+            ></textarea>
+            <div style="display:flex;gap:0.35rem;margin-bottom:0.35rem">
+              <input
+                v-model="conceptInput"
+                placeholder="Differentiate concept..."
+                style="font-size:0.7rem;flex:1"
+              />
+              <button class="btn-sm" :disabled="differentiateLoading" @click="differentiateConcept()">
+                {{ differentiateLoading ? '...' : 'Levels' }}
+              </button>
+            </div>
+            <div v-if="differentiatedConcept" class="card" style="padding:0.5rem;margin-bottom:0.35rem;font-size:0.72rem">
+              <strong>Basic</strong>
+              <p style="margin:0.2rem 0 0.4rem;white-space:pre-wrap">{{ differentiatedConcept.basic }}</p>
+              <strong>Standard</strong>
+              <p style="margin:0.2rem 0 0.4rem;white-space:pre-wrap">{{ differentiatedConcept.standard }}</p>
+              <strong>Advanced</strong>
+              <p style="margin:0.2rem 0 0.4rem;white-space:pre-wrap">{{ differentiatedConcept.advanced }}</p>
+              <button class="btn-sm" @click="insertDifferentiatedInfoBox()">+ Add as Info Box</button>
+            </div>
+            <div style="display:flex;gap:0.25rem;margin-bottom:0.35rem;flex-wrap:wrap">
+              <select v-model="aiStyle" style="font-size:0.65rem;padding:0.2rem;flex:1;min-width:60px">
+                <option value="practice">Practice</option>
+                <option value="test">Test</option>
+                <option value="revision">Revision</option>
+                <option value="challenge">Challenge</option>
+              </select>
+              <select v-model="aiDifficulty" style="font-size:0.65rem;padding:0.2rem;flex:1;min-width:50px">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+              <select v-model="aiLength" style="font-size:0.65rem;padding:0.2rem;flex:1;min-width:50px">
+                <option value="short">Short</option>
+                <option value="medium">Medium</option>
+                <option value="long">Long</option>
+              </select>
+              <select v-model="aiProvider" style="font-size:0.65rem;padding:0.2rem;flex:1;min-width:60px">
+                <option value="opencode">OpenCode</option>
+                <option value="ollama">Ollama</option>
+                <option value="gemini">Gemini</option>
+              </select>
+            </div>
+            <button
+              class="btn-primary"
+              :disabled="aiLoading"
+              @click="sidebarGenerate()"
+              style="width:100%;font-size:0.75rem;padding:0.35rem"
+            >
+              {{ aiLoading ? 'Generating...' : 'Generate' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Version History (collapsible) -->
+        <div v-if="isEditing && versionHistory.length" class="sidebar-section">
+          <button class="collapse-toggle" @click="versionPanelOpen = !versionPanelOpen">
+            <span class="collapse-toggle-label">📋 Version History</span>
+            <span class="collapse-arrow" :class="{ open: versionPanelOpen }">▾</span>
+          </button>
+          <div v-show="versionPanelOpen" class="collapse-content">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:0.35rem">
+              <button class="btn-sm" :disabled="versionLoading" @click="loadVersions()">
+                {{ versionLoading ? 'Refreshing...' : 'Refresh' }}
+              </button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.35rem">
+              <div
+                v-for="version in versionHistory"
+                :key="version.id"
+                style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.35rem;padding:0.4rem;border:1px solid var(--border-color);border-radius:6px"
+              >
+                <div style="font-size:0.72rem;line-height:1.3">
+                  <div style="font-weight:600">v{{ version.version_number }}</div>
+                  <div style="color:var(--text-muted);font-size:0.65rem">{{ version.change_summary || 'Saved' }}</div>
+                  <div style="color:var(--text-muted);font-size:0.6rem">{{ formatVersionDate(version.created_at) }}</div>
+                </div>
+                <button class="btn-sm" style="font-size:0.6rem;flex-shrink:0" @click="restoreVersion(version.id)">Restore</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ===== Right Main Area (flex, scrollable) ===== -->
+      <main class="builder-main">
+        <!-- Empty state -->
+        <div v-if="blocks.length === 0" class="card empty-state" style="text-align:center;color:var(--text-muted);padding:3rem">
+          <div style="font-size:3rem;margin-bottom:0.5rem;opacity:0.3">📝</div>
           <p>Add exercise blocks from the sidebar to start building your worksheet</p>
         </div>
 
+        <!-- Block cards -->
         <div
           v-for="(block, idx) in blocks"
           :key="block.id"
-          class="card"
-          style="margin-bottom: 0.75rem"
+          class="card block-card"
         >
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 0.75rem;
-            "
-          >
-            <strong
-              >{{ blockIcons[block.type] || '📄' }} {{ block.type.replace(/_/g, ' ') }}</strong
-            >
-            <div style="display: flex; gap: 0.25rem; align-items: center">
-              <label style="font-size: 0.8rem; margin: 0">Pts:</label>
-              <input v-model.number="block.points" type="number" style="width: 60px" min="0" />
-              <button class="btn-sm" :disabled="idx === 0" @click="moveBlock(idx, -1)">↑</button>
-              <button
-                class="btn-sm"
-                :disabled="idx === blocks.length - 1"
-                @click="moveBlock(idx, 1)"
+          <!-- Block header row -->
+          <div class="block-card-header">
+            <div class="block-card-title">
+              <span class="block-type-icon">{{ blockIcons[block.type] || '📄' }}</span>
+              <strong>{{ block.type.replace(/_/g, ' ') }}</strong>
+            </div>
+            <div class="block-card-controls">
+              <label class="pts-label">Pts:</label>
+              <input v-model.number="block.points" type="number" class="pts-input" min="0" />
+              <button class="btn-sm" :disabled="idx === 0" @click="moveBlock(idx, -1)" title="Move up">↑</button>
+              <button class="btn-sm" :disabled="idx === blocks.length - 1" @click="moveBlock(idx, 1)" title="Move down">↓</button>
+              <button class="btn-sm btn-danger" @click="removeBlock(idx)" title="Delete block">×</button>
+            </div>
+          </div>
+
+          <!-- AI Regenerate toolbar -->
+          <div v-if="canAiRegenerate(block.type)" class="block-ai-toolbar">
+            <button class="btn-sm" style="font-size:0.65rem;padding:0.15rem 0.4rem" @click="regenerateBlock(idx)" :disabled="aiLoading" title="Regenerate this block with AI">🔄 AI Regenerate</button>
+            <button class="btn-sm" style="font-size:0.65rem;padding:0.15rem 0.4rem" @click="regenerateBlockWithInstruction(idx, 'easier')" :disabled="aiLoading" title="Make this easier">🔽 Easier</button>
+            <button class="btn-sm" style="font-size:0.65rem;padding:0.15rem 0.4rem" @click="regenerateBlockWithInstruction(idx, 'harder')" :disabled="aiLoading" title="Make this harder">🔼 Harder</button>
+          </div>
+
+          <!-- Block fields -->
+          <div class="block-card-body">
+            <!-- Textarea for question-based blocks (exclude text, read_aloud, info_box which have their own) -->
+            <div v-if="block.type !== 'text' && block.type !== 'read_aloud' && block.type !== 'info_box' && block.type !== 'true_false'" class="form-group">
+              <textarea
+                v-model="block.text"
+                rows="2"
+                :placeholder="'Write your question for this ' + block.type.replace(/_/g, ' ') + '...'"
+                @input="autoExpand($event)"
+              ></textarea>
+            </div>
+
+            <!-- Gap Fill -->
+            <template v-if="block.type === 'gap_fill'">
+              <div class="form-group">
+                <label>Template (use ((answer)) placeholders)</label>
+                <textarea
+                  v-model="block.template"
+                  rows="3"
+                  placeholder="Text with ((answer)) placeholders"
+                  @input="autoExpand($event)"
+                ></textarea>
+              </div>
+            </template>
+
+            <!-- Multiple Choice / Single Choice -->
+            <template v-if="block.type === 'multiple_choice' || block.type === 'single_choice'">
+              <div
+                v-for="(opt, oi) in block.options || []"
+                :key="oi"
+                style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem"
               >
-                ↓
-              </button>
-              <button class="btn-sm btn-danger" @click="removeBlock(idx)">×</button>
-            </div>
-          </div>
-            <div style="display:flex;gap:0.25rem;margin-top:0.25rem">
-              <button class="btn-sm" style="font-size:0.65rem;padding:0.15rem 0.4rem" @click="regenerateBlock(idx)" :disabled="aiLoading" title="Regenerate this block with AI">🔄 AI Regenerate</button>
-              <button class="btn-sm" style="font-size:0.65rem;padding:0.15rem 0.4rem" @click="regenerateBlockWithInstruction(idx, 'easier')" :disabled="aiLoading" title="Make this easier">🔽 Easier</button>
-              <button class="btn-sm" style="font-size:0.65rem;padding:0.15rem 0.4rem" @click="regenerateBlockWithInstruction(idx, 'harder')" :disabled="aiLoading" title="Make this harder">🔼 Harder</button>
-            </div>
-
-          <div class="form-group" v-if="block.type !== 'text' && block.type !== 'read_aloud'">
-            <textarea
-              v-model="block.text"
-              rows="2"
-              :placeholder="'Write your question for this ' + block.type.replace(/_/g, ' ') + '...'"
-            ></textarea>
-          </div>
-
-          <template v-if="block.type === 'gap_fill'">
-            <textarea
-              v-model="block.template"
-              rows="3"
-              placeholder="Text with ((answer)) placeholders"
-            ></textarea>
-          </template>
-
-          <template v-if="block.type === 'multiple_choice' || block.type === 'single_choice'">
-            <div
-              v-for="(opt, oi) in block.options || []"
-              :key="oi"
-              style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem"
-            >
-              <input
-                v-if="block.type === 'multiple_choice'"
-                v-model="block.correct"
-                type="checkbox"
-                :value="oi"
-                style="width: auto; flex-shrink: 0"
-              />
-              <input
-                v-else
-                v-model="block.correct"
-                type="radio"
-                :value="oi"
-                name="correct"
-                style="width: auto; flex-shrink: 0"
-              />
-              <input
-                v-model="block.options[oi]"
-                :placeholder="`Option ${oi + 1}`"
-                style="flex: 1"
-              />
-              <button class="btn-sm btn-danger" @click="block.options.splice(oi, 1)">×</button>
-            </div>
-            <button class="btn-sm" @click="block.options = [...(block.options || []), '']">
-              + Option
-            </button>
-          </template>
-
-          <template v-if="block.type === 'matching'">
-            <div
-              v-for="(pair, pi) in block.pairs || []"
-              :key="pi"
-              style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem"
-            >
-              <input v-model="pair[0]" placeholder="Left" style="flex: 1" />
-              <span style="color: var(--text-muted)">→</span>
-              <input v-model="pair[1]" placeholder="Right" style="flex: 1" />
-              <button class="btn-sm btn-danger" @click="block.pairs.splice(pi, 1)">×</button>
-            </div>
-            <button class="btn-sm" @click="block.pairs = [...(block.pairs || []), ['', '']]">
-              + Pair
-            </button>
-          </template>
-
-          <template v-if="block.type === 'short_answer'">
-            <div class="form-group">
-              <label>Keywords (comma-separated)</label>
-              <input v-model="block.keywordsStr" placeholder="keyword1, keyword2" />
-            </div>
-          </template>
-
-          <template v-if="block.type === 'text' || block.type === 'read_aloud'">
-            <textarea v-model="block.text" rows="3" placeholder="Enter text content..."></textarea>
-          </template>
-
-          <template v-if="block.type === 'info_box'">
-            <input v-model="block.title" placeholder="Clickable headline (e.g. 'Did you know?')" style="font-weight:600;margin-bottom:0.35rem" />
-            <textarea v-model="block.text" rows="3" placeholder="Info content shown when clicked..." style="margin-bottom:0.35rem"></textarea>
-            <input v-model="block.mermaid" placeholder="Mermaid.js diagram code (optional)" style="font-size:0.7rem;margin-bottom:0.25rem" />
-            <input v-model="block.alt_text" placeholder="Alt text for diagram (optional)" style="font-size:0.7rem" />
-          </template>
-
-          <template v-if="block.type === 'word_scramble'">
-            <label
-              style="
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                margin-bottom: 0.25rem;
-                font-size: 0.8rem;
-              "
-            >
-              <input type="checkbox" v-model="block.sentence_mode" /> Sentence mode (scramble word
-              order)
-            </label>
-            <div
-              v-for="(w, wi) in block.words || []"
-              :key="wi"
-              style="display: flex; gap: 0.25rem; margin-bottom: 0.25rem"
-            >
-              <input
-                v-model="block.words[wi].word"
-                :placeholder="block.sentence_mode ? 'Sentence' : 'Word'"
-                style="flex: 1"
-              />
-              <button class="btn-sm btn-danger" @click="block.words.splice(wi, 1)">×</button>
-            </div>
-            <button class="btn-sm" @click="block.words = [...(block.words || []), { word: '' }]">
-              + {{ block.sentence_mode ? 'Sentence' : 'Word' }}
-            </button>
-          </template>
-
-          <template v-if="block.type === 'number_line'">
-            <div style="display: flex; gap: 0.5rem">
-              <input v-model.number="block.min_value" type="number" placeholder="Min" />
-              <input v-model.number="block.max_value" type="number" placeholder="Max" />
-              <input v-model="block.markers[0]" type="number" placeholder="Correct value" />
-            </div>
-          </template>
-
-          <template v-if="block.type === 'equation_entry'">
-            <input v-model="block.equation" placeholder="Equation (e.g. 3*x + 5 = 14)" />
-            <input
-              v-model="block.final_answer"
-              placeholder="Expected answer"
-              style="margin-top: 0.25rem"
-            />
-          </template>
-
-          <template v-if="block.type === 'fraction_input'">
-            <div style="display: flex; gap: 0.5rem; align-items: center">
-              <input
-                v-model.number="block.numerator"
-                type="number"
-                placeholder="Num"
-                style="width: 80px"
-              />
-              <span>/</span>
-              <input
-                v-model.number="block.denominator"
-                type="number"
-                placeholder="Den"
-                style="width: 80px"
-              />
-            </div>
-          </template>
-
-          <template v-if="block.type === 'arithmetic_grid'">
-            <div style="display: flex; gap: 0.5rem; align-items: center">
-              <input
-                v-model.number="block.operand1"
-                type="number"
-                placeholder="A"
-                style="width: 80px"
-              />
-              <select v-model="block.operation" style="width: 60px">
-                <option value="add">+</option>
-                <option value="subtract">−</option>
-                <option value="multiply">×</option>
-                <option value="divide">÷</option>
-              </select>
-              <input
-                v-model.number="block.operand2"
-                type="number"
-                placeholder="B"
-                style="width: 80px"
-              />
-            </div>
-          </template>
-
-          <template v-if="block.type === 'graph_plot'">
-            <textarea
-              v-model="block.pointsStr"
-              rows="2"
-              placeholder="[[x,y],[x,y]]"
-              @blur="tryParsePoints(block)"
-            ></textarea>
-          </template>
-
-          <template v-if="block.type === 'geometry_shape'">
-            <select v-model="block.shape_type">
-              <option value="triangle">Triangle</option>
-              <option value="square">Square</option>
-              <option value="rectangle">Rectangle</option>
-              <option value="circle">Circle</option>
-            </select>
-          </template>
-
-          <template v-if="block.type === 'word_problem'">
-            <textarea
-              v-model="block.problem_text"
-              rows="2"
-              placeholder="Problem description..."
-            ></textarea>
-            <div
-              v-for="(step, si) in block.steps || []"
-              :key="si"
-              style="display: flex; gap: 0.25rem; margin-top: 0.25rem"
-            >
-              <input v-model="step.description" placeholder="Step" style="flex: 1" />
-              <input v-model="step.expected" placeholder="Expected" style="flex: 1" />
-              <button class="btn-sm btn-danger" @click="block.steps.splice(si, 1)">×</button>
-            </div>
-            <button
-              class="btn-sm"
-              @click="block.steps = [...(block.steps || []), { description: '', expected: '' }]"
-              style="margin-top: 0.25rem"
-            >
-              + Step
-            </button>
-            <input
-              v-model="block.final_answer"
-              placeholder="Final answer"
-              style="margin-top: 0.25rem"
-            />
-          </template>
-
-          <template
-            v-if="block.type === 'media' || block.type === 'audio' || block.type === 'video'"
-          >
-            <div style="display: flex; gap: 0.5rem; align-items: center">
-              <input
-                v-model="block.src"
-                :placeholder="
-                  block.type === 'media'
-                    ? 'Image URL'
-                    : block.type === 'audio'
-                      ? 'Audio URL (.mp3)'
-                      : 'Video URL (.mp4)'
-                "
-                style="flex: 1"
-              />
-              <label class="btn-sm" style="cursor: pointer; margin: 0; white-space: nowrap">
-                Upload
                 <input
-                  type="file"
-                  :accept="
-                    block.type === 'media'
-                      ? 'image/*'
-                      : block.type === 'audio'
-                        ? 'audio/*'
-                        : 'video/*'
-                  "
-                  style="display: none"
-                  @change="uploadFile($event, block)"
+                  v-if="block.type === 'multiple_choice'"
+                  v-model="block.correct"
+                  type="checkbox"
+                  :value="oi"
+                  style="width:auto;flex-shrink:0"
                 />
+                <input
+                  v-else
+                  v-model="block.correct"
+                  type="radio"
+                  :value="oi"
+                  name="correct"
+                  style="width:auto;flex-shrink:0"
+                />
+                <input
+                  v-model="block.options[oi]"
+                  :placeholder="`Option ${oi + 1}`"
+                  style="flex:1"
+                />
+                <button class="btn-sm btn-danger" @click="block.options.splice(oi, 1)">×</button>
+              </div>
+              <button class="btn-sm" @click="block.options = [...(block.options || []), '']">+ Option</button>
+            </template>
+
+            <!-- True / False -->
+            <template v-if="block.type === 'true_false'">
+              <div class="form-group">
+                <label>Statement</label>
+                <textarea v-model="block.text" rows="2" placeholder="Enter the statement to evaluate..." @input="autoExpand($event)"></textarea>
+              </div>
+              <div style="display:flex;gap:1.5rem;margin-top:0.35rem">
+                <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer">
+                  <input type="radio" v-model="block.correct_answer" :value="true" style="width:auto" /> True
+                </label>
+                <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;cursor:pointer">
+                  <input type="radio" v-model="block.correct_answer" :value="false" style="width:auto" /> False
+                </label>
+              </div>
+            </template>
+
+            <!-- Matching -->
+            <template v-if="block.type === 'matching'">
+              <div
+                v-for="(pair, pi) in block.pairs || []"
+                :key="pi"
+                style="display:flex;gap:0.5rem;margin-bottom:0.25rem"
+              >
+                <input v-model="pair[0]" placeholder="Left" style="flex:1" />
+                <span style="color:var(--text-muted)">→</span>
+                <input v-model="pair[1]" placeholder="Right" style="flex:1" />
+                <button class="btn-sm btn-danger" @click="block.pairs.splice(pi, 1)">×</button>
+              </div>
+              <button class="btn-sm" @click="block.pairs = [...(block.pairs || []), ['', '']]">+ Pair</button>
+            </template>
+
+            <!-- Ordering -->
+            <template v-if="block.type === 'ordering'">
+              <div class="form-group">
+                <label>Instruction</label>
+                <textarea v-model="block.text" rows="1" placeholder="Put these items in the correct order..." @input="autoExpand($event)"></textarea>
+              </div>
+              <div
+                v-for="(item, oi) in block.items || []"
+                :key="oi"
+                style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem"
+              >
+                <span style="font-size:0.8rem;color:var(--text-muted);min-width:1.5rem;text-align:right;font-weight:600">{{ oi + 1 }}.</span>
+                <input v-model="block.items[oi]" :placeholder="`Item ${oi + 1}`" style="flex:1" />
+                <button class="btn-sm btn-danger" @click="block.items.splice(oi, 1)">×</button>
+              </div>
+              <button class="btn-sm" @click="block.items = [...(block.items || []), '']">+ Add Item</button>
+            </template>
+
+            <!-- Short Answer -->
+            <template v-if="block.type === 'short_answer'">
+              <div class="form-group">
+                <label>Keywords (comma-separated)</label>
+                <input v-model="block.keywordsStr" placeholder="keyword1, keyword2" />
+              </div>
+            </template>
+
+            <!-- Text / Read Aloud -->
+            <template v-if="block.type === 'text' || block.type === 'read_aloud'">
+              <div class="form-group">
+                <label>Content</label>
+                <textarea v-model="block.text" rows="3" placeholder="Enter text content..." @input="autoExpand($event)"></textarea>
+              </div>
+            </template>
+
+            <!-- Info Box -->
+            <template v-if="block.type === 'info_box'">
+              <div class="form-group">
+                <label>Headline</label>
+                <input v-model="block.title" placeholder="Clickable headline (e.g. 'Did you know?')" style="font-weight:600" />
+              </div>
+              <div class="form-group">
+                <label>Content</label>
+                <textarea v-model="block.text" rows="3" placeholder="Info content shown when clicked..." @input="autoExpand($event)"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Mermaid Diagram (optional)</label>
+                <input v-model="block.mermaid" placeholder="Mermaid.js diagram code" style="font-size:0.7rem" />
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label>Alt Text (optional)</label>
+                <input v-model="block.alt_text" placeholder="Alt text for diagram" style="font-size:0.7rem" />
+              </div>
+            </template>
+
+            <!-- Word Scramble -->
+            <template v-if="block.type === 'word_scramble'">
+              <label style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.35rem;font-size:0.8rem">
+                <input type="checkbox" v-model="block.sentence_mode" /> Sentence mode (scramble word order)
               </label>
-            </div>
-            <input
-              v-model="block.caption"
-              placeholder="Caption (optional)"
-              style="margin-top: 0.25rem"
-            />
-            <div v-if="block.src" style="margin-top: 0.5rem">
-              <img
-                v-if="block.type === 'media'"
-                :src="block.src"
-                style="max-width: 100%; max-height: 200px; border-radius: 4px"
-              />
-              <audio
-                v-else-if="block.type === 'audio'"
-                :src="block.src"
-                controls
-                style="width: 100%"
-              ></audio>
-              <video
-                v-else
-                :src="block.src"
-                controls
-                style="max-width: 100%; max-height: 200px; border-radius: 4px"
-              ></video>
-            </div>
-          </template>
+              <div
+                v-for="(w, wi) in block.words || []"
+                :key="wi"
+                style="display:flex;gap:0.25rem;margin-bottom:0.25rem"
+              >
+                <input v-model="block.words[wi].word" :placeholder="block.sentence_mode ? 'Sentence' : 'Word'" style="flex:1" />
+                <button class="btn-sm btn-danger" @click="block.words.splice(wi, 1)">×</button>
+              </div>
+              <button class="btn-sm" @click="block.words = [...(block.words || []), { word: '' }]">
+                + {{ block.sentence_mode ? 'Sentence' : 'Word' }}
+              </button>
+            </template>
 
-          <template v-if="block.type === 'youtube'">
-            <input
-              v-model="block.src"
-              placeholder="YouTube URL (e.g. https://youtube.com/watch?v=...)"
-            />
-            <div
-              v-if="block.src && isYoutube(block.src)"
-              style="margin-top: 0.5rem; position: relative; padding-bottom: 56.25%; height: 0"
-            >
-              <iframe
-                :src="youtubeEmbed(block.src)"
-                style="
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  width: 100%;
-                  height: 100%;
-                  border-radius: 4px;
-                "
-                frameborder="0"
-                allowfullscreen
-              ></iframe>
-            </div>
-          </template>
+            <!-- Number Line -->
+            <template v-if="block.type === 'number_line'">
+              <div style="display:flex;gap:0.5rem">
+                <div class="form-group" style="flex:1">
+                  <label>Min</label>
+                  <input v-model.number="block.min_value" type="number" />
+                </div>
+                <div class="form-group" style="flex:1">
+                  <label>Max</label>
+                  <input v-model.number="block.max_value" type="number" />
+                </div>
+                <div class="form-group" style="flex:1">
+                  <label>Correct</label>
+                  <input v-model="block.markers[0]" type="number" placeholder="Correct value" />
+                </div>
+              </div>
+            </template>
 
-          <details style="margin-top: 0.75rem; font-size: 0.8rem">
-            <summary>+ Mermaid Diagram</summary>
-            <textarea
-              v-model="block.mermaid"
-              rows="3"
-              placeholder="graph TD; A[Concept] --> B[Outcome]"
-              style="font-family: monospace; font-size: 0.75rem; margin-top: 0.25rem"
-            ></textarea>
-            <input v-model="block.alt_text" placeholder="Alt text" style="margin-top: 0.25rem" />
-          </details>
+            <!-- Equation Entry -->
+            <template v-if="block.type === 'equation_entry'">
+              <div class="form-group">
+                <label>Equation</label>
+                <input v-model="block.equation" placeholder="Equation (e.g. 3*x + 5 = 14)" />
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label>Expected Answer</label>
+                <input v-model="block.final_answer" placeholder="Expected answer" />
+              </div>
+            </template>
+
+            <!-- Fraction Input -->
+            <template v-if="block.type === 'fraction_input'">
+              <div style="display:flex;gap:0.5rem;align-items:center">
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Numerator</label>
+                  <input v-model.number="block.numerator" type="number" placeholder="Num" />
+                </div>
+                <span style="font-size:1.2rem;margin-top:1.2rem">/</span>
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Denominator</label>
+                  <input v-model.number="block.denominator" type="number" placeholder="Den" />
+                </div>
+              </div>
+            </template>
+
+            <!-- Arithmetic Grid -->
+            <template v-if="block.type === 'arithmetic_grid'">
+              <div style="display:flex;gap:0.5rem;align-items:center">
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Operand A</label>
+                  <input v-model.number="block.operand1" type="number" placeholder="A" />
+                </div>
+                <div class="form-group" style="width:70px;margin-bottom:0">
+                  <label>Op</label>
+                  <select v-model="block.operation">
+                    <option value="add">+</option>
+                    <option value="subtract">−</option>
+                    <option value="multiply">×</option>
+                    <option value="divide">÷</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Operand B</label>
+                  <input v-model.number="block.operand2" type="number" placeholder="B" />
+                </div>
+              </div>
+            </template>
+
+            <!-- Graph Plot -->
+            <template v-if="block.type === 'graph_plot'">
+              <div class="form-group">
+                <label>Points to plot (JSON array)</label>
+                <textarea
+                  v-model="block.pointsStr"
+                  rows="2"
+                  placeholder="[[x,y],[x,y]]"
+                  @blur="tryParsePoints(block)"
+                  @input="autoExpand($event)"
+                ></textarea>
+              </div>
+            </template>
+
+            <!-- Geometry Shape -->
+            <template v-if="block.type === 'geometry_shape'">
+              <div class="form-group">
+                <label>Shape Type</label>
+                <select v-model="block.shape_type">
+                  <option value="triangle">Triangle</option>
+                  <option value="square">Square</option>
+                  <option value="rectangle">Rectangle</option>
+                  <option value="circle">Circle</option>
+                </select>
+              </div>
+            </template>
+
+            <!-- Word Problem -->
+            <template v-if="block.type === 'word_problem'">
+              <div class="form-group">
+                <label>Problem</label>
+                <textarea v-model="block.problem_text" rows="2" placeholder="Problem description..." @input="autoExpand($event)"></textarea>
+              </div>
+              <div
+                v-for="(step, si) in block.steps || []"
+                :key="si"
+                style="display:flex;gap:0.25rem;margin-top:0.25rem"
+              >
+                <input v-model="step.description" placeholder="Step" style="flex:1" />
+                <input v-model="step.expected" placeholder="Expected" style="flex:1" />
+                <button class="btn-sm btn-danger" @click="block.steps.splice(si, 1)">×</button>
+              </div>
+              <button class="btn-sm" @click="block.steps = [...(block.steps || []), { description: '', expected: '' }]" style="margin-top:0.25rem">+ Step</button>
+              <div class="form-group" style="margin-top:0.35rem">
+                <label>Final Answer</label>
+                <input v-model="block.final_answer" placeholder="Final answer" />
+              </div>
+            </template>
+
+            <!-- Media / Audio / Video -->
+            <template v-if="block.type === 'media' || block.type === 'audio' || block.type === 'video'">
+              <div style="display:flex;gap:0.5rem;align-items:center">
+                <input
+                  v-model="block.src"
+                  :placeholder="block.type === 'media' ? 'Image URL' : block.type === 'audio' ? 'Audio URL (.mp3)' : 'Video URL (.mp4)'"
+                  style="flex:1"
+                />
+                <label class="btn-sm" style="cursor:pointer;margin:0;white-space:nowrap">
+                  Upload
+                  <input type="file" :accept="block.type === 'media' ? 'image/*' : block.type === 'audio' ? 'audio/*' : 'video/*'" style="display:none" @change="uploadFile($event, block)" />
+                </label>
+              </div>
+              <div class="form-group" style="margin-top:0.35rem">
+                <label>Caption (optional)</label>
+                <input v-model="block.caption" placeholder="Caption" />
+              </div>
+              <div v-if="block.src" style="margin-top:0.5rem">
+                <img v-if="block.type === 'media'" :src="block.src" style="max-width:100%;max-height:200px;border-radius:4px" />
+                <audio v-else-if="block.type === 'audio'" controls style="width:100%">
+                  <source :src="block.src" :type="block.mime_type || inferMimeType(block.src, 'audio')" />
+                </audio>
+                <video v-else controls style="max-width:100%;max-height:200px;border-radius:4px">
+                  <source :src="block.src" :type="block.mime_type || inferMimeType(block.src, 'video')" />
+                </video>
+              </div>
+            </template>
+
+            <!-- YouTube -->
+            <template v-if="block.type === 'youtube'">
+              <div class="form-group">
+                <label>YouTube URL</label>
+                <input v-model="block.src" placeholder="YouTube URL (e.g. https://youtube.com/watch?v=...)" />
+              </div>
+              <div v-if="block.src && isYoutube(block.src)" style="margin-top:0.5rem;position:relative;padding-bottom:56.25%;height:0">
+                <iframe :src="youtubeEmbed(block.src)" style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:4px" frameborder="0" allowfullscreen></iframe>
+              </div>
+            </template>
+
+            <!-- Drawing -->
+            <template v-if="block.type === 'drawing'">
+              <div class="form-group">
+                <label>Drawing Prompt / Instructions</label>
+                <textarea v-model="block.text" rows="2" placeholder="Describe what to draw..." @input="autoExpand($event)"></textarea>
+              </div>
+              <div style="display:flex;gap:0.5rem">
+                <div class="form-group" style="flex:1">
+                  <label>Canvas Width</label>
+                  <input v-model.number="block.canvas_width" type="number" min="100" />
+                </div>
+                <div class="form-group" style="flex:1">
+                  <label>Canvas Height</label>
+                  <input v-model.number="block.canvas_height" type="number" min="100" />
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label>Background Image URL (optional)</label>
+                <input v-model="block.background_image" placeholder="https://..." />
+              </div>
+            </template>
+
+            <!-- Mermaid (common to all blocks) -->
+            <details style="margin-top:0.75rem;font-size:0.8rem">
+              <summary>+ Mermaid Diagram</summary>
+              <textarea
+                v-model="block.mermaid"
+                rows="3"
+                placeholder="graph TD; A[Concept] --> B[Outcome]"
+                style="font-family:monospace;font-size:0.75rem;margin-top:0.25rem"
+              ></textarea>
+              <input v-model="block.alt_text" placeholder="Alt text" style="margin-top:0.25rem" />
+            </details>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   </div>
 </template>
@@ -638,6 +608,8 @@ const differentiateLoading = ref(false)
 const differentiatedConcept = ref(null)
 const versionHistory = ref([])
 const versionLoading = ref(false)
+const aiPanelOpen = ref(true)
+const versionPanelOpen = ref(true)
 
 const blockIcons = {
   text: '📄',
@@ -659,6 +631,10 @@ const blockIcons = {
   audio: '🎵',
   video: '🎬',
   youtube: '📺',
+  info_box: '💡',
+  true_false: '⚖️',
+  ordering: '🔢',
+  drawing: '🎨',
 }
 
 function getRouteWorksheetId() {
@@ -712,6 +688,17 @@ function mapLoadedBlocks(rawBlocks) {
       loaded.options = loaded.options || ['', '', '']
       loaded.correct =
         loaded.type === 'single_choice' ? (loaded.correct ?? 0) : loaded.correct || []
+    }
+    if (loaded.type === 'true_false') {
+      loaded.correct_answer = loaded.correct_answer ?? true
+    }
+    if (loaded.type === 'ordering') {
+      loaded.items = loaded.items || ['', '', '']
+    }
+    if (loaded.type === 'drawing') {
+      loaded.canvas_width = loaded.canvas_width ?? 600
+      loaded.canvas_height = loaded.canvas_height ?? 400
+      loaded.background_image = loaded.background_image ?? ''
     }
     return loaded
   })
@@ -787,6 +774,32 @@ function tryParsePoints(block) {
   }
 }
 
+function autoExpand(event) {
+  const target = event && event.target
+  if (!target) return
+  target.style.height = 'auto'
+  target.style.height = `${target.scrollHeight}px`
+}
+
+function inferMimeType(src, kind) {
+  const normalized = String(src || '').toLowerCase()
+  if (kind === 'audio') {
+    if (normalized.endsWith('.mp3')) return 'audio/mpeg'
+    if (normalized.endsWith('.wav')) return 'audio/wav'
+    if (normalized.endsWith('.ogg')) return 'audio/ogg'
+    if (normalized.endsWith('.m4a')) return 'audio/mp4'
+    return 'audio/mpeg'
+  }
+
+  if (normalized.endsWith('.webm')) return 'video/webm'
+  if (normalized.endsWith('.mov')) return 'video/quicktime'
+  return 'video/mp4'
+}
+
+function canAiRegenerate(type) {
+  return !['media', 'audio', 'video', 'youtube', 'drawing'].includes(type)
+}
+
 function addBlock(type) {
   const block = {
     id: genId(),
@@ -797,7 +810,8 @@ function addBlock(type) {
       type === 'video' ||
       type === 'youtube' ||
       type === 'text' ||
-      type === 'read_aloud'
+      type === 'read_aloud' ||
+      type === 'drawing'
         ? 0
         : 10,
     text: '',
@@ -855,6 +869,17 @@ function addBlock(type) {
   if (type === 'media' || type === 'audio' || type === 'video' || type === 'youtube') {
     block.src = ''
     block.caption = ''
+  }
+  if (type === 'true_false') {
+    block.correct_answer = true
+  }
+  if (type === 'ordering') {
+    block.items = ['', '', '']
+  }
+  if (type === 'drawing') {
+    block.canvas_width = 600
+    block.canvas_height = 400
+    block.background_image = ''
   }
   blocks.value.push(block)
 }
@@ -1013,11 +1038,22 @@ async function sidebarGenerate() {
 async function regenerateBlock(idx) {
   const block = blocks.value[idx]
   if (!block) return
+  if (!canAiRegenerate(block.type)) {
+    uiStore.showToast('AI regenerate is not available for uploaded media blocks', 'error')
+    return
+  }
   aiLoading.value = true
   try {
     const data = await store.aiRegenerateBlock({
       blockType: block.type,
       prompt: aiPrompt.value || undefined,
+      currentBlock: block,
+      worksheetContext: {
+        title: form.value.title || undefined,
+        description: form.value.description || undefined,
+        previousBlock: idx > 0 ? blocks.value[idx - 1] : undefined,
+        nextBlock: idx < blocks.value.length - 1 ? blocks.value[idx + 1] : undefined,
+      },
       provider: aiProvider.value,
       difficulty: aiDifficulty.value,
       subject: form.value.subject || undefined,
@@ -1038,12 +1074,23 @@ async function regenerateBlock(idx) {
 async function regenerateBlockWithInstruction(idx, instruction) {
   const block = blocks.value[idx]
   if (!block) return
+  if (!canAiRegenerate(block.type)) {
+    uiStore.showToast('AI regenerate is not available for uploaded media blocks', 'error')
+    return
+  }
   aiLoading.value = true
   try {
     const prompt = `${aiPrompt.value ? aiPrompt.value + '. ' : ''}Regenerate to be ${instruction}. ${block.text || block.template || ''}`
     const data = await store.aiRegenerateBlock({
       blockType: block.type,
       prompt,
+      currentBlock: block,
+      worksheetContext: {
+        title: form.value.title || undefined,
+        description: form.value.description || undefined,
+        previousBlock: idx > 0 ? blocks.value[idx - 1] : undefined,
+        nextBlock: idx < blocks.value.length - 1 ? blocks.value[idx + 1] : undefined,
+      },
       provider: aiProvider.value,
       difficulty: instruction === 'easier' ? 'easy' : instruction === 'harder' ? 'hard' : aiDifficulty.value,
       subject: form.value.subject || undefined,
@@ -1077,9 +1124,345 @@ async function uploadFile(event, block) {
   try {
     const data = await api.upload('/media/upload', formData)
     block.src = data.media.url
+    block.mime_type = data.media.mime_type
     uiStore.showToast('Uploaded', 'success')
   } catch (e) {
     uiStore.showToast(e.message, 'error')
   }
 }
 </script>
+
+<style scoped>
+/* ===== Builder Page Layout ===== */
+.builder-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 2.5rem;
+}
+
+.builder-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+/* ===== Left Sidebar ===== */
+.builder-sidebar {
+  width: 300px;
+  min-width: 300px;
+  position: sticky;
+  top: calc(4.5rem);
+  max-height: calc(100vh - 5.5rem);
+  overflow-y: auto;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-right: 0.25rem;
+}
+
+.builder-sidebar::-webkit-scrollbar {
+  width: 3px;
+}
+
+/* Sidebar header */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sidebar-header-title h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: nowrap;
+}
+
+/* Sidebar card (settings) */
+.sidebar-card {
+  padding: 0.85rem;
+}
+
+.sidebar-card .form-group label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.sidebar-card input,
+.sidebar-card textarea,
+.sidebar-card select {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.5rem;
+}
+
+/* Sidebar sections */
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.sidebar-heading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 0;
+  padding: 0 0.15rem;
+}
+
+/* Block toolbar grid */
+.block-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem;
+}
+
+.block-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.32rem 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 500;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.block-btn:hover {
+  border-color: var(--primary-soft);
+  background: var(--primary-light);
+  color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.block-btn:active {
+  transform: translateY(0);
+}
+
+.block-btn-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+/* Collapsible panels */
+.collapse-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.collapse-toggle:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary-soft);
+  color: var(--primary);
+}
+
+.collapse-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.collapse-arrow {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.collapse-arrow.open {
+  transform: rotate(180deg);
+}
+
+.collapse-content {
+  padding: 0.45rem 0 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Right Main ===== */
+.builder-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* Block cards */
+.block-card {
+  padding: 1rem;
+  transition: all var(--transition);
+  animation: fadeUp 0.25s ease both;
+}
+
+.block-card:hover {
+  border-color: var(--primary-soft);
+  box-shadow: var(--shadow-md);
+}
+
+/* Block card header */
+.block-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.block-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.block-type-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.block-card-title strong {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
+}
+
+.block-card-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.pts-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0;
+  display: inline;
+}
+
+.pts-input {
+  width: 52px;
+  font-size: 0.72rem !important;
+  padding: 0.2rem 0.35rem !important;
+  text-align: center;
+}
+
+/* AI regenerate toolbar */
+.block-ai-toolbar {
+  display: flex;
+  gap: 0.3rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0.5rem;
+}
+
+/* Block card body */
+.block-card-body {
+  font-size: 0.82rem;
+}
+
+.block-card-body .form-group {
+  margin-bottom: 0.5rem;
+}
+
+.block-card-body label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.block-card-body input,
+.block-card-body textarea,
+.block-card-body select {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.55rem;
+}
+
+/* Details/summary (Mermaid) */
+.block-card-body details {
+  margin-top: 0.6rem;
+}
+
+.block-card-body details summary {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.block-card-body details summary:hover {
+  color: var(--primary);
+}
+
+/* Animation for block cards */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Empty state */
+.builder-main .empty-state p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* Responsive: stack on narrow screens */
+@media (max-width: 900px) {
+  .builder-layout {
+    flex-direction: column;
+  }
+  .builder-sidebar {
+    width: 100%;
+    min-width: 100%;
+    position: static;
+    max-height: none;
+  }
+}
+</style>

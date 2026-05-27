@@ -61,6 +61,7 @@ model classes {
   class_announcements class_announcements[] 
   class_students      class_students[]
   users               users                 @relation(fields: [teacher_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  workspaces          workspaces[]
 }
 
 model course_students {
@@ -98,6 +99,7 @@ model courses {
   course_students   course_students[]
   course_worksheets course_worksheets[]
   users             users               @relation(fields: [teacher_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  workspace_items   workspace_items[]
 
   }
 
@@ -311,6 +313,7 @@ model users {
   team_members                                 team_members[]
   worksheets                                   worksheets[]            
   worksheet_versions                           worksheet_versions[]
+  workspaces                                   workspaces[]
 }
 
 model worksheets {
@@ -336,6 +339,7 @@ model worksheets {
   learning_queue    learning_queue[]
   users             users               @relation(fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
   worksheet_versions worksheet_versions[]
+  workspace_items    workspace_items[]
 
   }
 
@@ -359,4 +363,30 @@ model worksheet_versions {
   worksheets     worksheets @relation(fields: [worksheet_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([worksheet_id, version_number])
+}
+
+model workspaces {
+  id             String           @id
+  name           String
+  subject        String
+  class_id       String
+  teacher_id     String
+  created_at     DateTime?        @default(now())
+  updated_at     DateTime?        @default(now())
+  classes        classes          @relation(fields: [class_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users          users            @relation(fields: [teacher_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  workspace_items workspace_items[]
+}
+
+model workspace_items {
+  id           String      @id
+  workspace_id String
+  item_type    String
+  course_id    String?
+  worksheet_id String?
+  order_index  Int?        @default(0)
+  created_at   DateTime?   @default(now())
+  courses      courses?    @relation(fields: [course_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  worksheets   worksheets? @relation(fields: [worksheet_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  workspaces   workspaces  @relation(fields: [workspace_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
