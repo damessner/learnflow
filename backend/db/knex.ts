@@ -21,6 +21,17 @@ export function getKnex(): Knex {
       client: 'better-sqlite3',
       connection: { filename: dbPath },
       useNullAsDefault: true,
+      pool: {
+        afterCreate: (db: any, cb: any) => {
+          try {
+            db.pragma('journal_mode = WAL')
+            db.pragma('synchronous = NORMAL')
+          } catch (e) {
+            // ignore
+          }
+          cb(null, db)
+        },
+      },
     })
   }
 

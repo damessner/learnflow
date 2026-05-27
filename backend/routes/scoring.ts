@@ -238,20 +238,23 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
         case 'contextual_dialogue': {
           const messages = block.messages || []
           const ans = (userAnswer as Record<string, string>) || {}
-          const gapMsgs = messages.filter((m) => m.isGap)
           let correct = 0
-          for (let i = 0; i < gapMsgs.length; i++) {
-            const expected = gapMsgs[i].answer || ''
-            const userVal = (ans[String(i)] || '').trim()
-            if (
-              userVal.toLowerCase() === expected.toLowerCase() ||
-              isAcceptableVariant(userVal, expected)
-            ) {
-              correct++
+          let gapCount = 0
+          for (let mi = 0; mi < messages.length; mi++) {
+            if (messages[mi].isGap) {
+              gapCount++
+              const expected = messages[mi].answer || ''
+              const userVal = (ans[String(mi)] || '').trim()
+              if (
+                userVal.toLowerCase() === expected.toLowerCase() ||
+                isAcceptableVariant(userVal, expected)
+              ) {
+                correct++
+              }
             }
           }
-          earned = gapMsgs.length > 0 ? Math.round((correct / gapMsgs.length) * block.points) : 0
-          feedback.push(`Dialogue: ${correct}/${gapMsgs.length}`)
+          earned = gapCount > 0 ? Math.round((correct / gapCount) * block.points) : 0
+          feedback.push(`Dialogue: ${correct}/${gapCount}`)
           break
         }
         case 'vocabulary': {

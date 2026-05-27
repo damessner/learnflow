@@ -17,16 +17,24 @@ if [ -f /tmp/learnflow.db.bak ]; then
 fi
 
 echo "Setting up Nginx (if not already configured)..."
-if [ ! -f /etc/nginx/sites-available/learnflow ]; then
-  sudo cp deployment/nginx.conf /etc/nginx/sites-available/learnflow
+# Detect whether we need sudo (running as root in LXC? use plain commands)
+SUDO=""
+if command -v sudo &>/dev/null && [ "$(id -u)" -ne 0 ]; then
+  SUDO="sudo"
 fi
-if [ ! -L /etc/nginx/sites-enabled/learnflow ]; then
-  sudo ln -sf /etc/nginx/sites-available/learnflow /etc/nginx/sites-enabled/
+# Copy config if missing
+$SUDO cp -n deployment/nginx.conf /etc/nginx/sites-available/learnflow 2>/dev/null || true
+# Enable site (idempotent)
+$SUDO ln -sf /etc/nginx/sites-available/learnflow /etc/nginx/sites-enabled/
+# Remove default site so ours takes priority
+$SUDO rm -f /etc/nginx/sites-enabled/default
+# Validate and reload
+if $SUDO nginx -t 2>/dev/null; then
+  $SUDO systemctl reload nginx 2>/dev/null || $SUDO nginx -s reload 2>/dev/null || true
+  echo "✓ Nginx configured and reloaded"
+else
+  echo "⚠ Nginx config test failed — check /etc/nginx/sites-available/learnflow"
 fi
-if [ -f /etc/nginx/sites-enabled/default ]; then
-  sudo rm -f /etc/nginx/sites-enabled/default
-fi
-sudo nginx -t && sudo systemctl reload nginx
 
 echo "Installing dependencies..."
 npm install --no-package-lock

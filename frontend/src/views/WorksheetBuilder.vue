@@ -94,79 +94,185 @@
             <span class="collapse-arrow" :class="{ open: aiPanelOpen }">▾</span>
           </button>
           <div v-show="aiPanelOpen" class="collapse-content">
-            <textarea
-              v-model="aiPrompt"
-              rows="3"
-              placeholder="Describe the worksheet..."
-              style="font-size:0.75rem;margin-bottom:0.35rem"
-              @input="autoExpand($event)"
-            ></textarea>
-            <div v-if="lernzieleTemplates.length" style="margin-bottom:0.2rem">
-              <select style="font-size:0.68rem;padding:0.2rem;width:100%" @change="e => { if (e.target.value) { aiLernziele = e.target.value; e.target.value = '' } }">
-                <option value="">📚 Lernziel-Vorlage wählen…</option>
-                <option v-for="t in lernzieleTemplates" :key="t" :value="t">{{ t }}</option>
-              </select>
+            <!-- Tabs -->
+            <div style="display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 0.75rem">
+              <button
+                type="button"
+                style="flex: 1; padding: 0.4rem; font-size: 0.72rem; font-weight: 600; border: none; background: none; border-bottom: 2px solid transparent; cursor: pointer; color: var(--text-muted)"
+                :style="{ borderBottomColor: aiTab === 'generate' ? 'var(--primary)' : 'transparent', color: aiTab === 'generate' ? 'var(--primary)' : 'var(--text-muted)' }"
+                @click="aiTab = 'generate'"
+              >
+                ✨ Worksheet
+              </button>
+              <button
+                type="button"
+                style="flex: 1; padding: 0.4rem; font-size: 0.72rem; font-weight: 600; border: none; background: none; border-bottom: 2px solid transparent; cursor: pointer; color: var(--text-muted)"
+                :style="{ borderBottomColor: aiTab === 'differentiate' ? 'var(--primary)' : 'transparent', color: aiTab === 'differentiate' ? 'var(--primary)' : 'var(--text-muted)' }"
+                @click="aiTab = 'differentiate'"
+              >
+                🔀 Differentiate
+              </button>
             </div>
-            <textarea
-              v-model="aiLernziele"
-              rows="2"
-              placeholder="Lernziele (optional)"
-              style="font-size:0.7rem;margin-bottom:0.35rem"
-              @input="autoExpand($event)"
-            ></textarea>
-            <div style="margin-bottom:0.35rem">
-              <div v-if="differentiateTemplates.length" style="margin-bottom:0.2rem">
+
+            <!-- Tab 1: Generate Worksheet -->
+            <div v-show="aiTab === 'generate'">
+              <!-- Expose aiProvider selection -->
+              <div class="form-group" style="margin-bottom: 0.5rem">
+                <label style="font-size: 0.65rem">AI Provider</label>
+                <select v-model="aiProvider" style="font-size: 0.7rem; padding: 0.25rem">
+                  <option value="gemini">Google Gemini 3.5 Flash</option>
+                  <option value="opencode">OpenCode AI Client</option>
+                  <option value="ollama">Ollama (Local Server)</option>
+                </select>
+              </div>
+
+              <!-- Prompt suggestion chips -->
+              <label style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 0.15rem">Quick Suggestions</label>
+              <div style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-bottom: 0.5rem">
+                <button
+                  type="button"
+                  style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); cursor: pointer"
+                  @click="applySuggestion('Create a vocabulary quiz matching English to German terms')"
+                >
+                  📚 Vocabulary
+                </button>
+                <button
+                  type="button"
+                  style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); cursor: pointer"
+                  @click="applySuggestion('Generate a reading passage about solar system with 3 gap fill items')"
+                >
+                  📖 Reading Passage
+                </button>
+                <button
+                  type="button"
+                  style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); cursor: pointer"
+                  @click="applySuggestion('Create math word problems involving basic fraction operations')"
+                >
+                  🧮 Math Fractions
+                </button>
+                <button
+                  type="button"
+                  style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); cursor: pointer"
+                  @click="applySuggestion('A conversation dialogue at a restaurant with gap fill blanks')"
+                >
+                  💬 Dialogue
+                </button>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0.5rem">
+                <textarea
+                  v-model="aiPrompt"
+                  rows="3"
+                  placeholder="Describe what the worksheet should contain..."
+                  style="font-size:0.75rem"
+                  @input="autoExpand($event)"
+                ></textarea>
+              </div>
+
+              <div v-if="lernzieleTemplates.length" style="margin-bottom:0.4rem">
+                <select style="font-size:0.68rem;padding:0.2rem;width:100%" @change="e => { if (e.target.value) { aiLernziele = e.target.value; e.target.value = '' } }">
+                  <option value="">📚 Select learning objective template…</option>
+                  <option v-for="t in lernzieleTemplates" :key="t" :value="t">{{ t }}</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0.5rem">
+                <textarea
+                  v-model="aiLernziele"
+                  rows="2"
+                  placeholder="Learning objectives / Lernziele (optional)"
+                  style="font-size:0.7rem"
+                  @input="autoExpand($event)"
+                ></textarea>
+              </div>
+
+              <div style="display:flex;gap:0.25rem;margin-bottom:0.5rem;flex-wrap:wrap">
+                <div style="flex: 1; min-width: 60px">
+                  <label style="font-size: 0.6rem; color: var(--text-muted)">Style</label>
+                  <select v-model="aiStyle" style="font-size:0.65rem;padding:0.2rem;width:100%">
+                    <option value="practice">Practice</option>
+                    <option value="test">Test</option>
+                    <option value="revision">Revision</option>
+                    <option value="challenge">Challenge</option>
+                  </select>
+                </div>
+                <div style="flex: 1; min-width: 50px">
+                  <label style="font-size: 0.6rem; color: var(--text-muted)">Difficulty</label>
+                  <select v-model="aiDifficulty" style="font-size:0.65rem;padding:0.2rem;width:100%">
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </div>
+                <div style="flex: 1; min-width: 50px">
+                  <label style="font-size: 0.6rem; color: var(--text-muted)">Length</label>
+                  <select v-model="aiLength" style="font-size:0.65rem;padding:0.2rem;width:100%">
+                    <option value="short">Short</option>
+                    <option value="medium">Medium</option>
+                    <option value="long">Long</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                class="btn-primary"
+                :disabled="aiLoading"
+                @click="sidebarGenerate()"
+                style="width:100%;font-size:0.75rem;padding:0.4rem;display:flex;align-items:center;justify-content:center;gap:0.35rem"
+              >
+                <span>{{ aiLoading ? '🪄 Generating...' : '🪄 Generate Worksheet' }}</span>
+              </button>
+            </div>
+
+            <!-- Tab 2: Differentiate Concept -->
+            <div v-show="aiTab === 'differentiate'">
+              <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem">
+                Provide a core concept, and the AI will generate three explanation levels (Basic, Standard, Advanced) as a study reference.
+              </p>
+
+              <div class="form-group" style="margin-bottom: 0.5rem">
+                <label style="font-size: 0.65rem">AI Provider</label>
+                <select v-model="aiProvider" style="font-size: 0.7rem; padding: 0.25rem">
+                  <option value="gemini">Google Gemini 3.5 Flash</option>
+                  <option value="opencode">OpenCode AI Client</option>
+                  <option value="ollama">Ollama (Local Server)</option>
+                </select>
+              </div>
+
+              <div v-if="differentiateTemplates.length" style="margin-bottom:0.4rem">
                 <select style="font-size:0.68rem;padding:0.2rem;width:100%" @change="e => { if (e.target.value) { conceptInput = e.target.value; e.target.value = '' } }">
-                  <option value="">🔀 Konzept-Vorlage wählen…</option>
+                  <option value="">🔀 Select concept template…</option>
                   <option v-for="t in differentiateTemplates" :key="t" :value="t">{{ t }}</option>
                 </select>
               </div>
-              <div style="display:flex;gap:0.35rem">
+
+              <div style="display:flex;gap:0.35rem;margin-bottom:0.5rem">
                 <input
                   v-model="conceptInput"
-                  placeholder="Differentiate concept..."
-                  style="font-size:0.7rem;flex:1"
+                  placeholder="Enter concept (e.g. Photosynthesis)..."
+                  style="font-size:0.75rem;flex:1"
                 />
-                <button class="btn-sm" :disabled="differentiateLoading" @click="differentiateConcept()">
-                  {{ differentiateLoading ? '...' : 'Levels' }}
+                <button class="btn-primary" style="padding:0.25rem 0.5rem;font-size:0.72rem" :disabled="differentiateLoading" @click="differentiateConcept()">
+                  {{ differentiateLoading ? '...' : 'Create Levels' }}
                 </button>
               </div>
+
+              <div v-if="differentiatedConcept" class="card" style="padding:0.5rem;margin-top:0.5rem;font-size:0.72rem;border: 1px solid var(--border-color)">
+                <div style="margin-bottom:0.4rem">
+                  <strong style="color:var(--text-muted)">🟢 Basic Level</strong>
+                  <p style="margin:0.15rem 0 0;white-space:pre-wrap;line-height:1.4">{{ differentiatedConcept.basic }}</p>
+                </div>
+                <div style="margin-bottom:0.4rem">
+                  <strong style="color:var(--primary)">🔵 Standard Level</strong>
+                  <p style="margin:0.15rem 0 0;white-space:pre-wrap;line-height:1.4">{{ differentiatedConcept.standard }}</p>
+                </div>
+                <div style="margin-bottom:0.4rem">
+                  <strong style="color:var(--warning)">🔴 Advanced Level</strong>
+                  <p style="margin:0.15rem 0 0;white-space:pre-wrap;line-height:1.4">{{ differentiatedConcept.advanced }}</p>
+                </div>
+                <button class="btn-sm" style="width:100%;margin-top:0.25rem" @click="insertDifferentiatedInfoBox()">+ Add as Info Box Block</button>
+              </div>
             </div>
-            <div v-if="differentiatedConcept" class="card" style="padding:0.5rem;margin-bottom:0.35rem;font-size:0.72rem">
-              <strong>Basic</strong>
-              <p style="margin:0.2rem 0 0.4rem;white-space:pre-wrap">{{ differentiatedConcept.basic }}</p>
-              <strong>Standard</strong>
-              <p style="margin:0.2rem 0 0.4rem;white-space:pre-wrap">{{ differentiatedConcept.standard }}</p>
-              <strong>Advanced</strong>
-              <p style="margin:0.2rem 0 0.4rem;white-space:pre-wrap">{{ differentiatedConcept.advanced }}</p>
-              <button class="btn-sm" @click="insertDifferentiatedInfoBox()">+ Add as Info Box</button>
-            </div>
-            <div style="display:flex;gap:0.25rem;margin-bottom:0.35rem;flex-wrap:wrap">
-              <select v-model="aiStyle" style="font-size:0.65rem;padding:0.2rem;flex:1;min-width:60px">
-                <option value="practice">Practice</option>
-                <option value="test">Test</option>
-                <option value="revision">Revision</option>
-                <option value="challenge">Challenge</option>
-              </select>
-              <select v-model="aiDifficulty" style="font-size:0.65rem;padding:0.2rem;flex:1;min-width:50px">
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-              <select v-model="aiLength" style="font-size:0.65rem;padding:0.2rem;flex:1;min-width:50px">
-                <option value="short">Short</option>
-                <option value="medium">Medium</option>
-                <option value="long">Long</option>
-              </select>
-            </div>
-            <button
-              class="btn-primary"
-              :disabled="aiLoading"
-              @click="sidebarGenerate()"
-              style="width:100%;font-size:0.75rem;padding:0.35rem"
-            >
-              {{ aiLoading ? 'Generating...' : 'Generate' }}
-            </button>
           </div>
         </div>
 
@@ -271,6 +377,7 @@
           v-for="(block, idx) in blocks"
           :key="block.id"
           class="card block-card"
+          @focusout="updateBlockPoints(block)"
         >
           <!-- Block header row -->
           <div class="block-card-header">
@@ -308,12 +415,15 @@
 
             <!-- Gap Fill -->
             <template v-if="block.type === 'gap_fill'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Gap Fill:</strong> Write your text below. Put words that should be blank gaps for students inside double parentheses. Example: <code>The capital of France is ((Paris)).</code>
+              </p>
               <div class="form-group">
-                <label>Template (use ((answer)) placeholders)</label>
+                <label>Template text with ((answers))</label>
                 <textarea
                   v-model="block.template"
                   rows="3"
-                  placeholder="Text with ((answer)) placeholders"
+                  placeholder="E.g. Berlin is the capital of ((Germany))."
                   @input="autoExpand($event)"
                 ></textarea>
               </div>
@@ -321,6 +431,9 @@
 
             <!-- Multiple Choice / Single Choice -->
             <template v-if="block.type === 'multiple_choice' || block.type === 'single_choice'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>{{ block.type === 'multiple_choice' ? 'Multiple Choice' : 'Single Choice' }}:</strong> Enter possible answers. Mark the correct answer(s) by checking the box/circle next to them.
+              </p>
               <div
                 v-for="(opt, oi) in block.options || []"
                 :key="oi"
@@ -332,6 +445,7 @@
                   type="checkbox"
                   :value="oi"
                   style="width:auto;flex-shrink:0"
+                  @change="updateBlockPoints(block)"
                 />
                 <input
                   v-else
@@ -340,19 +454,24 @@
                   :value="oi"
                   name="correct"
                   style="width:auto;flex-shrink:0"
+                  @change="updateBlockPoints(block)"
                 />
                 <input
                   v-model="block.options[oi]"
                   :placeholder="`Option ${oi + 1}`"
                   style="flex:1"
+                  @input="updateBlockPoints(block)"
                 />
-                <button class="btn-sm btn-danger" @click="block.options.splice(oi, 1)">×</button>
+                <button class="btn-sm btn-danger" @click="block.options.splice(oi, 1); updateBlockPoints(block)">×</button>
               </div>
-              <button class="btn-sm" @click="block.options = [...(block.options || []), '']">+ Option</button>
+              <button class="btn-sm" @click="block.options = [...(block.options || []), '']; updateBlockPoints(block)">+ Option</button>
             </template>
 
             <!-- True / False -->
             <template v-if="block.type === 'true_false'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>True / False:</strong> Enter a statement, and select whether it is true or false.
+              </p>
               <div class="form-group">
                 <label>Statement</label>
                 <textarea v-model="block.text" rows="2" placeholder="Enter the statement to evaluate..." @input="autoExpand($event)"></textarea>
@@ -369,21 +488,27 @@
 
             <!-- Matching -->
             <template v-if="block.type === 'matching'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Matching:</strong> Add matching items (Left and Right). They will be automatically shuffled for the student.
+              </p>
               <div
                 v-for="(pair, pi) in block.pairs || []"
                 :key="pi"
                 style="display:flex;gap:0.5rem;margin-bottom:0.25rem"
               >
-                <input v-model="pair[0]" placeholder="Left" style="flex:1" />
+                <input v-model="pair[0]" placeholder="Left Item (e.g. Dog)" style="flex:1" @input="updateBlockPoints(block)" />
                 <span style="color:var(--text-muted)">→</span>
-                <input v-model="pair[1]" placeholder="Right" style="flex:1" />
-                <button class="btn-sm btn-danger" @click="block.pairs.splice(pi, 1)">×</button>
+                <input v-model="pair[1]" placeholder="Right Item (e.g. Hund)" style="flex:1" @input="updateBlockPoints(block)" />
+                <button class="btn-sm btn-danger" @click="block.pairs.splice(pi, 1); updateBlockPoints(block)">×</button>
               </div>
-              <button class="btn-sm" @click="block.pairs = [...(block.pairs || []), ['', '']]">+ Pair</button>
+              <button class="btn-sm" @click="block.pairs = [...(block.pairs || []), ['', '']]; updateBlockPoints(block)">+ Pair</button>
             </template>
 
             <!-- Ordering -->
             <template v-if="block.type === 'ordering'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Ordering:</strong> Write the items in the **correct order** from top to bottom. The system will shuffle them for the student.
+              </p>
               <div class="form-group">
                 <label>Instruction</label>
                 <textarea v-model="block.text" rows="1" placeholder="Put these items in the correct order..." @input="autoExpand($event)"></textarea>
@@ -394,17 +519,20 @@
                 style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem"
               >
                 <span style="font-size:0.8rem;color:var(--text-muted);min-width:1.5rem;text-align:right;font-weight:600">{{ oi + 1 }}.</span>
-                <input v-model="block.items[oi]" :placeholder="`Item ${oi + 1}`" style="flex:1" />
-                <button class="btn-sm btn-danger" @click="block.items.splice(oi, 1)">×</button>
+                <input v-model="block.items[oi]" :placeholder="`Item ${oi + 1}`" style="flex:1" @input="updateBlockPoints(block)" />
+                <button class="btn-sm btn-danger" @click="block.items.splice(oi, 1); updateBlockPoints(block)">×</button>
               </div>
-              <button class="btn-sm" @click="block.items = [...(block.items || []), '']">+ Add Item</button>
+              <button class="btn-sm" @click="block.items = [...(block.items || []), '']; updateBlockPoints(block)">+ Add Item</button>
             </template>
 
             <!-- Short Answer -->
             <template v-if="block.type === 'short_answer'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Short Answer:</strong> Enter key words or phrases (comma-separated) that must appear in the student's answer for it to be scored correct automatically.
+              </p>
               <div class="form-group">
                 <label>Keywords (comma-separated)</label>
-                <input v-model="block.keywordsStr" placeholder="keyword1, keyword2" />
+                <input v-model="block.keywordsStr" placeholder="e.g. oxygen, photosynthesis" @input="updateBlockPoints(block)" />
               </div>
             </template>
 
@@ -743,6 +871,141 @@
               </div>
             </template>
 
+            <!-- Vocabulary -->
+            <template v-if="block.type === 'vocabulary'">
+              <div class="form-group">
+                <label>Translation Direction</label>
+                <select v-model="block.vocabulary.direction" @change="updateBlockPoints(block)">
+                  <option value="l2r">Left to Right (Source → Target)</option>
+                  <option value="r2l">Right to Left (Target → Source)</option>
+                </select>
+              </div>
+              <label style="display:block;font-size:0.75rem;font-weight:600;margin-bottom:0.25rem">Vocabulary Pairs</label>
+              <div
+                v-for="(pair, pi) in block.vocabulary.pairs || []"
+                :key="pi"
+                style="display:flex;gap:0.5rem;margin-bottom:0.25rem"
+              >
+                <input v-model="pair.l" placeholder="Source Language" style="flex:1" />
+                <span style="color:var(--text-muted)">→</span>
+                <input v-model="pair.r" placeholder="Target Language (Translation)" style="flex:1" />
+                <button class="btn-sm btn-danger" @click="block.vocabulary.pairs.splice(pi, 1); updateBlockPoints(block)">×</button>
+              </div>
+              <button class="btn-sm" @click="block.vocabulary.pairs = [...(block.vocabulary.pairs || []), { l: '', r: '' }]; updateBlockPoints(block)">+ Add Word Pair</button>
+            </template>
+
+            <!-- Contextual Dialogue -->
+            <template v-if="block.type === 'contextual_dialogue'">
+              <label style="display:block;font-size:0.75rem;font-weight:600;margin-bottom:0.25rem">Dialogue Messages</label>
+              <div
+                v-for="(msg, mi) in block.messages || []"
+                :key="mi"
+                style="padding:0.5rem;border:1px solid var(--border-color);border-radius:4px;margin-bottom:0.5rem;background:var(--bg-main)"
+              >
+                <div class="form-group" style="margin-bottom:0.25rem">
+                  <label style="font-size:0.7rem">Line {{ mi + 1 }} Text</label>
+                  <input v-model="msg.text" placeholder="Line of dialogue (e.g. 'My name is ((Peter))')" />
+                </div>
+                <div style="display:flex;gap:1rem;align-items:center;margin-top:0.25rem">
+                  <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.75rem;cursor:pointer">
+                    <input type="checkbox" v-model="msg.isGap" @change="updateBlockPoints(block)" /> Is Gap (Student fills this line)
+                  </label>
+                  <div v-if="msg.isGap" style="flex:1;display:flex;align-items:center;gap:0.25rem">
+                    <label style="font-size:0.7rem;white-space:nowrap">Correct Answer:</label>
+                    <input v-model="msg.answer" placeholder="Expected answer" style="font-size:0.75rem;padding:0.2rem" />
+                  </div>
+                  <button class="btn-sm btn-danger" style="margin-left:auto" @click="block.messages.splice(mi, 1); updateBlockPoints(block)">Remove</button>
+                </div>
+              </div>
+              <button class="btn-sm" @click="block.messages = [...(block.messages || []), { text: '', isGap: false, answer: '' }]; updateBlockPoints(block)">+ Add Line</button>
+            </template>
+
+            <!-- Semantic Sorter -->
+            <template v-if="block.type === 'semantic_sorter'">
+              <label style="display:block;font-size:0.75rem;font-weight:600;margin-bottom:0.25rem">Categories & Items</label>
+              <div
+                v-for="(cat, ci) in block.categories || []"
+                :key="ci"
+                style="padding:0.5rem;border:1px solid var(--border-color);border-radius:4px;margin-bottom:0.5rem;background:var(--bg-main)"
+              >
+                <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.35rem">
+                  <input v-model="cat.name" placeholder="Category Label (e.g. 'Nouns')" style="font-weight:600;flex:1" />
+                  <button class="btn-sm btn-danger" @click="block.categories.splice(ci, 1); updateBlockPoints(block)">Delete Category</button>
+                </div>
+                <div style="margin-left:1rem">
+                  <label style="font-size:0.7rem;color:var(--text-muted);display:block;margin-bottom:0.2rem">Items in this Category:</label>
+                  <div
+                    v-for="(word, wi) in cat.words || []"
+                    :key="wi"
+                    style="display:flex;gap:0.25rem;margin-bottom:0.25rem"
+                  >
+                    <input v-model="cat.words[wi]" placeholder="Word / Phrase" style="font-size:0.75rem;padding:0.2rem;flex:1" />
+                    <button class="btn-sm btn-danger" @click="cat.words.splice(wi, 1); updateBlockPoints(block)">×</button>
+                  </div>
+                  <button class="btn-sm" style="font-size:0.7rem;padding:0.15rem 0.4rem" @click="cat.words = [...(cat.words || []), '']; updateBlockPoints(block)">+ Add Item</button>
+                </div>
+              </div>
+              <button class="btn-sm" @click="block.categories = [...(block.categories || []), { name: '', words: [] }]; updateBlockPoints(block)">+ Add Category</button>
+            </template>
+
+            <!-- Flashcards -->
+            <template v-if="block.type === 'flashcards'">
+              <label style="display:block;font-size:0.75rem;font-weight:600;margin-bottom:0.25rem">Flashcards</label>
+              <div
+                v-for="(card, ci) in block.cards || []"
+                :key="ci"
+                style="padding:0.5rem;border:1px solid var(--border-color);border-radius:4px;margin-bottom:0.5rem;background:var(--bg-main)"
+              >
+                <div style="display:flex;gap:0.5rem;margin-bottom:0.25rem">
+                  <input v-model="card.front" placeholder="Front Side Text" style="flex:1" />
+                  <input v-model="card.back" placeholder="Back Side Text" style="flex:1" />
+                </div>
+                <div style="display:flex;gap:0.5rem;margin-top:0.25rem">
+                  <input v-model="card.image_url" placeholder="Image URL (optional)" style="font-size:0.75rem;flex:1" />
+                  <input v-model="card.audio_url" placeholder="Audio URL (optional)" style="font-size:0.75rem;flex:1" />
+                  <button class="btn-sm btn-danger" @click="block.cards.splice(ci, 1); updateBlockPoints(block)">×</button>
+                </div>
+              </div>
+              <button class="btn-sm" @click="block.cards = [...(block.cards || []), { front: '', back: '', image_url: '', audio_url: '' }]; updateBlockPoints(block)">+ Add Card</button>
+            </template>
+
+            <!-- Memory Match -->
+            <template v-if="block.type === 'memory_match'">
+              <label style="display:block;font-size:0.75rem;font-weight:600;margin-bottom:0.25rem">Memory Match Pairs</label>
+              <div
+                v-for="(pair, pi) in block.pairs || []"
+                :key="pi"
+                style="display:flex;gap:0.5rem;margin-bottom:0.25rem"
+              >
+                <input v-model="pair[0]" placeholder="Card A" style="flex:1" />
+                <span style="color:var(--text-muted)">⇄</span>
+                <input v-model="pair[1]" placeholder="Card B" style="flex:1" />
+                <button class="btn-sm btn-danger" @click="block.pairs.splice(pi, 1); updateBlockPoints(block)">×</button>
+              </div>
+              <button class="btn-sm" @click="block.pairs = [...(block.pairs || []), ['', '']]; updateBlockPoints(block)">+ Add Memory Pair</button>
+            </template>
+
+            <!-- Drag & Drop -->
+            <template v-if="block.type === 'drag_drop'">
+              <label style="display:block;font-size:0.75rem;font-weight:600;margin-bottom:0.25rem">Drag & Drop Slots</label>
+              <div
+                v-for="key in Object.keys(block.answers || {})"
+                :key="key"
+                style="display:flex;gap:0.5rem;margin-bottom:0.25rem;align-items:center"
+              >
+                <input :value="key" @change="e => renameAnswerKey(block, key, e.target.value)" placeholder="Slot Name (e.g. 'Noun')" style="flex:1" />
+                <span style="color:var(--text-muted)">→</span>
+                <input
+                  v-model="block.answers[key]"
+                  placeholder="Draggable Item Value (e.g. 'table')"
+                  style="flex:1"
+                  @input="block.items = Object.values(block.answers).filter(Boolean)"
+                />
+                <button class="btn-sm btn-danger" @click="deleteAnswerKey(block, key)">×</button>
+              </div>
+              <button class="btn-sm" @click="addAnswerKey(block)">+ Add Slot</button>
+            </template>
+
             <!-- Mermaid (common to all blocks) -->
             <details style="margin-top:0.75rem;font-size:0.8rem">
               <summary>+ Mermaid Diagram</summary>
@@ -793,8 +1056,13 @@ const differentiatedConcept = ref(null)
 const versionHistory = ref([])
 const versionLoading = ref(false)
 const aiPanelOpen = ref(false)
+const aiTab = ref('generate')
 const titlePanelOpen = ref(false)
 const versionPanelOpen = ref(true)
+
+function applySuggestion(text) {
+  aiPrompt.value = text
+}
 
 const lernzieleTemplates = computed(() => {
   const s = form.value.subject
@@ -1097,6 +1365,29 @@ function mapLoadedBlocks(rawBlocks) {
       loaded.canvas_height = loaded.canvas_height ?? 400
       loaded.background_image = loaded.background_image ?? ''
     }
+    if (loaded.type === 'vocabulary') {
+      loaded.vocabulary = loaded.vocabulary || { pairs: [], direction: 'l2r' }
+      if (Array.isArray(loaded.vocabulary)) {
+        loaded.vocabulary = { pairs: loaded.vocabulary, direction: 'l2r' }
+      }
+      loaded.vocabulary.pairs = loaded.vocabulary.pairs || []
+    }
+    if (loaded.type === 'contextual_dialogue') {
+      loaded.messages = loaded.messages || []
+    }
+    if (loaded.type === 'semantic_sorter') {
+      loaded.categories = loaded.categories || []
+    }
+    if (loaded.type === 'flashcards') {
+      loaded.cards = loaded.cards || []
+    }
+    if (loaded.type === 'memory_match') {
+      loaded.pairs = loaded.pairs || []
+    }
+    if (loaded.type === 'drag_drop') {
+      loaded.items = loaded.items || []
+      loaded.answers = loaded.answers || {}
+    }
     return loaded
   })
 }
@@ -1169,6 +1460,80 @@ function tryParsePoints(block) {
   } catch {
     /* */
   }
+}
+
+function updateBlockPoints(block) {
+  let count = 0
+  if (block.type === 'gap_fill') {
+    count = (block.template?.match(/\(\(.*?\)\)/g) || []).length
+  } else if (block.type === 'multiple_choice' || block.type === 'single_choice') {
+    count = (block.options || []).filter(Boolean).length
+  } else if (block.type === 'matching') {
+    count = (block.pairs || []).filter((p) => p[0] || p[1]).length
+  } else if (block.type === 'word_scramble') {
+    count = (block.words || []).filter((w) => w.word).length
+  } else if (block.type === 'vocabulary') {
+    const pairs = Array.isArray(block.vocabulary)
+      ? block.vocabulary
+      : (block.vocabulary?.pairs || [])
+    count = pairs.filter((p) => p.l || p.r).length
+  } else if (block.type === 'contextual_dialogue') {
+    count = (block.messages || []).filter((m) => m.isGap).length
+  } else if (block.type === 'semantic_sorter') {
+    count = (block.categories || []).reduce(
+      (sum, cat) => sum + (cat.words || []).filter(Boolean).length,
+      0,
+    )
+  } else if (block.type === 'memory_match') {
+    count = (block.pairs || []).filter((p) => {
+      if (Array.isArray(p)) return p[0] || p[1]
+      return p.a || p.b
+    }).length
+  } else if (block.type === 'drag_drop') {
+    count = (block.items || []).filter(Boolean).length
+  } else if (block.type === 'flashcards') {
+    count = (block.cards || []).filter((c) => c.front || c.back).length
+  } else if (block.type === 'word_problem') {
+    count = (block.steps || []).length + 1
+  } else if (block.type === 'short_answer') {
+    count = (block.keywordsStr || '')
+      .split(',')
+      .map((k) => k.trim())
+      .filter(Boolean).length
+    if (count === 0) count = 1
+  } else {
+    return
+  }
+  block.points = count * 2
+}
+
+function renameAnswerKey(block, oldKey, newKey) {
+  if (!newKey || oldKey === newKey) return
+  if (!block.answers) block.answers = {}
+  if (block.answers[newKey] !== undefined) return
+  const val = block.answers[oldKey]
+  delete block.answers[oldKey]
+  block.answers[newKey] = val
+  updateBlockPoints(block)
+}
+
+function deleteAnswerKey(block, key) {
+  if (!block.answers) return
+  delete block.answers[key]
+  block.items = Object.values(block.answers).filter(Boolean)
+  updateBlockPoints(block)
+}
+
+function addAnswerKey(block) {
+  if (!block.answers) block.answers = {}
+  let baseName = 'slot'
+  let count = 1
+  while (block.answers[`${baseName}${count}`] !== undefined) {
+    count++
+  }
+  block.answers[`${baseName}${count}`] = ''
+  block.items = Object.values(block.answers).filter(Boolean)
+  updateBlockPoints(block)
 }
 
 function autoExpand(event) {

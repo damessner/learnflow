@@ -9,7 +9,7 @@
         :style="{ background: selected.includes(pi) ? 'var(--primary-light)' : '' }"
         @click="select(pi)"
       >
-        {{ showBack ? pair.b : pair.a }}
+        {{ showBack ? getPairVal(pair, 'b') : getPairVal(pair, 'a') }}
       </div>
     </div>
     <button
@@ -40,5 +40,12 @@ const showBack = ref(false)
 function select(pi) {
   if (selected.value.includes(pi)) selected.value = selected.value.filter((v) => v !== pi)
   else selected.value = [...selected.value, pi]
+}
+function getPairVal(pair: any, side: 'a' | 'b') {
+  if (!pair) return ''
+  if (Array.isArray(pair)) {
+    return side === 'a' ? pair[0] : pair[1]
+  }
+  return side === 'a' ? pair.a : pair.b
 }
 </script>
