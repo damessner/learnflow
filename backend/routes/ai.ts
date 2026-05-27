@@ -11,6 +11,18 @@ import {
 } from '../services/opencode'
 
 const ZEN_API_URL = 'https://opencode.ai/zen/v1/chat/completions'
+const DEFAULT_FETCH_TIMEOUT_MS = 60_000
+const STREAM_FETCH_TIMEOUT_MS = 300_000
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(timeout)
+  }
+}
 
 function getZenApiKey(): string | undefined {
   return process.env.OPENCODE_ZEN_API_KEY
@@ -24,7 +36,9 @@ async function callZenChat(prompt: string, system?: string, stream = false, extr
   const messages: { role: string; content: string }[] = []
   if (system) messages.push({ role: 'system', content: system })
   messages.push({ role: 'user', content: prompt })
-  return fetch(ZEN_API_URL, {
+  return fetchWithTimeout(
+    ZEN_API_URL,
+    {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -36,7 +50,9 @@ async function callZenChat(prompt: string, system?: string, stream = false, extr
       stream,
       ...extraBody,
     }),
-  })
+    },
+    stream ? STREAM_FETCH_TIMEOUT_MS : DEFAULT_FETCH_TIMEOUT_MS,
+  )
 }
 
 const router = Router()
@@ -137,7 +153,7 @@ const GenerationSchema = z.object({
 
 const GenerateRequestSchema = z.object({
   prompt: z.string().min(3),
-  provider: z.string().optional().default('ollama'),
+  provider: z.string().optional().default('gemini'),
   difficulty: z.enum(['easy', 'medium', 'hard']).optional().default('medium'),
   length: z.enum(['short', 'medium', 'long']).optional().default('medium'),
   lernziele: z.string().optional(),
@@ -621,7 +637,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
           console.error('OpenCode generation failed:', e)
         }
       } else if (provider === 'ollama' && process.env.OLLAMA_URL) {
-        const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
+        const response = await fetchWithTimeout(`${process.env.OLLAMA_URL}/api/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -639,11 +655,14 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
           console.error('Validation failed for Ollama:', e)
         }
       } else if ((provider === 'gemini' || !['opencode', 'ollama'].includes(provider)) && process.env.GEMINI_API_KEY) {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        const response = await fetchWithTimeout(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': process.env.GEMINI_API_KEY,
+            },
             body: JSON.stringify({
               contents: [
                 {
@@ -767,7 +786,7 @@ RULES:
       }
     } else if (provider === 'ollama' && process.env.OLLAMA_URL) {
       try {
-        const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
+        const response = await fetchWithTimeout(`${process.env.OLLAMA_URL}/api/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ model: process.env.OLLAMA_MODEL || 'llama3', prompt: blockPrompt, stream: false, format: 'json' }),
@@ -779,13 +798,16 @@ RULES:
       } catch (e) {
         console.error('Ollama block regeneration failed:', e)
       }
-    } else if (process.env.GEMINI_API_KEY) {
+    } else if ((provider === 'gemini' || !provider) && process.env.GEMINI_API_KEY) {
       try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        const response = await fetchWithTimeout(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': process.env.GEMINI_API_KEY,
+            },
             body: JSON.stringify({
               contents: [{ parts: [{ text: blockPrompt }] }],
               generationConfig: { responseMimeType: 'application/json' },
@@ -851,7 +873,7 @@ router.post('/differentiate', requireAuth, requireRole('teacher', 'admin'), asyn
       }
     } else if (request.provider === 'ollama' && process.env.OLLAMA_URL) {
       try {
-        const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
+        const response = await fetchWithTimeout(`${process.env.OLLAMA_URL}/api/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -866,13 +888,16 @@ router.post('/differentiate', requireAuth, requireRole('teacher', 'admin'), asyn
       } catch (e) {
         console.error('Ollama differentiation failed:', e)
       }
-    } else if (process.env.GEMINI_API_KEY) {
+    } else if ((request.provider === 'gemini' || !request.provider) && process.env.GEMINI_API_KEY) {
       try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        const response = await fetchWithTimeout(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': process.env.GEMINI_API_KEY,
+            },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: { responseMimeType: 'application/json' },
@@ -1021,11 +1046,14 @@ router.post('/check-answer', requireAuth, async (req, res, next) => {
 
     if (process.env.GEMINI_API_KEY) {
       try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        const response = await fetchWithTimeout(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': process.env.GEMINI_API_KEY,
+            },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: { responseMimeType: 'application/json' },
@@ -1104,7 +1132,7 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
 4. Be encouraging.`
 
     if (process.env.DEEPSEEK_API_KEY) {
-      const deepseekRes = await fetch('https://api.deepseek.com/chat/completions', {
+      const deepseekRes = await fetchWithTimeout('https://api.deepseek.com/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1118,7 +1146,7 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
           ],
           stream: true,
         }),
-      })
+      }, STREAM_FETCH_TIMEOUT_MS)
 
       const reader = deepseekRes.body?.getReader()
       if (reader) {
@@ -1148,7 +1176,7 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
         res.write(`data: ${JSON.stringify({ text: 'AI tutor encountered an error.' })}\n\n`)
       }
     } else if (process.env.OLLAMA_URL) {
-      const ollamaRes = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
+      const ollamaRes = await fetchWithTimeout(`${process.env.OLLAMA_URL}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1156,7 +1184,7 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
           prompt: systemPrompt,
           stream: true,
         }),
-      })
+      }, STREAM_FETCH_TIMEOUT_MS)
 
       const reader = ollamaRes.body?.getReader()
       if (reader) {
@@ -1174,15 +1202,19 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
         }
       }
     } else if (process.env.GEMINI_API_KEY) {
-      const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse&key=${process.env.GEMINI_API_KEY}`,
+      const geminiRes = await fetchWithTimeout(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': process.env.GEMINI_API_KEY,
+          },
           body: JSON.stringify({
             contents: [{ parts: [{ text: systemPrompt }] }],
           }),
         },
+        STREAM_FETCH_TIMEOUT_MS,
       )
 
       const reader = geminiRes.body?.getReader()
@@ -1277,7 +1309,7 @@ Student asks/explains: ${message}`
         res.write(`data: ${JSON.stringify({ text: 'Uh... I got confused. Can you try explaining again?' })}\n\n`)
       }
     } else if (process.env.OLLAMA_URL) {
-      const ollamaRes = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
+      const ollamaRes = await fetchWithTimeout(`${process.env.OLLAMA_URL}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1285,7 +1317,7 @@ Student asks/explains: ${message}`
           prompt: systemPrompt,
           stream: true,
         }),
-      })
+      }, STREAM_FETCH_TIMEOUT_MS)
 
       const reader = ollamaRes.body?.getReader()
       if (reader) {
@@ -1303,15 +1335,19 @@ Student asks/explains: ${message}`
         }
       }
     } else if (process.env.GEMINI_API_KEY) {
-      const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse&key=${process.env.GEMINI_API_KEY}`,
+      const geminiRes = await fetchWithTimeout(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': process.env.GEMINI_API_KEY,
+          },
           body: JSON.stringify({
             contents: [{ parts: [{ text: systemPrompt }] }],
           }),
         },
+        STREAM_FETCH_TIMEOUT_MS,
       )
 
       const reader = geminiRes.body?.getReader()
@@ -1402,7 +1438,7 @@ router.post(
         length,
         lernziele,
       } = req.body
-      const provider = req.body.provider
+      const provider = req.body.provider || 'gemini'
 
       if (!topic) {
         res.status(400).json({ error: 'Topic required' })
@@ -1512,8 +1548,8 @@ Mix reading comprehension, vocabulary, and grammar exercises. All content in Ger
         } catch (e) {
           console.error('OpenCode story generation failed:', e)
         }
-      } else if (process.env.OLLAMA_URL) {
-        const response = await fetch(`${process.env.OLLAMA_URL}/api/generate`, {
+      } else if (provider === 'ollama' && process.env.OLLAMA_URL) {
+        const response = await fetchWithTimeout(`${process.env.OLLAMA_URL}/api/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1540,12 +1576,15 @@ Mix reading comprehension, vocabulary, and grammar exercises. All content in Ger
             text: 'Story generation failed to parse.',
           })
         }
-      } else if (process.env.GEMINI_API_KEY) {
-        const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      } else if ((provider === 'gemini' || !provider) && process.env.GEMINI_API_KEY) {
+        const response = await fetchWithTimeout(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': process.env.GEMINI_API_KEY,
+            },
             body: JSON.stringify({
               contents: [{ parts: [{ text: storyPrompt }] }],
               generationConfig: { responseMimeType: 'application/json' },

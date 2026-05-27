@@ -68,6 +68,26 @@ export async function initDB(): Promise<void> {
     } else {
       logger.info('Database already initialized (workspaces)')
     }
+
+    const hasRemediationRounds = await knex.schema.hasTable('submission_remediation_rounds')
+    if (!hasRemediationRounds) {
+      const { up: upRemediationRounds } = require('./migrations/20260527_007_submission_remediation_rounds')
+      await upRemediationRounds(knex)
+      logger.info('Database migration (submission remediation rounds) completed')
+    } else {
+      logger.info('Database already initialized (submission remediation rounds)')
+    }
+
+    const hasMasteryBefore = await knex.schema.hasColumn('submission_remediation_rounds', 'mastery_before')
+    if (!hasMasteryBefore) {
+      await knex.schema.alterTable('submission_remediation_rounds', (t) => {
+        t.integer('mastery_before').defaultTo(50)
+        t.integer('mastery_after').defaultTo(50)
+      })
+      logger.info('Database migration (submission remediation rounds mastery columns) completed')
+    } else {
+      logger.info('Database already has mastery columns on remediation rounds')
+    }
   } catch (err) {
     logger.error({ err }, 'Database migration failed')
     throw err

@@ -77,6 +77,7 @@
                 </div>
               </div>
               <button class="btn-sm" @click="prefillAssignmentEdit(assignment)">Edit</button>
+              <button class="btn-sm" @click="openAssignmentResults(assignment, ws)">Results</button>
             </div>
           </div>
           <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap">
@@ -402,24 +403,131 @@
       </div>
       <div v-else>
         <h3>Results for {{ selectedAssignment.worksheet_title }}</h3>
+        <div v-if="remediationLoading" style="color: var(--text-muted); margin-bottom: 0.5rem">
+          Loading remediation summary…
+        </div>
+        <div
+          v-if="(remediationSummary?.aggregate?.most_missed || []).length"
+          class="card"
+          style="margin: 0.6rem 0; padding: 0.6rem"
+        >
+          <h4 style="margin: 0 0 0.4rem">Top Missed Blocks</h4>
+          <div
+            v-for="m in remediationSummary.aggregate.most_missed.slice(0, 5)"
+            :key="m.blockId"
+            style="font-size: 0.83rem; margin-bottom: 0.2rem"
+          >
+            <strong>{{ m.blockType }}</strong> · {{ m.count }} students · {{ m.blockText }}
+          </div>
+        </div>
+        <div
+          v-if="remediationAbMetrics"
+          class="card"
+          style="margin: 0.6rem 0; padding: 0.6rem"
+        >
+          <h4 style="margin: 0 0 0.4rem">Remediation A/B Metrics</h4>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;font-size:0.82rem">
+            <span class="badge">A rounds: {{ remediationAbMetrics.A?.rounds ?? 0 }}</span>
+            <span class="badge">B rounds: {{ remediationAbMetrics.B?.rounds ?? 0 }}</span>
+            <span class="badge">Round2 rate: {{ Math.round((remediationAbMetrics.round2_rate || 0) * 100) }}%</span>
+            <span class="badge">A avg correct: {{ remediationAbMetrics.A?.avg_exercises_correct ?? 0 }}</span>
+            <span class="badge">B avg correct: {{ remediationAbMetrics.B?.avg_exercises_correct ?? 0 }}</span>
+          </div>
+        </div>
         <table v-if="results.length">
           <thead>
             <tr>
               <th>Student</th>
               <th>Score</th>
               <th>Submitted</th>
+              <th>Wrong</th>
+              <th>Remediation</th>
               <th>Feedback</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="r in results" :key="r.id">
-              <td>{{ r.student_name }}</td>
-              <td>{{ r.score }}/{{ r.max_score }}</td>
-              <td>{{ r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : '-' }}</td>
-              <td>
-                <button class="btn-sm" @click="giveFeedback(r)">Feedback</button>
-              </td>
-            </tr>
+            <template v-for="r in results" :key="r.id">
+              <tr>
+                <td>{{ r.student_name }}</td>
+                <td>{{ r.score }}/{{ r.max_score }}</td>
+                <td>{{ r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : '-' }}</td>
+                <td>{{ r.remediation?.wrong_count ?? '-' }}</td>
+                <td>
+                  <span class="badge" v-if="r.remediation">
+                    {{ r.remediation.rounds_used }}/2 rounds
+                  </span>
+                  <span style="font-size:0.75rem;color:var(--text-muted)" v-if="r.remediation?.latest_summary">
+                    {{ r.remediation.latest_summary }}
+                  </span>
+                  <div v-if="r.remediation?.rounds?.length" style="margin-top:0.35rem">
+                    <button class="btn-sm" @click="toggleRemediationDetails(r.id)">
+                      {{ remediationDetailsExpanded[r.id] ? 'Hide details' : 'Show details' }}
+                    </button>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn-sm" @click="giveFeedback(r)">Feedback</button>
+                </td>
+              </tr>
+              <tr v-show="remediationDetailsExpanded[r.id]">
+                <td colspan="6" style="background:var(--bg-main)">
+                  <div v-if="!r.remediation?.rounds?.length" style="color:var(--text-muted);font-size:0.82rem">
+                    No remediation rounds available.
+                  </div>
+                  <div
+                    v-for="round in r.remediation?.rounds || []"
+                    :key="round.id"
+                    class="card"
+                    style="margin:0.45rem 0;padding:0.55rem;border:1px solid var(--border-color)"
+                  >
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap">
+                      <strong>Round {{ round.round_number }}</strong>
+                      <div style="display:flex;gap:0.35rem;flex-wrap:wrap">
+                        <span class="badge">Attempted: {{ round.exercises_attempted || 0 }}</span>
+                        <span class="badge">Correct: {{ round.exercises_correct || 0 }}</span>
+                        <span class="badge">Time: {{ round.time_spent_seconds || 0 }}s</span>
+                      </div>
+                    </div>
+                    <p v-if="round.analysis?.summary" style="margin:0.35rem 0;color:var(--text-muted)">
+                      {{ round.analysis.summary }}
+                    </p>
+                    <div
+                      v-if="round.self_assessment"
+                      style="font-size:0.82rem;margin:0.35rem 0;padding:0.45rem;border-left:3px solid var(--primary);background:var(--bg-card)"
+                    >
+                      <strong>Student reflection:</strong> {{ round.self_assessment }}
+                    </div>
+                    <div v-if="round.exercises?.length" style="margin-top:0.35rem">
+                      <div
+                        v-for="(ex, exIdx) in round.exercises"
+                        :key="`${round.id}_${exIdx}`"
+                        style="padding:0.45rem 0;border-top:1px dashed var(--border-color)"
+                      >
+                        <div style="display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap">
+                          <strong style="font-size:0.85rem">{{ ex.title }}</strong>
+                          <span style="font-size:0.75rem;color:var(--text-muted)">{{ ex.type }} · {{ ex.points ?? 0 }} pts</span>
+                        </div>
+                        <div v-if="ex.prompt || ex.problem_text || ex.template" style="font-size:0.8rem;color:var(--text-muted);white-space:pre-wrap">
+                          {{ ex.prompt || ex.problem_text || ex.template }}
+                        </div>
+                        <div
+                          v-if="getRoundExerciseResponse(round, ex, exIdx)"
+                          style="font-size:0.8rem;margin-top:0.2rem"
+                        >
+                          <div>
+                            <strong>Response:</strong>
+                            {{ formatExerciseResponse(getRoundExerciseResponse(round, ex, exIdx)?.response) }}
+                          </div>
+                          <div style="color:var(--text-muted)">
+                            Score: {{ getRoundExerciseResponse(round, ex, exIdx)?.score ?? 0 }}/{{ getRoundExerciseResponse(round, ex, exIdx)?.maxScore ?? 0 }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
         <div v-if="feedbackTarget" style="margin-top: 0.5rem">
@@ -1536,6 +1644,10 @@ const selectedClass = ref(null)
 const classProgress = ref([])
 const selectedAssignment = ref(null)
 const results = ref([])
+const remediationSummary = ref(null)
+const remediationLoading = ref(false)
+const remediationAbMetrics = ref(null)
+const remediationDetailsExpanded = ref({})
 const feedbackTarget = ref(null)
 const feedbackText = ref('')
 
@@ -1798,6 +1910,74 @@ async function loadAssignmentsForWorksheet(wsId) {
   }
 }
 
+async function loadAssignmentResults(assignmentId) {
+  remediationLoading.value = true
+  try {
+    const [subs, remediation] = await Promise.all([
+      wsStore.fetchAssignmentResults(assignmentId),
+      wsStore.fetchAssignmentRemediation(assignmentId).catch(() => null),
+    ])
+
+    const ab = await submissionsStore.fetchRemediationAbMetrics().catch(() => null)
+
+    const remediationBySubmission = new Map(
+      (remediation?.students || []).map((s) => [s.submission_id, s]),
+    )
+
+    results.value = (subs || []).map((row) => ({
+      ...row,
+      remediation: remediationBySubmission.get(row.id) || null,
+    }))
+    remediationSummary.value = remediation
+    remediationAbMetrics.value = ab
+    remediationDetailsExpanded.value = {}
+  } catch (e) {
+    uiStore.showToast(e.message || 'Failed to load assignment results', 'error')
+    results.value = []
+    remediationSummary.value = null
+    remediationAbMetrics.value = null
+  } finally {
+    remediationLoading.value = false
+  }
+}
+
+function toggleRemediationDetails(submissionId) {
+  remediationDetailsExpanded.value = {
+    ...remediationDetailsExpanded.value,
+    [submissionId]: !remediationDetailsExpanded.value[submissionId],
+  }
+}
+
+function getExerciseId(ex, exIdx) {
+  return ex?.id || `ex_${exIdx}`
+}
+
+function getRoundExerciseResponse(round, ex, exIdx) {
+  const exId = getExerciseId(ex, exIdx)
+  return round?.exercise_responses?.[exId] || null
+}
+
+function formatExerciseResponse(value) {
+  if (value === null || value === undefined || value === '') return '—'
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value)
+  }
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return String(value)
+  }
+}
+
+function openAssignmentResults(assignment, worksheet) {
+  selectedAssignment.value = {
+    ...assignment,
+    worksheet_title: worksheet?.title || assignment?.worksheet_title || 'Worksheet',
+  }
+  tab.value = 'results'
+  loadAssignmentResults(assignment.id)
+}
+
 function prefillAssignmentEdit(assignment) {
   assignForm.value = {
     assignment_id: assignment.id,
@@ -1889,6 +2069,9 @@ async function submitFeedback() {
   try {
     await submissionsStore.submitFeedback(feedbackTarget.value.id, feedbackText.value)
     uiStore.showToast('Feedback saved', 'success')
+    if (selectedAssignment.value?.id) {
+      await loadAssignmentResults(selectedAssignment.value.id)
+    }
     feedbackTarget.value = null
   } catch (e) {
     uiStore.showToast(e.message, 'error')

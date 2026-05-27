@@ -22,6 +22,30 @@ export const useSubmissionsStore = defineStore('submissions', () => {
     return data
   }
 
+  async function fetchRemediation(assignmentId) {
+    return api.get(`/submissions/assignment/${assignmentId}/remediation`)
+  }
+
+  async function generateRemediationRound(assignmentId) {
+    return api.post(`/submissions/assignment/${assignmentId}/remediation/generate`)
+  }
+
+  async function submitRemediationResponses(roundId, payload) {
+    return api.post(`/submissions/remediation/round/${roundId}/responses`, payload)
+  }
+
+  async function submitRemediationSelfAssessment(roundId, self_assessment) {
+    return api.post(`/submissions/remediation/round/${roundId}/self-assessment`, { self_assessment })
+  }
+
+  async function fetchStudentRemediationHistory() {
+    return api.get('/submissions/student/remediation-history')
+  }
+
+  async function fetchRemediationAbMetrics() {
+    return api.get('/submissions/remediation/ab-metrics')
+  }
+
   async function fetchStudentSummary() {
     const data = await api.get('/submissions/student/summary')
     summary.value = data.submissions || []
@@ -38,6 +62,12 @@ export const useSubmissionsStore = defineStore('submissions', () => {
     fetchAssignmentSubmission,
     saveProgress,
     submitAssignment,
+    fetchRemediation,
+    generateRemediationRound,
+    submitRemediationResponses,
+    submitRemediationSelfAssessment,
+    fetchStudentRemediationHistory,
+    fetchRemediationAbMetrics,
     fetchStudentSummary,
     submitFeedback,
   }

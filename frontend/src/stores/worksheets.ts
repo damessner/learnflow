@@ -85,7 +85,11 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     return api.get(`/worksheets/assignments/${assignmentId}/stats`)
   }
 
-  async function aiGenerate(prompt, provider = 'ollama', options = {}) {
+  async function fetchAssignmentRemediation(assignmentId) {
+    return api.get(`/worksheets/assignments/${assignmentId}/remediation`)
+  }
+
+  async function aiGenerate(prompt, provider = 'gemini', options = {}) {
     return api.post('/ai/generate', { prompt, provider, ...options })
   }
 
@@ -122,6 +126,7 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     restoreWorksheetVersion,
     fetchAssignmentResults,
     fetchAssignmentStats,
+    fetchAssignmentRemediation,
     aiGenerate,
     aiRegenerateBlock,
     aiCheckAnswer,

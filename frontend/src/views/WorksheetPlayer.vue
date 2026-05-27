@@ -57,6 +57,325 @@
       <p>{{ submitResult.feedback }}</p>
     </div>
 
+    <div v-if="submitted" class="card" style="margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap">
+        <h3 style="margin:0">🧠 Personalisierte Nacharbeit</h3>
+        <button
+          class="btn-primary"
+          :disabled="remediationLoading || remediationGenerating || !remediationData?.canGenerateRound"
+          @click="generateRemediationRound"
+        >
+          {{ remediationGenerating ? 'Generating...' : `Generate Round (${remediationData?.roundsLeft ?? 0} left)` }}
+        </button>
+      </div>
+
+      <p style="margin:0.35rem 0 0.6rem;color:var(--text-muted);font-size:0.85rem">
+        KI analysiert deine Fehler und erstellt bis zu 2 individuelle Übungsrunden.
+      </p>
+
+      <div v-if="remediationLoading" style="color:var(--text-muted)">Loading remediation…</div>
+      <div v-else-if="!remediationData" style="color:var(--text-muted)">No remediation data yet.</div>
+      <div v-else>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem">
+          <span class="badge">Wrong blocks: {{ remediationData.wrongBlocks?.length || 0 }}</span>
+          <span class="badge">Rounds used: {{ remediationData.roundsUsed || 0 }}/2</span>
+        </div>
+
+        <div v-if="(remediationData.wrongBlocks || []).length" style="margin-bottom:0.5rem">
+          <h4 style="margin:0 0 0.35rem;font-size:0.95rem">Fehlerübersicht</h4>
+          <ul style="margin:0;padding-left:1rem">
+            <li v-for="wb in remediationData.wrongBlocks" :key="wb.blockId" style="margin-bottom:0.2rem">
+              <strong>{{ wb.blockType }}</strong>: {{ wb.blockText }}
+            </li>
+          </ul>
+        </div>
+
+        <div v-if="!(remediationData.rounds || []).length" style="color:var(--text-muted)">
+          Noch keine KI-Nacharbeit erstellt. Klicke auf "Generate Round".
+        </div>
+
+        <div
+          v-for="round in remediationData.rounds || []"
+          :key="round.id"
+          class="card"
+          style="padding:0.75rem;margin-top:0.5rem;border:1px solid var(--border-color)"
+        >
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap">
+            <strong>Round {{ round.round_number }}</strong>
+            <span style="font-size:0.75rem;color:var(--text-muted)">{{ new Date(round.created_at).toLocaleString() }}</span>
+          </div>
+
+          <p style="margin:0.4rem 0 0.5rem">{{ round.analysis?.summary }}</p>
+
+          <div v-if="round.analysis?.misconceptions?.length" style="margin-bottom:0.45rem">
+            <strong style="font-size:0.85rem">Misconceptions:</strong>
+            <ul style="margin:0.25rem 0 0;padding-left:1rem">
+              <li v-for="m in round.analysis.misconceptions" :key="m">{{ m }}</li>
+            </ul>
+          </div>
+
+          <div v-if="round.analysis?.custom_instructions?.length" style="margin-bottom:0.45rem">
+            <strong style="font-size:0.85rem">Custom instructions:</strong>
+            <ol style="margin:0.25rem 0 0;padding-left:1rem">
+              <li v-for="c in round.analysis.custom_instructions" :key="c">{{ c }}</li>
+            </ol>
+          </div>
+
+          <MermaidDiagram
+            v-if="round.analysis?.mermaid"
+            :code="round.analysis.mermaid"
+            alt-text="Remediation diagram"
+            style="margin-bottom:0.5rem"
+          />
+
+          <div v-if="round.exercises?.length">
+            <strong style="font-size:0.85rem">Individual exercises:</strong>
+            <div
+              v-for="(ex, exIdx) in round.exercises"
+              :key="`${round.id}_${exIdx}`"
+              style="margin-top:0.35rem;padding:0.6rem;border:1px dashed var(--border-color);border-radius:6px"
+            >
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap">
+                <div style="font-weight:600">{{ ex.title }}</div>
+                <div style="display:flex;gap:0.35rem;align-items:center">
+                  <span class="badge" style="font-size:0.7rem">{{ ex.type }}</span>
+                  <span class="badge" style="font-size:0.7rem">{{ ex.points ?? 0 }} pts</span>
+                </div>
+              </div>
+
+              <div v-if="ex.prompt" style="white-space:pre-wrap;margin-top:0.35rem">{{ ex.prompt }}</div>
+              <div v-if="ex.problem_text" style="white-space:pre-wrap;margin-top:0.35rem">{{ ex.problem_text }}</div>
+
+              <div style="margin-top:0.5rem">
+                <template v-if="ex.type === 'gap_fill'">
+                  <template v-for="seg in getGapSegments(ex.template || '')" :key="`${round.id}_${getRemediationExerciseId(ex, exIdx)}_${seg.key}`">
+                    <span v-if="seg.type === 'text'" style="white-space: pre-wrap">{{ seg.text }}</span>
+                    <input
+                      v-else
+                      type="text"
+                      :value="remediationRoundResponses[round.id]?.[getRemediationExerciseId(ex, exIdx)]?.[String(seg.index)] || ''"
+                      @input="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][String(seg.index)] = ($event.target as HTMLInputElement).value"
+                      style="display:inline;width:auto;min-width:80px;padding:0.2rem 0.5rem;border:1px dashed var(--primary);border-radius:4px"
+                    />
+                  </template>
+                </template>
+
+                <template v-else-if="ex.type === 'multiple_choice'">
+                  <div v-for="(opt, oi) in ex.options || []" :key="oi" style="margin:0.2rem 0">
+                    <label style="display:flex;align-items:center;gap:0.5rem">
+                      <input
+                        v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                        type="checkbox"
+                        :value="oi"
+                      />
+                      {{ opt }}
+                    </label>
+                  </div>
+                </template>
+
+                <template v-else-if="ex.type === 'single_choice'">
+                  <div v-for="(opt, oi) in ex.options || []" :key="oi" style="margin:0.2rem 0">
+                    <label style="display:flex;align-items:center;gap:0.5rem">
+                      <input
+                        v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                        type="radio"
+                        :value="oi"
+                        :name="`rem_sc_${round.id}_${getRemediationExerciseId(ex, exIdx)}`"
+                      />
+                      {{ opt }}
+                    </label>
+                  </div>
+                </template>
+
+                <template v-else-if="ex.type === 'true_false'">
+                  <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+                    <label style="display:flex;align-items:center;gap:0.35rem">
+                      <input
+                        v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                        type="radio"
+                        :value="1"
+                        :name="`rem_tf_${round.id}_${getRemediationExerciseId(ex, exIdx)}`"
+                      />
+                      True
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.35rem">
+                      <input
+                        v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                        type="radio"
+                        :value="0"
+                        :name="`rem_tf_${round.id}_${getRemediationExerciseId(ex, exIdx)}`"
+                      />
+                      False
+                    </label>
+                  </div>
+                </template>
+
+                <template v-else-if="ex.type === 'matching'">
+                  <div
+                    v-for="(pair, pi) in ex.pairs || []"
+                    :key="pi"
+                    style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem"
+                  >
+                    <span style="min-width:120px">{{ pair[0] }}</span>
+                    <input
+                      v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][String(pi)]"
+                      :placeholder="'Match for ' + pair[0]"
+                    />
+                  </div>
+                </template>
+
+                <template v-else-if="ex.type === 'word_scramble'">
+                  <div
+                    v-for="(w, wi) in ex.words || []"
+                    :key="wi"
+                    style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem"
+                  >
+                    <span style="font-family: monospace; letter-spacing: 2px">
+                      {{ getRemediationScrambled(String(round.id), getRemediationExerciseId(ex, exIdx), wi, w.word) }}
+                    </span>
+                    <input
+                      v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][wi]"
+                      placeholder="Unscramble"
+                    />
+                  </div>
+                </template>
+
+                <template v-else-if="ex.type === 'word_problem'">
+                  <div v-for="(step, si) in ex.steps || []" :key="si" style="margin-bottom:0.35rem">
+                    <label style="display:block;font-size:0.8rem;color:var(--text-muted)">
+                      Step {{ si + 1 }}: {{ step.description }}
+                    </label>
+                    <input v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][String(si)]" />
+                  </div>
+                  <label style="display:block;font-size:0.8rem;color:var(--text-muted)">Final answer</label>
+                  <input v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)].final_answer" />
+                </template>
+
+                <template v-else-if="ex.type === 'fraction_input'">
+                  <div style="display:flex;gap:0.5rem;align-items:center">
+                    <input
+                      v-model.number="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)].numerator"
+                      type="number"
+                      placeholder="Numerator"
+                      style="width:120px"
+                    />
+                    <span>/</span>
+                    <input
+                      v-model.number="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)].denominator"
+                      type="number"
+                      placeholder="Denominator"
+                      style="width:120px"
+                    />
+                  </div>
+                </template>
+
+                <template v-else-if="ex.type === 'number_line'">
+                  <input
+                    v-model.number="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                    type="number"
+                    placeholder="Pick a number"
+                    style="width:180px"
+                  />
+                </template>
+
+                <template v-else-if="ex.type === 'graph_plot'">
+                  <textarea
+                    v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                    rows="2"
+                    placeholder="Enter points as x,y; x,y"
+                  ></textarea>
+                </template>
+
+                <template v-else-if="ex.type === 'geometry_shape'">
+                  <input
+                    v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)].shape_name"
+                    placeholder="Shape name"
+                  />
+                </template>
+
+                <template v-else-if="ex.type === 'short_answer'">
+                  <textarea
+                    v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                    rows="3"
+                    placeholder="Your answer..."
+                  ></textarea>
+                </template>
+
+                <template v-else>
+                  <input
+                    v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                    placeholder="Your answer"
+                  />
+                </template>
+              </div>
+
+              <div v-if="ex.answer_hint" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem">
+                Hint: {{ ex.answer_hint }}
+              </div>
+            </div>
+
+            <div style="margin-top:0.6rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+              <button
+                class="btn-primary btn-sm"
+                :disabled="remediationRoundSubmitting[round.id]"
+                @click="submitRoundResponses(round)"
+              >
+                {{ remediationRoundSubmitting[round.id] ? 'Submitting...' : 'Submit Round Responses' }}
+              </button>
+              <span
+                v-if="remediationRoundResults[round.id]"
+                class="badge"
+              >
+                Score: {{ remediationRoundResults[round.id].score }}/{{ remediationRoundResults[round.id].maxScore }} ·
+                Correct: {{ remediationRoundResults[round.id].exercises_correct }}/{{ remediationRoundResults[round.id].exercises_attempted }}
+              </span>
+              <span
+                v-else-if="getRoundHistoryMetrics(round.round_number)"
+                class="badge"
+              >
+                Attempts: {{ getRoundHistoryMetrics(round.round_number)?.exercises_attempted || 0 }} ·
+                Correct: {{ getRoundHistoryMetrics(round.round_number)?.exercises_correct || 0 }} ·
+                Time: {{ getRoundHistoryMetrics(round.round_number)?.time_spent_seconds || 0 }}s
+              </span>
+            </div>
+
+            <div style="margin-top:0.55rem">
+              <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem">
+                Self-assessment (min. 10 chars): What did you understand better after this round?
+              </label>
+              <textarea
+                v-model="remediationSelfAssessments[round.id]"
+                rows="2"
+                placeholder="I understood that..."
+              ></textarea>
+              <div style="margin-top:0.4rem">
+                <button
+                  class="btn-sm"
+                  :disabled="remediationSelfAssessmentSaving[round.id]"
+                  @click="submitRoundSelfAssessment(round)"
+                >
+                  {{ remediationSelfAssessmentSaving[round.id] ? 'Saving...' : 'Save Reflection' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:0.75rem;border-top:1px solid var(--border-color);padding-top:0.6rem">
+          <h4 style="margin:0 0 0.35rem;font-size:0.9rem">Your remediation history (this worksheet)</h4>
+          <div v-if="remediationHistoryLoading" style="color:var(--text-muted);font-size:0.8rem">Loading history…</div>
+          <div v-else-if="!currentAssignmentRemediationHistory" style="color:var(--text-muted);font-size:0.8rem">
+            No completed history yet.
+          </div>
+          <div v-else style="display:flex;gap:0.45rem;flex-wrap:wrap">
+            <span class="badge">Rounds: {{ currentAssignmentRemediationHistory.round_count || 0 }}</span>
+            <span class="badge">Attempted: {{ currentAssignmentRemediationHistory.attempted || 0 }}</span>
+            <span class="badge">Correct: {{ currentAssignmentRemediationHistory.correct || 0 }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div
       v-if="!submitted && blocks.length > 0"
       style="
@@ -91,7 +410,18 @@
       <MermaidDiagram v-if="block.mermaid" :code="block.mermaid" :alt-text="block.alt_text" />
 
       <template v-if="block.type === 'gap_fill'">
-        <div v-html="renderGaps(block.template, block.id)"></div>
+        <div>
+          <template v-for="seg in getGapSegments(block.template)" :key="seg.key">
+            <span v-if="seg.type === 'text'" style="white-space: pre-wrap">{{ seg.text }}</span>
+            <input
+              v-else-if="seg.type === 'gap'"
+              type="text"
+              :value="getGapValue(block.id, seg.index)"
+              @input="setGapValue(block.id, seg.index, ($event.target as HTMLInputElement).value)"
+              style="display:inline;width:auto;min-width:80px;padding:0.2rem 0.5rem;border:1px dashed var(--primary);border-radius:4px"
+            />
+          </template>
+        </div>
       </template>
 
       <template v-if="block.type === 'multiple_choice'">
@@ -373,7 +703,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSubmissionsStore } from '../stores/submissions'
 import { useUiStore } from '../stores/ui'
@@ -430,8 +760,22 @@ const tutorMessages = ref([
 ])
 const tutorLoading = ref(false)
 
-let autoSaveTimer = null
-let lastSavedAnswers = ''
+const remediationData = ref(null)
+const remediationLoading = ref(false)
+const remediationGenerating = ref(false)
+const remediationHistory = ref([])
+const remediationHistoryLoading = ref(false)
+const remediationRoundResponses = reactive({})
+const remediationRoundSubmitting = reactive({})
+const remediationRoundResults = reactive({})
+const remediationSelfAssessments = reactive({})
+const remediationSelfAssessmentSaving = reactive({})
+const remediationRoundStartedAt = reactive({})
+const remediationScrambleCache = reactive({})
+
+const initialized = ref(false)
+let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let lastSavedPayload = ''
 
 onMounted(async () => {
   try {
@@ -441,17 +785,18 @@ onMounted(async () => {
     try {
       const content = JSON.parse(data.worksheet.content)
       blocks.value = content.blocks || []
-    } catch {
+    } catch (e) {
+      console.warn('Failed to parse worksheet content:', e)
       blocks.value = []
     }
 
     if (data.submission.answers) {
       try {
         const saved = JSON.parse(data.submission.answers)
-        Object.assign(answers, saved)
-        lastSavedAnswers = JSON.stringify(saved)
-      } catch {
-        /* */
+        applySavedProgress(saved)
+        lastSavedPayload = JSON.stringify(getProgressPayload())
+      } catch (e) {
+        console.warn('Failed to parse server saved progress:', e)
       }
     }
 
@@ -462,6 +807,7 @@ onMounted(async () => {
           else if (b.type === 'matching') answers[b.id] = {}
           else if (b.type === 'word_scramble') answers[b.id] = []
           else if (b.type === 'single_choice') answers[b.id] = null
+          else if (b.type === 'gap_fill') answers[b.id] = {}
           else answers[b.id] = ''
         }
       }
@@ -470,63 +816,92 @@ onMounted(async () => {
     const local = localStorage.getItem(`answers_${route.params.id}`)
     if (local && !data.submission.submitted_at) {
       try {
-        Object.assign(answers, JSON.parse(local))
-      } catch {
-        /* */
+        applySavedProgress(JSON.parse(local))
+      } catch (e) {
+        console.warn('Failed to parse localStorage saved progress:', e)
       }
     }
 
     try {
-      autoSaveTimer = setInterval(() => {
-        saveProgress().catch(() => {})
-      }, 20000)
       await learningStore.fetchGamification()
       gamXp.value = learningStore.gamification?.xp || 0
     } catch {
       gamXp.value = 0
     }
+
+    if (data.submission.submitted_at) {
+      submitted.value = true
+      readonly.value = true
+      submitResult.value = {
+        score: Number(data.submission.score || 0),
+        maxScore: Number(data.submission.max_score || 0),
+        feedback: data.submission.feedback || '',
+      }
+      await loadRemediation()
+      await loadRemediationHistory()
+    }
+
+    initialized.value = true
+    lastSavedPayload = JSON.stringify(getProgressPayload())
   } catch (_e) {
     uiStore.showToast('Failed to load assignment', 'error')
   }
 })
 
 onUnmounted(() => {
-  if (autoSaveTimer) clearInterval(autoSaveTimer)
-  if (typeof window !== 'undefined') {
-    delete (window as Record<string, unknown>).__updateGap
-  }
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer)
 })
 
-function escapeHtmlAttr(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+function parseGapTemplate(template: string): Array<
+  | { type: 'text'; text: string; key: string }
+  | { type: 'gap'; index: number; key: string }
+> {
+  const segments: Array<
+    | { type: 'text'; text: string; key: string }
+    | { type: 'gap'; index: number; key: string }
+  > = []
+  if (!template) return segments
+  let lastIndex = 0
+  let gapIndex = 0
+  const regex = /\(\((.*?)\)\)/g
+  let match: RegExpExecArray | null
+  while ((match = regex.exec(template)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({
+        type: 'text',
+        text: template.slice(lastIndex, match.index),
+        key: `t_${lastIndex}_${match.index}`,
+      })
+    }
+
+    segments.push({ type: 'gap', index: gapIndex++, key: `g_${match.index}` })
+    lastIndex = regex.lastIndex
+  }
+  if (lastIndex < template.length) {
+    segments.push({
+      type: 'text',
+      text: template.slice(lastIndex),
+      key: `t_${lastIndex}_${template.length}`,
+    })
+  }
+  return segments
 }
 
-function renderGaps(template, blockId) {
-  if (!template) return ''
+function getGapSegments(template: string) {
+  return parseGapTemplate(template)
+}
 
-  if (typeof window !== 'undefined') {
-    window.__updateGap = (id, idx, value) => {
-      if (!answers[id]) answers[id] = {}
-      answers[id][idx] = value
-    }
+function getGapValue(blockId: string, index: number): string {
+  const blockAnswers = answers[blockId]
+  if (!blockAnswers || typeof blockAnswers !== 'object') return ''
+  return (blockAnswers as Record<string, string>)[String(index)] ?? ''
+}
+
+function setGapValue(blockId: string, index: number, value: string): void {
+  if (!answers[blockId] || typeof answers[blockId] !== 'object') {
+    answers[blockId] = {}
   }
-
-  let html = template
-  let gapIdx = 0
-  html = html.replace(/\(\((.*?)\)\)/g, (_match, _answer) => {
-    const idx = gapIdx++
-    const val = answers[blockId] || {}
-    const answerText = escapeHtmlAttr(val[idx] || '')
-    const safeBlockId = escapeHtmlAttr(blockId)
-    return `<input type="text" value="${answerText}" oninput="window.__updateGap(&quot;${safeBlockId}&quot;,${idx},this.value)" style="display:inline;width:auto;min-width:80px;padding:0.2rem 0.5rem;border:1px dashed var(--primary);border-radius:4px" />`
-  })
-
-  return html
+  ;(answers[blockId] as Record<string, string>)[String(index)] = value
 }
 
 function scrambleWord(word) {
@@ -560,23 +935,53 @@ function getProgressiveStyle(idx) {
   return 'display: none;'
 }
 
+function getProgressPayload(): Record<string, unknown> {
+  return { ...answers, _wagers: { ...wagers }, _confidence: { ...blockConfidence } }
+}
+
+function applySavedProgress(savedRaw: unknown): void {
+  if (!savedRaw || typeof savedRaw !== 'object') return
+  const saved = savedRaw as Record<string, unknown>
+  if (saved._wagers && typeof saved._wagers === 'object') {
+    Object.assign(wagers, saved._wagers)
+  }
+  if (saved._confidence && typeof saved._confidence === 'object') {
+    Object.assign(blockConfidence, saved._confidence)
+  }
+  for (const key of Object.keys(saved)) {
+    if (key !== '_wagers' && key !== '_confidence') {
+      ;(answers as Record<string, unknown>)[key] = saved[key]
+    }
+  }
+}
+
 async function saveProgress() {
-  const current = JSON.stringify(answers)
-  if (current === lastSavedAnswers) return
+  if (saving.value || submitted.value) return
+  const payload = getProgressPayload()
+  const payloadStr = JSON.stringify(payload)
+  if (payloadStr === lastSavedPayload) return
   saving.value = true
   try {
-    localStorage.setItem(`answers_${route.params.id}`, current)
-    await store.saveProgress(route.params.id, {
-      ...answers,
-      _wagers: { ...wagers },
-      _confidence: { ...blockConfidence },
-    })
-    lastSavedAnswers = current
-  } catch {
-    /* silent */
+    localStorage.setItem(`answers_${route.params.id}`, payloadStr)
+    await store.saveProgress(route.params.id, payload)
+    lastSavedPayload = payloadStr
+  } catch (e) {
+    console.warn('Failed to save progress:', e)
   }
   saving.value = false
 }
+
+function scheduleSave() {
+  if (!initialized.value || submitted.value || document.hidden) return
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer)
+  saveDebounceTimer = setTimeout(() => {
+    saveProgress()
+  }, 5000)
+}
+
+watch([answers, wagers, blockConfidence], () => {
+  scheduleSave()
+}, { deep: true })
 
 async function submit() {
   submitting.value = true
@@ -589,7 +994,7 @@ async function submit() {
     submitResult.value = result
     submitted.value = true
     readonly.value = true
-    if (autoSaveTimer) clearInterval(autoSaveTimer)
+    if (saveDebounceTimer) clearTimeout(saveDebounceTimer)
     localStorage.removeItem(`answers_${route.params.id}`)
     if (result.gritBonusAwarded) {
       audioSynth.playLevelUp()
@@ -598,10 +1003,272 @@ async function submit() {
       audioSynth.playComplete()
       uiStore.showToast('Submitted successfully!', 'success')
     }
+    await loadRemediation()
+    await loadRemediationHistory()
   } catch (e) {
     uiStore.showToast(e.message, 'error')
   }
   submitting.value = false
+}
+
+async function loadRemediation() {
+  remediationLoading.value = true
+  try {
+    remediationData.value = await store.fetchRemediation(route.params.id)
+    syncRemediationRoundState()
+  } catch (e) {
+    console.warn('Failed to load remediation:', e)
+    remediationData.value = null
+  } finally {
+    remediationLoading.value = false
+  }
+}
+
+async function loadRemediationHistory() {
+  remediationHistoryLoading.value = true
+  try {
+    const data = await store.fetchStudentRemediationHistory()
+    remediationHistory.value = data?.assignments || []
+  } catch (e) {
+    console.warn('Failed to load remediation history:', e)
+    remediationHistory.value = []
+  } finally {
+    remediationHistoryLoading.value = false
+  }
+}
+
+function getRemediationExerciseId(ex: Record<string, unknown>, exIdx = 0): string {
+  const fromEx = ex?.id
+  if (typeof fromEx === 'string' && fromEx.trim()) return fromEx
+  return `ex_${exIdx}`
+}
+
+function buildDefaultRoundResponse(ex: Record<string, unknown>): unknown {
+  const type = String(ex?.type || '')
+
+  if (type === 'multiple_choice') return []
+  if (type === 'matching') {
+    const initial: Record<string, string> = {}
+    const pairs = Array.isArray(ex?.pairs) ? ex.pairs : []
+    for (let i = 0; i < pairs.length; i++) initial[String(i)] = ''
+    return initial
+  }
+  if (type === 'gap_fill') {
+    const initial: Record<string, string> = {}
+    const template = String(ex?.template || '')
+    const gapCount = (template.match(/\(\(.*?\)\)/g) || []).length
+    for (let i = 0; i < gapCount; i++) initial[String(i)] = ''
+    return initial
+  }
+  if (type === 'word_scramble') {
+    const words = Array.isArray(ex?.words) ? ex.words : []
+    return Array.from({ length: words.length }, () => '')
+  }
+  if (type === 'word_problem') {
+    const initial: Record<string, string> = { final_answer: '' }
+    const steps = Array.isArray(ex?.steps) ? ex.steps : []
+    for (let i = 0; i < steps.length; i++) initial[String(i)] = ''
+    return initial
+  }
+  if (type === 'fraction_input') return { numerator: '', denominator: '' }
+  if (type === 'geometry_shape') return { shape_name: '' }
+  if (type === 'graph_plot') return ''
+  return ''
+}
+
+function syncRemediationRoundState() {
+  const rounds = remediationData.value?.rounds || []
+  for (const round of rounds) {
+    const roundId = String(round.id)
+    if (!remediationRoundResponses[roundId]) remediationRoundResponses[roundId] = {}
+    if (!remediationSelfAssessments[roundId]) remediationSelfAssessments[roundId] = ''
+    if (!remediationRoundStartedAt[roundId]) remediationRoundStartedAt[roundId] = Date.now()
+
+    const exercises = Array.isArray(round.exercises) ? round.exercises : []
+    exercises.forEach((ex: Record<string, unknown>, exIdx: number) => {
+      const exId = getRemediationExerciseId(ex, exIdx)
+      if (remediationRoundResponses[roundId][exId] === undefined) {
+        remediationRoundResponses[roundId][exId] = buildDefaultRoundResponse(ex)
+      }
+    })
+  }
+}
+
+function normalizeGraphPlotResponse(value: unknown): unknown {
+  if (Array.isArray(value)) return value
+  const raw = String(value || '').trim()
+  if (!raw) return []
+  const pairs = raw
+    .split(';')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((entry) => entry.split(',').map((n) => Number(n.trim())))
+    .filter((xy) => xy.length === 2 && Number.isFinite(xy[0]) && Number.isFinite(xy[1]))
+  return pairs
+}
+
+function hasAnyNonEmptyValue(value: unknown): boolean {
+  if (value === null || value === undefined) return false
+  if (typeof value === 'string') return value.trim().length > 0
+  if (typeof value === 'number') return Number.isFinite(value)
+  if (Array.isArray(value)) return value.some((v) => hasAnyNonEmptyValue(v))
+  if (typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).some((v) => hasAnyNonEmptyValue(v))
+  }
+  return false
+}
+
+function normalizeRoundResponses(round: Record<string, unknown>): Record<string, unknown> {
+  const roundId = String(round.id)
+  const responses = remediationRoundResponses[roundId] || {}
+  const normalized: Record<string, unknown> = {}
+  const exercises = Array.isArray(round.exercises) ? round.exercises : []
+
+  exercises.forEach((ex: Record<string, unknown>, exIdx: number) => {
+    const exId = getRemediationExerciseId(ex, exIdx)
+    const type = String(ex?.type || '')
+    const value = responses[exId]
+
+    if (type === 'multiple_choice') {
+      const picked = Array.isArray(value)
+        ? value.map((v) => Number(v)).filter((v) => Number.isFinite(v))
+        : []
+      normalized[exId] = picked.length > 0 ? picked : ''
+      return
+    }
+
+    if (type === 'single_choice' || type === 'true_false') {
+      if (!hasAnyNonEmptyValue(value)) {
+        normalized[exId] = ''
+        return
+      }
+      const n = Number(value)
+      normalized[exId] = Number.isFinite(n) ? n : value
+      return
+    }
+
+    if (type === 'number_line') {
+      if (!hasAnyNonEmptyValue(value)) {
+        normalized[exId] = ''
+        return
+      }
+      const n = Number(value)
+      normalized[exId] = Number.isFinite(n) ? n : ''
+      return
+    }
+
+    if (type === 'fraction_input') {
+      const numRaw = (value as Record<string, unknown>)?.numerator
+      const denRaw = (value as Record<string, unknown>)?.denominator
+      if (!hasAnyNonEmptyValue(numRaw) && !hasAnyNonEmptyValue(denRaw)) {
+        normalized[exId] = ''
+        return
+      }
+      normalized[exId] = {
+        numerator: Number(numRaw),
+        denominator: Number(denRaw),
+      }
+      return
+    }
+
+    if (type === 'graph_plot') {
+      const parsed = normalizeGraphPlotResponse(value)
+      normalized[exId] = Array.isArray(parsed) && parsed.length === 0 ? '' : parsed
+      return
+    }
+
+    if (
+      type === 'matching' ||
+      type === 'gap_fill' ||
+      type === 'word_problem' ||
+      type === 'word_scramble' ||
+      type === 'geometry_shape'
+    ) {
+      normalized[exId] = hasAnyNonEmptyValue(value) ? value : ''
+      return
+    }
+
+    normalized[exId] = hasAnyNonEmptyValue(value) ? value : ''
+  })
+
+  return normalized
+}
+
+async function submitRoundResponses(round: Record<string, unknown>) {
+  const roundId = String(round.id)
+  if (remediationRoundSubmitting[roundId]) return
+
+  remediationRoundSubmitting[roundId] = true
+  try {
+    const time_spent_seconds = Math.max(
+      1,
+      Math.round((Date.now() - Number(remediationRoundStartedAt[roundId] || Date.now())) / 1000),
+    )
+    const responses = normalizeRoundResponses(round)
+    const result = await store.submitRemediationResponses(roundId, { responses, time_spent_seconds })
+    remediationRoundResults[roundId] = result
+    remediationRoundStartedAt[roundId] = Date.now()
+    uiStore.showToast('Remediation responses submitted', 'success')
+    await loadRemediationHistory()
+  } catch (e) {
+    uiStore.showToast(e.message || 'Failed to submit remediation responses', 'error')
+  } finally {
+    remediationRoundSubmitting[roundId] = false
+  }
+}
+
+async function submitRoundSelfAssessment(round: Record<string, unknown>) {
+  const roundId = String(round.id)
+  if (remediationSelfAssessmentSaving[roundId]) return
+  const text = String(remediationSelfAssessments[roundId] || '').trim()
+  if (text.length < 10) {
+    uiStore.showToast('Please write at least 10 characters for your reflection', 'error')
+    return
+  }
+
+  remediationSelfAssessmentSaving[roundId] = true
+  try {
+    await store.submitRemediationSelfAssessment(roundId, text)
+    uiStore.showToast('Reflection saved', 'success')
+    await loadRemediationHistory()
+  } catch (e) {
+    uiStore.showToast(e.message || 'Failed to save reflection', 'error')
+  } finally {
+    remediationSelfAssessmentSaving[roundId] = false
+  }
+}
+
+function getRemediationScrambled(roundId: string, exId: string, wi: number, word: string): string {
+  const key = `${roundId}_${exId}_${wi}`
+  if (!remediationScrambleCache[key]) {
+    remediationScrambleCache[key] = scrambleWord(String(word || ''))
+  }
+  return remediationScrambleCache[key]
+}
+
+const currentAssignmentRemediationHistory = computed(() => {
+  const assignmentId = String(route.params.id)
+  return remediationHistory.value.find((entry: Record<string, unknown>) => String(entry.assignment_id) === assignmentId) || null
+})
+
+function getRoundHistoryMetrics(roundNumber: number): Record<string, unknown> | null {
+  const rounds = currentAssignmentRemediationHistory.value?.rounds || []
+  return rounds.find((r: Record<string, unknown>) => Number(r.round_number) === Number(roundNumber)) || null
+}
+
+async function generateRemediationRound() {
+  if (remediationGenerating.value) return
+  remediationGenerating.value = true
+  try {
+    await store.generateRemediationRound(route.params.id)
+    await loadRemediation()
+    await loadRemediationHistory()
+    uiStore.showToast('Remediation round generated', 'success')
+  } catch (e) {
+    uiStore.showToast(e.message || 'Failed to generate remediation round', 'error')
+  } finally {
+    remediationGenerating.value = false
+  }
 }
 
 function openTutor() {

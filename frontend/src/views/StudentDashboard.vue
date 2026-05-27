@@ -251,6 +251,31 @@
       </div>
 
       <div class="card">
+        <h3>Remediation History</h3>
+        <div v-if="remediationHistory.length === 0" style="color: var(--text-muted)">
+          No remediation rounds yet.
+        </div>
+        <div
+          v-for="entry in remediationHistory"
+          :key="entry.assignment_id"
+          style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color)"
+        >
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap">
+            <router-link :to="`/student/assignment/${entry.assignment_id}`" style="font-weight:600">
+              {{ entry.worksheet_title }}
+            </router-link>
+            <div style="display:flex;gap:0.35rem;flex-wrap:wrap;justify-content:flex-end">
+              <span class="badge">Rounds: {{ entry.round_count || 0 }}</span>
+              <span class="badge">Correct: {{ entry.correct || 0 }}/{{ entry.attempted || 0 }}</span>
+            </div>
+          </div>
+          <div v-if="entry.rounds?.length" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem">
+            Last: {{ entry.rounds[entry.rounds.length - 1]?.summary || 'No summary' }}
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
         <h3>Courses</h3>
         <div v-if="courses.length === 0" style="color: var(--text-muted)">No courses assigned</div>
         <div
@@ -484,6 +509,7 @@ const streakLevel = computed(() => {
 const myClasses = ref([])
 const announcements = ref([])
 const submissions = ref([])
+const remediationHistory = ref([])
 const courses = ref([])
 const gamification = ref(null)
 const masteryList = ref([])
@@ -563,10 +589,11 @@ const xpForNext = computed(() => {
 
 onMounted(async () => {
   try {
-    const [status, ann, _summ, _gam, _mast, _dm] = await Promise.all([
+    const [status, ann, _summ, _remHistory, _gam, _mast, _dm] = await Promise.all([
       classesStore.fetchStudentStatus().catch(() => ({ classes: [] })),
       classesStore.fetchAnnouncements().catch(() => []),
       submissionsStore.fetchStudentSummary().catch(() => []),
+      submissionsStore.fetchStudentRemediationHistory().catch(() => ({ assignments: [] })),
       learningStore.fetchGamification().catch(() => null),
       learningStore.fetchMastery().catch(() => []),
       learningStore.fetchDailyMix().catch(() => []),
@@ -575,6 +602,7 @@ onMounted(async () => {
     myClasses.value = status.classes || []
     announcements.value = ann || []
     submissions.value = submissionsStore.summary
+    remediationHistory.value = _remHistory?.assignments || []
     gamification.value = learningStore.gamification
     masteryList.value = learningStore.mastery
     dailyMix.value = learningStore.dailyMix || []

@@ -10,7 +10,12 @@
       </div>
 
       <template v-if="block.type === 'gap_fill'">
-        <div v-html="renderGapPreview(block.template)"></div>
+        <div>
+          <template v-for="seg in getGapPreviewSegments(block.template)" :key="seg.key">
+            <span v-if="seg.type === 'text'" style="white-space: pre-wrap">{{ seg.text }}</span>
+            <u v-else-if="seg.type === 'gap'" style="color: var(--primary)">{{ seg.answer }}</u>
+          </template>
+        </div>
       </template>
 
       <template v-if="block.type === 'multiple_choice'">
@@ -96,9 +101,44 @@ onMounted(async () => {
   }
 })
 
-function renderGapPreview(template) {
-  if (!template) return ''
-  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
-  return template.replace(/\(\((.*?)\)\)/g, (_m, c) => `<u style="color:var(--primary)">${esc(c)}</u>`)
+function parseGapPreviewTemplate(template: string): Array<
+  | { type: 'text'; text: string; key: string }
+  | { type: 'gap'; answer: string; key: string }
+> {
+  const segments: Array<
+    | { type: 'text'; text: string; key: string }
+    | { type: 'gap'; answer: string; key: string }
+  > = []
+  if (!template) return segments
+  let lastIndex = 0
+  const regex = /\(\((.*?)\)\)/g
+  let match: RegExpExecArray | null
+  while ((match = regex.exec(template)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({
+        type: 'text',
+        text: template.slice(lastIndex, match.index),
+        key: `t_${lastIndex}_${match.index}`,
+      })
+    }
+    segments.push({
+      type: 'gap',
+      answer: match[1],
+      key: `g_${match.index}`,
+    })
+    lastIndex = regex.lastIndex
+  }
+  if (lastIndex < template.length) {
+    segments.push({
+      type: 'text',
+      text: template.slice(lastIndex),
+      key: `t_${lastIndex}_${template.length}`,
+    })
+  }
+  return segments
+}
+
+function getGapPreviewSegments(template: string) {
+  return parseGapPreviewTemplate(template)
 }
 </script>

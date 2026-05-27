@@ -16,6 +16,7 @@ const ALL_TABLES = [
   'assignments',
   'submissions',
   'submission_attempts',
+  'submission_remediation_rounds',
   'peer_reviews',
   'teams',
   'team_members',
@@ -27,6 +28,8 @@ const ALL_TABLES = [
   'learning_queue',
   'ratings',
   'media_files',
+  'workspaces',
+  'workspace_items',
   'settings',
 ]
 

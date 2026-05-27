@@ -4,8 +4,10 @@ import { z } from 'zod'
 import { getKnex } from '../db/knex'
 import { requireAuth, requireRole } from '../middleware/requireAuth'
 import { validate } from '../middleware/validate'
+import { scoreAnswers } from './scoring'
 
 const router = Router()
+const MAX_REMEDIATION_ROUNDS = 2
 
 function normalizeDueDateInput(value: unknown): string | null {
   if (typeof value !== 'string') return null
@@ -31,6 +33,17 @@ function trackedWorksheetSnapshot(worksheet: Record<string, unknown>) {
     rubric_json: worksheet.rubric_json || '',
     in_library: worksheet.in_library || 0,
   })
+}
+
+function remediationBlockText(block: Record<string, unknown>): string {
+  return String(
+    block.text ||
+      block.problem_text ||
+      block.template ||
+      block.title ||
+      block.type ||
+      '',
+  )
 }
 
 async function createWorksheetVersion(
@@ -551,6 +564,163 @@ router.get(
         .orderBy('submissions.submitted_at', 'desc')
 
       res.json({ submissions })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
+
+router.get(
+  '/assignments/:assignmentId/remediation',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const assignment = await knex('assignments').where({ id: req.params.assignmentId }).first()
+      if (!assignment) {
+        res.status(404).json({ error: 'Assignment not found' })
+        return
+      }
+
+      if (req.user!.role === 'teacher' && assignment.created_by !== req.user!.userId) {
+        res.status(403).json({ error: 'Not allowed' })
+        return
+      }
+
+      const worksheet = await knex('worksheets').where({ id: assignment.worksheet_id }).first()
+      if (!worksheet) {
+        res.status(404).json({ error: 'Worksheet not found' })
+        return
+      }
+
+      let blocks: Record<string, unknown>[] = []
+      try {
+        const parsed = JSON.parse(worksheet.content || '{}')
+        blocks = Array.isArray(parsed.blocks) ? parsed.blocks : []
+      } catch {
+        blocks = []
+      }
+
+      const submissions = await knex('submissions')
+        .join('users', 'submissions.user_id', 'users.id')
+        .where('submissions.assignment_id', req.params.assignmentId)
+        .select(
+          'submissions.id',
+          'submissions.user_id',
+          'submissions.answers',
+          'submissions.score',
+          'submissions.max_score',
+          'submissions.submitted_at',
+          'users.name as student_name',
+          'users.username as student_username',
+        )
+        .orderBy('users.name', 'asc')
+
+      const rounds = await knex('submission_remediation_rounds')
+        .where({ assignment_id: req.params.assignmentId })
+        .orderBy('round_number', 'asc')
+
+      const roundsBySubmission = new Map<string, Record<string, unknown>[]>()
+      for (const round of rounds as Record<string, unknown>[]) {
+        const sid = String(round.submission_id)
+        if (!roundsBySubmission.has(sid)) roundsBySubmission.set(sid, [])
+        roundsBySubmission.get(sid)!.push(round)
+      }
+
+      const missMap = new Map<string, { blockId: string; blockType: string; blockText: string; count: number }>()
+
+      const students = (submissions as Record<string, unknown>[]).map((s) => {
+        const submissionId = String(s.id)
+        let answers: Record<string, unknown> = {}
+        try {
+          answers = s.answers ? JSON.parse(String(s.answers)) : {}
+        } catch {
+          answers = {}
+        }
+
+        const scoring = scoreAnswers(blocks as Array<{ id: string; type: string; points: number }>, answers)
+        const wrong = scoring.blockScores.filter((b) => b.maxScore > 0 && b.score < b.maxScore)
+
+        for (const w of wrong) {
+          const b = blocks.find((x) => String(x.id) === w.blockId) || { id: w.blockId, type: 'unknown' }
+          const key = String(w.blockId)
+          const current = missMap.get(key)
+          if (current) current.count += 1
+          else {
+            missMap.set(key, {
+              blockId: key,
+              blockType: String((b as Record<string, unknown>).type || 'unknown'),
+              blockText: remediationBlockText(b as Record<string, unknown>),
+              count: 1,
+            })
+          }
+        }
+
+        const submissionRounds = roundsBySubmission.get(submissionId) || []
+        const latestRound = submissionRounds.length
+          ? submissionRounds[submissionRounds.length - 1]
+          : null
+        const latestAnalysis = latestRound
+          ? JSON.parse(String(latestRound.analysis_json || '{}'))
+          : null
+
+        return {
+          submission_id: submissionId,
+          student_id: String(s.user_id),
+          student_name: String(s.student_name || ''),
+          student_username: String(s.student_username || ''),
+          score: s.score,
+          max_score: s.max_score,
+          submitted_at: s.submitted_at,
+          wrong_count: wrong.length,
+          wrong_blocks: wrong.map((w) => {
+            const b = blocks.find((x) => String(x.id) === w.blockId) || { id: w.blockId, type: 'unknown' }
+            return {
+              blockId: w.blockId,
+              blockType: String((b as Record<string, unknown>).type || 'unknown'),
+              blockText: remediationBlockText(b as Record<string, unknown>),
+              score: w.score,
+              maxScore: w.maxScore,
+            }
+          }),
+          rounds_used: submissionRounds.length,
+          rounds_left: Math.max(0, MAX_REMEDIATION_ROUNDS - submissionRounds.length),
+          latest_round_at: latestRound?.created_at || null,
+          latest_summary: latestAnalysis?.summary || null,
+          rounds: submissionRounds.map((r: Record<string, unknown>) => ({
+            id: r.id,
+            round_number: r.round_number,
+            created_at: r.created_at,
+            analysis: JSON.parse(String(r.analysis_json || '{}')),
+            exercises: JSON.parse(String(r.exercises_json || '[]')),
+            exercise_responses: JSON.parse(String(r.exercise_responses_json || '{}')),
+            self_assessment: r.self_assessment || null,
+            exercises_attempted: r.exercises_attempted || 0,
+            exercises_correct: r.exercises_correct || 0,
+            time_spent_seconds: r.time_spent_seconds || 0,
+          })),
+        }
+      })
+
+      const mostMissed = Array.from(missMap.values())
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 12)
+
+      res.json({
+        assignment: {
+          id: assignment.id,
+          worksheet_id: assignment.worksheet_id,
+          worksheet_title: worksheet.title,
+          subject: worksheet.subject,
+          class_id: assignment.class_id,
+          class_name: assignment.class_name,
+          due_date: assignment.due_date,
+        },
+        limits: { max_rounds: MAX_REMEDIATION_ROUNDS },
+        students,
+        aggregate: { most_missed: mostMissed },
+      })
     } catch (err) {
       next(err)
     }

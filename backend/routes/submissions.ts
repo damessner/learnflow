@@ -6,8 +6,305 @@ import { scoreAnswers } from './scoring'
 import { reviewKnowledgeComponent } from '../services/srs'
 import { addXp, updateStreak, awardActivityBadges } from '../services/gamification'
 import { Rating } from 'ts-fsrs'
+import { z } from 'zod'
+import {
+  createSession,
+  sendPromptStructured,
+  getModelConfig,
+  isOpenCodeAvailable,
+} from '../services/opencode'
 
 const router = Router()
+
+const MAX_REMEDIATION_ROUNDS = 2
+const REMEDIATION_TIMEOUT_MS = 60_000
+
+const RemediationExerciseSchema = z.object({
+  title: z.string(),
+  type: z.string(),
+  id: z.string().optional(),
+  points: z.number().optional(),
+  kc_ids: z.array(z.string()).optional(),
+  template: z.string().optional(),
+  pairs: z.array(z.tuple([z.string(), z.string()])).optional(),
+  options: z.array(z.string()).optional(),
+  correct: z.union([z.array(z.number()), z.number()]).optional(),
+  keywords: z.array(z.string()).optional(),
+  sampleAnswer: z.string().optional(),
+  words: z.array(z.object({ word: z.string() })).optional(),
+  markers: z.array(z.number()).optional(),
+  range: z.tuple([z.number(), z.number()]).optional(),
+  equation: z.string().optional(),
+  final_answer: z.string().optional(),
+  numerator: z.number().optional(),
+  denominator: z.number().optional(),
+  operand1: z.number().optional(),
+  operand2: z.number().optional(),
+  operation: z.string().optional(),
+  points_to_plot: z.array(z.tuple([z.number(), z.number()])).optional(),
+  shape_type: z.string().optional(),
+  problem_text: z.string().optional(),
+  steps: z.array(z.object({ description: z.string(), expected: z.string() })).optional(),
+  statement: z.string().optional(),
+  items: z.array(z.string()).optional(),
+  correct_order: z.array(z.number()).optional(),
+  value: z.number().optional(),
+  total: z.number().optional(),
+  from_value: z.number().optional(),
+  from_unit: z.string().optional(),
+  to_unit: z.string().optional(),
+  angle_value: z.number().optional(),
+  angle_type: z.string().optional(),
+}).passthrough()
+
+const RemediationResultSchema = z.object({
+  summary: z.string(),
+  misconceptions: z.array(z.string()).default([]),
+  custom_instructions: z.array(z.string()).default([]),
+  mermaid: z.string().optional(),
+  exercises: z.array(RemediationExerciseSchema).default([]),
+})
+
+type BlockScore = { blockId: string; score: number; maxScore: number }
+
+function normalizeBlockText(block: Record<string, unknown>): string {
+  return String(
+    block.text ||
+      block.problem_text ||
+      block.template ||
+      block.title ||
+      block.type ||
+      '',
+  )
+}
+
+const SUPPORTED_EXERCISE_TYPES = new Set([
+  'gap_fill', 'matching', 'multiple_choice', 'single_choice', 'short_answer',
+  'word_scramble', 'number_line', 'equation_entry', 'fraction_input',
+  'arithmetic_grid', 'graph_plot', 'geometry_shape', 'word_problem',
+  'true_false', 'ordering', 'percentage', 'unit_conversion', 'angle',
+  'info', 'text', 'read_aloud', 'drawing', 'fraction_model',
+])
+
+const FREE_TEXT_EXERCISE_TYPES = new Set(['short_answer', 'equation_entry', 'word_problem'])
+
+function inferExercisePoints(exercise: Record<string, unknown>): number {
+  const type = String(exercise.type || '')
+  const explicitPoints = Number(exercise.points)
+  if (Number.isFinite(explicitPoints) && explicitPoints > 0) return Math.round(explicitPoints)
+
+  switch (type) {
+    case 'gap_fill': {
+      const template = String(exercise.template || '')
+      return Math.max(1, (template.match(/\(\(.*?\)\)/g) || []).length)
+    }
+    case 'matching': {
+      const pairs = (exercise.pairs || []) as unknown[]
+      return Math.max(1, pairs.length)
+    }
+    case 'word_scramble': {
+      const words = (exercise.words || []) as unknown[]
+      return Math.max(1, words.length)
+    }
+    case 'ordering': {
+      const items = (exercise.items || []) as unknown[]
+      return Math.max(1, items.length)
+    }
+    case 'graph_plot': {
+      const pts = (exercise.points_to_plot || []) as unknown[]
+      return Math.max(1, pts.length)
+    }
+    case 'word_problem': {
+      const steps = (exercise.steps || []) as unknown[]
+      return Math.max(1, steps.length + 1)
+    }
+    case 'number_line': return 1
+    case 'equation_entry': return 1
+    case 'fraction_input': return 1
+    case 'arithmetic_grid': return 1
+    case 'geometry_shape': return 1
+    case 'true_false': return 1
+    case 'percentage': return 1
+    case 'unit_conversion': return 1
+    case 'angle': return 1
+    case 'multiple_choice': {
+      const opts = (exercise.options || []) as unknown[]
+      return Math.max(1, opts.length > 4 ? 2 : 1)
+    }
+    case 'single_choice': return 1
+    case 'info':
+    case 'text':
+    case 'read_aloud':
+    case 'drawing':
+    case 'fraction_model':
+      return 0
+    default:
+      return 1
+  }
+}
+
+function normalizeRemediationExercises(
+  rawExercises: Record<string, unknown>[],
+): Record<string, unknown>[] {
+  const valid: Record<string, unknown>[] = []
+  for (const ex of rawExercises) {
+    if (!ex || typeof ex !== 'object') continue
+    const type = String(ex.type || '')
+    if (!SUPPORTED_EXERCISE_TYPES.has(type)) continue
+    if (typeof ex.title !== 'string' || !ex.title.trim()) continue
+    // Assign id if missing
+    const normalized = { ...ex }
+    if (!normalized.id || typeof normalized.id !== 'string') {
+      normalized.id = uuidv4()
+    }
+    // Infer points
+    normalized.points = inferExercisePoints(normalized)
+    valid.push(normalized)
+  }
+  return valid
+}
+
+function getRemediationPromptVariant(): 'A' | 'B' {
+  return Math.random() < 0.5 ? 'A' : 'B'
+}
+
+function getVariantInstruction(variant: 'A' | 'B'): string {
+  if (variant === 'A') {
+    return [
+      'INSTRUCTION STYLE: DIRECT CORRECTIVE',
+      '- Clearly state the correct answer for each exercise.',
+      '- Explain step-by-step why the student\'s original answer was incorrect.',
+      '- Provide the correct method or rule explicitly.',
+      '- Use direct, clear language without rhetorical questions.',
+      '- Example: "The correct answer is X because Y. Your answer was Z because you forgot to..."',
+    ].join('\n')
+  }
+  return [
+    'INSTRUCTION STYLE: SOCRATIC GUIDED',
+    '- Do NOT give away answers directly.',
+    '- Ask guiding questions that help the student discover the correct answer.',
+    '- Use phrases like "What would happen if..." and "How could we check this?"',
+    '- Encourage self-correction through targeted prompts.',
+    '- Praise partial understanding and build on it with further questions.',
+    '- Example: "Think about what happens when we multiply both sides by 2..."',
+  ].join('\n')
+}
+
+function buildPriorRoundsContext(
+  rounds: Record<string, unknown>[],
+): string {
+  if (rounds.length === 0) return ''
+  const lines: string[] = ['PRIOR REMEDIATION ROUNDS:']
+  for (const r of rounds) {
+    const roundNum = r.round_number || '?'
+    const analysis = JSON.parse(String(r.analysis_json || '{}'))
+    const summary = analysis.summary || ''
+    const exes = JSON.parse(String(r.exercises_json || '[]'))
+    const titles = (Array.isArray(exes) ? exes : [])
+      .map((e: Record<string, unknown>) => `  - "${e.title || 'Untitled'}" (${e.type || 'unknown'})`)
+      .join('\n')
+    lines.push(`Round ${roundNum}: ${summary}`)
+    if (titles) lines.push(`Exercises already given:\n${titles}`)
+  }
+  lines.push('')
+  lines.push('CRITICAL: Do NOT repeat or closely paraphrase any of the above exercises. Create entirely new exercises that target the same concepts from a different angle.')
+  return lines.join('\n')
+}
+
+function buildDifficultyCalibration(wrongDetails: { blockText: string; blockType: string; score: number; maxScore: number }[]): string {
+  if (wrongDetails.length === 0) return ''
+  const lines: string[] = ['DIFFICULTY CALIBRATION PER MISTAKE:']
+  for (const w of wrongDetails) {
+    const ratio = w.maxScore > 0 ? w.score / w.maxScore : 0
+    let level = 'prerequisite'
+    if (ratio >= 0.7) level = 'hint'
+    else if (ratio >= 0.3) level = 'scaffold'
+    lines.push(`- "${w.blockText}" (${w.blockType}): score=${w.score}/${w.maxScore} (ratio=${ratio.toFixed(2)}) -> difficulty=${level}`)
+  }
+  lines.push('')
+  lines.push('Calibration rules for generated exercises:')
+  lines.push('- "hint" difficulty: Student nearly got it. Generate exercises with subtle hints that nudge them to the correct answer.')
+  lines.push('- "scaffold" difficulty: Student has partial understanding. Break the concept into smaller steps or sub-skills.')
+  lines.push('- "prerequisite" difficulty: Student lacks foundational knowledge. Generate exercises on prerequisite concepts first, then build up.')
+  return lines.join('\n')
+}
+
+function validateResponseTextLength(type: string, value: unknown): boolean {
+  if (value === null || value === undefined) return false
+  const str = String(value).trim()
+  if (str.length === 0) return false
+  if (FREE_TEXT_EXERCISE_TYPES.has(type)) {
+    return str.length >= 10
+  }
+  return true
+}
+
+async function generateRemediationWithOpenCode(
+  prompt: string,
+): Promise<z.infer<typeof RemediationResultSchema> | null> {
+  if (!(await isOpenCodeAvailable())) return null
+  try {
+    const sessionId = await createSession('Submission Remediation')
+    const structured = await sendPromptStructured(
+      sessionId,
+      prompt,
+      RemediationResultSchema as unknown as Record<string, unknown>,
+      {
+        model: await getModelConfig(),
+      },
+    )
+    return RemediationResultSchema.parse(structured)
+  } catch {
+    return null
+  }
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = REMEDIATION_TIMEOUT_MS): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+async function generateRemediationWithGemini(
+  prompt: string,
+): Promise<z.infer<typeof RemediationResultSchema> | null> {
+  if (!process.env.GEMINI_API_KEY) return null
+  try {
+    const response = await fetchWithTimeout(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': process.env.GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json' },
+        }),
+      },
+    )
+
+    const data = await response.json()
+    if (!response.ok) return null
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
+    return RemediationResultSchema.parse(JSON.parse(text))
+  } catch {
+    return null
+  }
+}
+
+async function generateRemediation(
+  prompt: string,
+): Promise<z.infer<typeof RemediationResultSchema> | null> {
+  const gemini = await generateRemediationWithGemini(prompt)
+  if (gemini) return gemini
+  return generateRemediationWithOpenCode(prompt)
+}
 
 router.get('/assignment/:id', requireAuth, async (req, res, next) => {
   try {
@@ -93,6 +390,600 @@ router.post('/assignment/:id/save', requireAuth, async (req, res, next) => {
       .update({ answers, updated_at: knex.fn.now() })
 
     res.json({ message: 'Progress saved' })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get('/assignment/:id/remediation', requireAuth, async (req, res, next) => {
+  try {
+    const knex = getKnex()
+    const submission = await knex('submissions')
+      .where({ assignment_id: req.params.id, user_id: req.user!.userId })
+      .first()
+
+    if (!submission) {
+      res.status(404).json({ error: 'Submission not found' })
+      return
+    }
+
+    const assignment = await knex('assignments').where({ id: req.params.id }).first()
+    if (!assignment) {
+      res.status(404).json({ error: 'Assignment not found' })
+      return
+    }
+
+    const worksheet = await knex('worksheets').where({ id: assignment.worksheet_id }).first()
+    if (!worksheet) {
+      res.status(404).json({ error: 'Worksheet not found' })
+      return
+    }
+
+    let blocks: Record<string, unknown>[] = []
+    try {
+      const content = JSON.parse(worksheet.content || '{}')
+      blocks = Array.isArray(content.blocks) ? content.blocks : []
+    } catch {
+      blocks = []
+    }
+
+    const answers = submission.answers ? JSON.parse(submission.answers) : {}
+    const score = scoreAnswers(blocks as Array<{ id: string; type: string; points: number }>, answers)
+    const wrong = score.blockScores.filter((b) => b.maxScore > 0 && b.score < b.maxScore)
+
+    const rounds = await knex('submission_remediation_rounds')
+      .where({ submission_id: submission.id })
+      .orderBy('round_number', 'asc')
+
+    res.json({
+      submissionId: submission.id,
+      assignmentId: assignment.id,
+      worksheetId: worksheet.id,
+      worksheetTitle: worksheet.title,
+      score: submission.score,
+      maxScore: submission.max_score,
+      roundsUsed: rounds.length,
+      roundsLeft: Math.max(0, MAX_REMEDIATION_ROUNDS - rounds.length),
+      canGenerateRound: !!submission.submitted_at && wrong.length > 0 && rounds.length < MAX_REMEDIATION_ROUNDS,
+      wrongBlocks: wrong.map((w) => {
+        const block = blocks.find((b) => String(b.id) === w.blockId) || { id: w.blockId, type: 'unknown' }
+        return {
+          blockId: w.blockId,
+          blockType: String(block.type || 'unknown'),
+          blockText: normalizeBlockText(block),
+          score: w.score,
+          maxScore: w.maxScore,
+          userAnswer: answers[w.blockId],
+        }
+      }),
+      rounds: rounds.map((r: Record<string, unknown>) => ({
+        id: r.id,
+        round_number: r.round_number,
+        created_at: r.created_at,
+        analysis: JSON.parse(String(r.analysis_json || '{}')),
+        exercises: JSON.parse(String(r.exercises_json || '[]')),
+      })),
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/assignment/:id/remediation/generate', requireAuth, async (req, res, next) => {
+  try {
+    const knex = getKnex()
+    const submission = await knex('submissions')
+      .where({ assignment_id: req.params.id, user_id: req.user!.userId })
+      .first()
+
+    if (!submission) {
+      res.status(404).json({ error: 'Submission not found' })
+      return
+    }
+
+    if (!submission.submitted_at) {
+      res.status(400).json({ error: 'Submit the assignment first' })
+      return
+    }
+
+    const assignment = await knex('assignments').where({ id: req.params.id }).first()
+    if (!assignment) {
+      res.status(404).json({ error: 'Assignment not found' })
+      return
+    }
+
+    const worksheet = await knex('worksheets').where({ id: assignment.worksheet_id }).first()
+    if (!worksheet) {
+      res.status(404).json({ error: 'Worksheet not found' })
+      return
+    }
+
+    const rounds = await knex('submission_remediation_rounds')
+      .where({ submission_id: submission.id })
+      .orderBy('round_number', 'asc')
+
+    if (rounds.length >= MAX_REMEDIATION_ROUNDS) {
+      res.status(400).json({ error: `Maximum ${MAX_REMEDIATION_ROUNDS} remediation rounds reached` })
+      return
+    }
+
+    let blocks: Record<string, unknown>[] = []
+    try {
+      const content = JSON.parse(worksheet.content || '{}')
+      blocks = Array.isArray(content.blocks) ? content.blocks : []
+    } catch {
+      blocks = []
+    }
+
+    const answers = submission.answers ? JSON.parse(submission.answers) : {}
+    const score = scoreAnswers(blocks as Array<{ id: string; type: string; points: number }>, answers)
+    const wrong = score.blockScores.filter((b) => b.maxScore > 0 && b.score < b.maxScore)
+
+    if (wrong.length === 0) {
+      res.status(400).json({ error: 'No mistakes found for remediation' })
+      return
+    }
+
+    const wrongDetails = wrong.map((w: BlockScore) => {
+      const block = blocks.find((b) => String(b.id) === w.blockId) || { id: w.blockId, type: 'unknown' }
+      return {
+        blockId: w.blockId,
+        blockType: String(block.type || 'unknown'),
+        blockText: normalizeBlockText(block),
+        score: w.score,
+        maxScore: w.maxScore,
+        userAnswer: answers[w.blockId],
+      }
+    })
+
+    const variant = getRemediationPromptVariant()
+    const priorContext = buildPriorRoundsContext(rounds)
+    const difficultyCal = buildDifficultyCalibration(wrongDetails)
+    const variantInst = getVariantInstruction(variant)
+
+    const prompt = [
+      'You are an expert teacher remediation assistant.',
+      `Worksheet: ${worksheet.title}`,
+      worksheet.subject ? `Subject: ${worksheet.subject}` : '',
+      worksheet.grade_level ? `Grade: ${worksheet.grade_level}` : '',
+      `Student score: ${submission.score ?? 0}/${submission.max_score ?? 0}`,
+      '',
+      priorContext,
+      '',
+      'The following mistakes were made:',
+      JSON.stringify(wrongDetails, null, 2),
+      '',
+      difficultyCal,
+      '',
+      variantInst,
+      '',
+      'Return remediation JSON with this exact schema:',
+      JSON.stringify({
+        summary: 'Brief summary of student issues',
+        misconceptions: ['list of misconceptions found'],
+        custom_instructions: ['practical next steps for this student'],
+        mermaid: 'optional mermaid diagram code',
+        exercises: [
+          {
+            title: 'Exercise title',
+            type: 'gap_fill|matching|multiple_choice|single_choice|short_answer|word_scramble|number_line|equation_entry|fraction_input|arithmetic_grid|graph_plot|geometry_shape|word_problem|true_false|ordering|percentage|unit_conversion|angle',
+            // Type-specific fields (see rules below):
+            template: 'Text with ((gap)) placeholders',       // for gap_fill
+            pairs: [['left', 'right']],                       // for matching
+            options: ['A', 'B', 'C', 'D'],                    // for multiple_choice / single_choice
+            correct: 0,                                       // for single_choice (index), true_false (0/1)
+            keywords: ['kw1', 'kw2'],                         // for short_answer
+            sampleAnswer: 'expected answer',                  // for short_answer
+            words: [{ word: 'scrambled' }],                   // for word_scramble
+            markers: [0, 1, 2],                               // for number_line
+            equation: 'x + 2 = 5',                            // for equation_entry
+            final_answer: '3',                                // for equation_entry, word_problem, percentage, unit_conversion
+            numerator: 1, denominator: 2,                     // for fraction_input
+            operand1: 5, operand2: 3, operation: 'add',       // for arithmetic_grid (add/subtract/multiply/divide)
+            points_to_plot: [[1, 2], [3, 4]],                 // for graph_plot
+            shape_type: 'triangle',                           // for geometry_shape
+            problem_text: 'word problem text',                // for word_problem
+            steps: [{ description: 'Step 1', expected: 'answer1' }], // for word_problem
+            statement: 'True or false statement',             // for true_false
+            items: ['first', 'second', 'third'],              // for ordering
+            correct_order: [2, 0, 1],                         // for ordering
+            value: 75, total: 100,                            // for percentage
+            from_value: 12, from_unit: 'inches', to_unit: 'cm', // for unit_conversion
+            angle_value: 90, angle_type: 'right',             // for angle
+            kc_ids: ['kc-id-1'],                              // optional knowledge component IDs
+          },
+        ],
+      }, null, 2),
+      '',
+      'RULES:',
+      '- Keep language age-appropriate and encouraging.',
+      '- custom_instructions must be practical next steps for THIS student.',
+      '- Create 2 to 4 targeted exercises based on these mistakes.',
+      '- Each exercise MUST have a valid type from the list above.',
+      '- Include type-specific fields matching the chosen type (see schema).',
+      '- Each exercise can optionally include a kc_ids array of knowledge component IDs.',
+      '- Mermaid diagram should be present when useful (flow/steps/concept map).',
+      '- Return only valid JSON, no markdown, no code fences.',
+    ]
+      .filter(Boolean)
+      .join('\n')
+
+    const remediation = await generateRemediation(prompt)
+
+    if (!remediation) {
+      res.status(503).json({ error: 'AI remediation unavailable right now' })
+      return
+    }
+
+    // Normalize exercises to block-based format
+    const normalizedExercises = normalizeRemediationExercises(remediation.exercises || [])
+
+    if (normalizedExercises.length === 0) {
+      res.status(503).json({ error: 'AI returned no valid exercises. Try again.' })
+      return
+    }
+
+    const roundNumber = rounds.length + 1
+    const row = {
+      id: uuidv4(),
+      submission_id: submission.id,
+      assignment_id: assignment.id,
+      user_id: req.user!.userId,
+      round_number: roundNumber,
+      remediation_prompt_variant: variant,
+      mistakes_json: JSON.stringify(wrongDetails),
+      analysis_json: JSON.stringify({
+        summary: remediation.summary,
+        misconceptions: remediation.misconceptions,
+        custom_instructions: remediation.custom_instructions,
+        mermaid: remediation.mermaid,
+      }),
+      exercises_json: JSON.stringify(normalizedExercises),
+    }
+
+    await knex('submission_remediation_rounds').insert(row)
+
+    res.json({
+      round_number: roundNumber,
+      roundsLeft: Math.max(0, MAX_REMEDIATION_ROUNDS - roundNumber),
+      remediation: {
+        summary: remediation.summary,
+        misconceptions: remediation.misconceptions,
+        custom_instructions: remediation.custom_instructions,
+        mermaid: remediation.mermaid,
+        exercises: normalizedExercises,
+      },
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── Submit remediation exercise responses ───────────────────────────────
+router.post('/remediation/round/:roundId/responses', requireAuth, async (req, res, next) => {
+  try {
+    const knex = getKnex()
+    const round = await knex('submission_remediation_rounds')
+      .where({ id: req.params.roundId })
+      .first()
+
+    if (!round) {
+      res.status(404).json({ error: 'Remediation round not found' })
+      return
+    }
+
+    if (round.user_id !== req.user!.userId) {
+      res.status(403).json({ error: 'You can only respond to your own remediation rounds' })
+      return
+    }
+
+    // Parse exercises
+    const exercises: Record<string, unknown>[] = JSON.parse(String(round.exercises_json || '[]'))
+    if (!Array.isArray(exercises) || exercises.length === 0) {
+      res.status(400).json({ error: 'No exercises in this round' })
+      return
+    }
+
+    const { responses, time_spent_seconds } = req.body as {
+      responses: Record<string, unknown>
+      time_spent_seconds?: number
+    }
+
+    if (!responses || typeof responses !== 'object') {
+      res.status(400).json({ error: 'responses object is required' })
+      return
+    }
+
+    // Validate free-text responses
+    for (const ex of exercises) {
+      const exId = String(ex.id || '')
+      const type = String(ex.type || '')
+      const answer = responses[exId]
+      if (!validateResponseTextLength(type, answer)) {
+        res.status(400).json({
+          error: `Invalid response for exercise "${ex.title || exId}". Free-text answers require at least 10 characters.`,
+        })
+        return
+      }
+    }
+
+    // Score responses using the shared scoring engine
+    const scoringResult = scoreAnswers(
+      exercises as Array<{ id: string; type: string; points: number }>,
+      responses,
+    )
+
+    const attempted = exercises.filter((ex) => String(responses[String(ex.id || '')] ?? '') !== '').length
+    const correctCount = scoringResult.blockScores.filter(
+      (bs) => bs.maxScore > 0 && bs.score >= bs.maxScore,
+    ).length
+
+    // Build exercise_responses_json with submitted_at per item
+    const exerciseResponses: Record<string, unknown> = {}
+    const now = new Date().toISOString()
+    for (const ex of exercises) {
+      const exId = String(ex.id || '')
+      exerciseResponses[exId] = {
+        response: responses[exId] ?? null,
+        score: scoringResult.blockScores.find((bs) => bs.blockId === exId)?.score ?? 0,
+        maxScore: scoringResult.blockScores.find((bs) => bs.blockId === exId)?.maxScore ?? 0,
+        submitted_at: now,
+      }
+    }
+
+    // Get worksheet info for mastery topic
+    let worksheetTitle = 'General'
+    let worksheetSubject = ''
+    if (round.assignment_id) {
+      const assign = await knex('assignments').where({ id: round.assignment_id }).first()
+      if (assign) {
+        const w = await knex('worksheets').where({ id: assign.worksheet_id }).first()
+        if (w) {
+          worksheetTitle = w.title || 'General'
+          worksheetSubject = w.subject || ''
+        }
+      }
+    }
+    const topic = worksheetSubject || worksheetTitle || 'General'
+
+    // Update SRS for exercises with kc_ids
+    for (const blockScore of scoringResult.blockScores) {
+      const exercise = exercises.find((e) => String(e.id || '') === blockScore.blockId)
+      if (exercise && Array.isArray(exercise.kc_ids)) {
+        const ratio = blockScore.maxScore > 0 ? blockScore.score / blockScore.maxScore : 0
+        let rating = Rating.Again
+        if (ratio >= 1.0) rating = Rating.Easy
+        else if (ratio >= 0.8) rating = Rating.Good
+        else if (ratio >= 0.5) rating = Rating.Hard
+        else rating = Rating.Again
+
+        for (const kcId of exercise.kc_ids as string[]) {
+          await reviewKnowledgeComponent(req.user!.userId, kcId, rating)
+        }
+      }
+    }
+
+    // Update mastery (once per submission)
+    const ratio = scoringResult.maxScore > 0 ? scoringResult.score / scoringResult.maxScore : 0
+    const pass = ratio >= 0.6
+
+    const existingMastery = await knex('learning_mastery')
+      .where({ user_id: req.user!.userId, topic })
+      .first()
+
+    let masteryBefore = 50
+    let masteryAfter = 50
+
+    if (existingMastery) {
+      masteryBefore = existingMastery.mastery_level
+      masteryAfter = pass
+        ? Math.min(100, masteryBefore + 5)
+        : Math.max(0, masteryBefore - 3)
+      await knex('learning_mastery')
+        .where({ id: existingMastery.id })
+        .update({ mastery_level: masteryAfter, last_practiced_at: knex.fn.now() })
+    } else {
+      masteryBefore = 50
+      masteryAfter = pass ? 55 : 47
+      await knex('learning_mastery').insert({
+        id: uuidv4(),
+        user_id: req.user!.userId,
+        topic,
+        mastery_level: masteryAfter,
+        last_practiced_at: knex.fn.now(),
+      })
+    }
+
+    // Persist all data in the round row
+    const updateData: Record<string, unknown> = {
+      exercise_responses_json: JSON.stringify(exerciseResponses),
+      exercises_attempted: attempted,
+      exercises_correct: correctCount,
+      mastery_before: masteryBefore,
+      mastery_after: masteryAfter,
+    }
+    if (typeof time_spent_seconds === 'number' && time_spent_seconds > 0) {
+      updateData.time_spent_seconds = time_spent_seconds
+    }
+
+    await knex('submission_remediation_rounds').where({ id: round.id }).update(updateData)
+
+    res.json({
+      score: scoringResult.score,
+      maxScore: scoringResult.maxScore,
+      exercises_attempted: attempted,
+      exercises_correct: correctCount,
+      mastery_before: masteryBefore,
+      mastery_after: masteryAfter,
+      feedback: scoringResult.feedback,
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── Self-assessment endpoint ──────────────────────────────────────────
+router.post('/remediation/round/:roundId/self-assessment', requireAuth, async (req, res, next) => {
+  try {
+    const knex = getKnex()
+    const round = await knex('submission_remediation_rounds')
+      .where({ id: req.params.roundId })
+      .first()
+
+    if (!round) {
+      res.status(404).json({ error: 'Remediation round not found' })
+      return
+    }
+
+    if (round.user_id !== req.user!.userId) {
+      res.status(403).json({ error: 'You can only assess your own remediation rounds' })
+      return
+    }
+
+    const { self_assessment } = req.body as { self_assessment?: string }
+    if (!self_assessment || typeof self_assessment !== 'string' || self_assessment.trim().length < 10) {
+      res.status(400).json({ error: 'self_assessment must be at least 10 characters' })
+      return
+    }
+
+    await knex('submission_remediation_rounds')
+      .where({ id: round.id })
+      .update({ self_assessment: self_assessment.trim() })
+
+    res.json({ message: 'Self-assessment saved' })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── A/B prompt variant metrics (teacher/admin) ────────────────────────
+router.get('/remediation/ab-metrics', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
+  try {
+    const knex = getKnex()
+    const rounds = await knex('submission_remediation_rounds').select('*')
+
+    const byVariant: Record<string, Record<string, unknown>[]> = { A: [], B: [] }
+    for (const r of rounds as Record<string, unknown>[]) {
+      const v = String(r.remediation_prompt_variant || 'A')
+      if (!byVariant[v]) byVariant[v] = []
+      byVariant[v].push(r)
+    }
+
+    const result: Record<string, unknown> = {}
+    for (const [variant, variantRounds] of Object.entries(byVariant)) {
+      const n = variantRounds.length
+      const totalAttempted = variantRounds.reduce(
+        (s, r) => s + (Number(r.exercises_attempted) || 0), 0,
+      )
+      const totalCorrect = variantRounds.reduce(
+        (s, r) => s + (Number(r.exercises_correct) || 0), 0,
+      )
+      const totalTime = variantRounds.reduce(
+        (s, r) => s + (Number(r.time_spent_seconds) || 0), 0,
+      )
+
+      result[variant] = {
+        rounds: n,
+        avg_exercises_attempted: n > 0 ? Math.round((totalAttempted / n) * 100) / 100 : 0,
+        avg_exercises_correct: n > 0 ? Math.round((totalCorrect / n) * 100) / 100 : 0,
+        avg_time_spent_seconds: n > 0 ? Math.round((totalTime / n) * 100) / 100 : 0,
+      }
+    }
+
+    // round2_rate: fraction of submissions with >=2 rounds
+    const subCounts = await knex('submission_remediation_rounds')
+      .select('submission_id')
+      .count({ count: '*' })
+      .groupBy('submission_id')
+      .havingRaw('count(*) >= 2')
+
+    const totalSubmissions = await knex('submission_remediation_rounds')
+      .distinct('submission_id')
+      .count({ count: '*' })
+      .first()
+
+    const totalSubCount = Number((totalSubmissions as Record<string, unknown>)?.count || 0)
+    const multiRoundCount = subCounts.length
+
+    result.round2_rate = totalSubCount > 0 ? multiRoundCount / totalSubCount : 0
+
+    res.json(result)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── Student remediation history ───────────────────────────────────────
+router.get('/student/remediation-history', requireAuth, async (req, res, next) => {
+  try {
+    const knex = getKnex()
+    const userId = req.user!.userId
+
+    const rows = await knex('submission_remediation_rounds')
+      .join('assignments', 'submission_remediation_rounds.assignment_id', 'assignments.id')
+      .join('worksheets', 'assignments.worksheet_id', 'worksheets.id')
+      .where('submission_remediation_rounds.user_id', userId)
+      .select(
+        'submission_remediation_rounds.id as round_id',
+        'submission_remediation_rounds.round_number',
+        'submission_remediation_rounds.created_at',
+        'submission_remediation_rounds.analysis_json',
+        'submission_remediation_rounds.exercises_attempted',
+        'submission_remediation_rounds.exercises_correct',
+        'submission_remediation_rounds.time_spent_seconds',
+        'submission_remediation_rounds.remediation_prompt_variant',
+        'assignments.id as assignment_id',
+        'worksheets.id as worksheet_id',
+        'worksheets.title as worksheet_title',
+        'worksheets.subject',
+      )
+      .orderBy('worksheets.title', 'asc')
+      .orderBy('submission_remediation_rounds.round_number', 'asc')
+
+    // Group by assignment
+    const grouped: Record<string, {
+      assignment_id: string
+      worksheet_id: string
+      worksheet_title: string
+      subject: string
+      rounds: Record<string, unknown>[]
+      round_count: number
+      attempted: number
+      correct: number
+    }> = {}
+
+    for (const row of rows as Record<string, unknown>[]) {
+      const assId = String(row.assignment_id || '')
+      if (!grouped[assId]) {
+        grouped[assId] = {
+          assignment_id: assId,
+          worksheet_id: String(row.worksheet_id || ''),
+          worksheet_title: String(row.worksheet_title || ''),
+          subject: String(row.subject || ''),
+          rounds: [],
+          round_count: 0,
+          attempted: 0,
+          correct: 0,
+        }
+      }
+
+      const analysis = JSON.parse(String(row.analysis_json || '{}'))
+      grouped[assId].rounds.push({
+        id: row.round_id,
+        round_number: row.round_number,
+        created_at: row.created_at,
+        summary: analysis.summary || null,
+        exercises_attempted: row.exercises_attempted || 0,
+        exercises_correct: row.exercises_correct || 0,
+        time_spent_seconds: row.time_spent_seconds || 0,
+        remediation_prompt_variant: row.remediation_prompt_variant || null,
+      })
+      grouped[assId].round_count = grouped[assId].rounds.length
+      grouped[assId].attempted += Number(row.exercises_attempted || 0)
+      grouped[assId].correct += Number(row.exercises_correct || 0)
+    }
+
+    res.json({ assignments: Object.values(grouped) })
   } catch (err) {
     next(err)
   }
