@@ -320,6 +320,24 @@
           <label>Ollama Model</label>
           <input v-model="settingsForm.ollama_model" placeholder="llama3" />
         </div>
+        <div style="margin: 0.75rem 0; border-top: 1px dashed var(--border-color)"></div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem">
+          <strong>OpenCode Server</strong> — run <code>opencode serve --port 4096</code> to connect any AI provider (DeepSeek, Claude, GPT, etc.). Select "OpenCode" in the Worksheet Builder.
+        </div>
+        <div class="form-group">
+          <label>OpenCode URL</label>
+          <input v-model="settingsForm.opencode_url" placeholder="http://127.0.0.1:4096" />
+        </div>
+        <div style="display: flex; gap: 0.5rem">
+          <div class="form-group" style="flex: 1">
+            <label>Provider (optional)</label>
+            <input v-model="settingsForm.opencode_provider" placeholder="e.g. deepseek" />
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label>Model (optional)</label>
+            <input v-model="settingsForm.opencode_model" placeholder="e.g. deepseek-v4-flash" />
+          </div>
+        </div>
         <button class="btn-primary" @click="saveSettings" :disabled="savingSettings">
           Save Settings
         </button>
@@ -523,7 +541,14 @@ async function runRestore() {
   }
 }
 
-const settingsForm = ref({ gemini_api_key: '', ollama_url: '', ollama_model: '' })
+const settingsForm = ref({
+  gemini_api_key: '',
+  ollama_url: '',
+  ollama_model: '',
+  opencode_url: '',
+  opencode_provider: '',
+  opencode_model: '',
+})
 const savingSettings = ref(false)
 const settingsSaved = ref(false)
 

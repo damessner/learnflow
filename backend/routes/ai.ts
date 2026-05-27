@@ -91,7 +91,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
         const systemPrompt = `Create an educational worksheet with interactive exercise blocks. Each block has id, type, points, and type-specific fields. For "single_choice", include a "correct" field (integer index of correct option, 0-indexed). For "multiple_choice", include a "correct" field (array of integer indices of correct options, 0-indexed). For concepts involving processes, hierarchies, or relationships, include a "mermaid" field with valid Mermaid.js syntax and an "alt_text" field describing the diagram.`
         const result = await sendPromptStructured(sessionId, prompt, GenerationSchema as unknown as Record<string, unknown>, {
           system: systemPrompt,
-          model: getModelConfig(),
+          model: await getModelConfig(),
         })
         const validated = GenerationSchema.parse(result)
         blocks.push(...validated.blocks)
@@ -205,7 +205,7 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
     if ((await isOpenCodeAvailable()) && !process.env.OLLAMA_URL && !process.env.GEMINI_API_KEY) {
       try {
         const sessionId = await createSession('Socratic Tutor')
-        const text = await sendPrompt(sessionId, question, { system: systemPrompt, model: getModelConfig() })
+        const text = await sendPrompt(sessionId, question, { system: systemPrompt, model: await getModelConfig() })
         res.write(`data: ${JSON.stringify({ text })}\n\n`)
       } catch (e) {
         console.error('OpenCode tutor error:', e)
@@ -310,7 +310,7 @@ Student asks/explains: ${message}`
     if ((await isOpenCodeAvailable()) && !process.env.OLLAMA_URL && !process.env.GEMINI_API_KEY) {
       try {
         const sessionId = await createSession('Protege Student')
-        const text = await sendPrompt(sessionId, message, { system: systemPrompt, model: getModelConfig() })
+        const text = await sendPrompt(sessionId, message, { system: systemPrompt, model: await getModelConfig() })
         res.write(`data: ${JSON.stringify({ text })}\n\n`)
       } catch (e) {
         console.error('OpenCode protege error:', e)
@@ -516,7 +516,7 @@ Mix reading comprehension, vocabulary, and grammar exercises. All content in Ger
         try {
           const sessionId = await createSession('Story Generation')
           const result = await sendPromptStructured(sessionId, storyPrompt, GenerationSchema as unknown as Record<string, unknown>, {
-            model: getModelConfig(),
+            model: await getModelConfig(),
           })
           const parsed = result as { blocks?: z.infer<typeof BlockSchema>[] }
           if (parsed.blocks) {

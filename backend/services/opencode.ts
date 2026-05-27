@@ -1,21 +1,54 @@
 import logger from '../lib/logger'
 import type { OpenCodeClient } from '@opencode-ai/sdk'
+import { getKnex } from '../db/knex'
 
 let clientPromise: Promise<OpenCodeClient> | null = null
+let cachedDbSettings: Record<string, string> | null = null
 
-function getOpenCodeUrl(): string {
-  return process.env.OPENCODE_URL || 'http://127.0.0.1:4096'
+async function getDbSettings(): Promise<Record<string, string>> {
+  if (cachedDbSettings) return cachedDbSettings
+  try {
+    const knex = getKnex()
+    const rows = await knex('settings').select('key', 'value')
+    cachedDbSettings = {}
+    for (const r of rows) cachedDbSettings[r.key] = r.value
+    // Refresh cache every 60 seconds
+    setTimeout(() => { cachedDbSettings = null }, 60000)
+    return cachedDbSettings
+  } catch {
+    return {}
+  }
+}
+
+async function getSetting(key: string, envKey: string, defaultValue: string): Promise<string> {
+  const db = await getDbSettings()
+  return db[key] || process.env[envKey] || defaultValue
+}
+
+export async function getOpenCodeUrlFromSettings(): Promise<string> {
+  return getSetting('opencode_url', 'OPENCODE_URL', 'http://127.0.0.1:4096')
+}
+
+export async function getOpenCodeProvider(): Promise<string | undefined> {
+  const db = await getDbSettings()
+  return db['opencode_provider'] || process.env.OPENCODE_PROVIDER || undefined
+}
+
+export async function getOpenCodeModel(): Promise<string | undefined> {
+  const db = await getDbSettings()
+  return db['opencode_model'] || process.env.OPENCODE_MODEL || undefined
 }
 
 async function getClient(): Promise<OpenCodeClient> {
   if (clientPromise) return clientPromise
 
   try {
+    const url = await getOpenCodeUrlFromSettings()
     const { createOpencodeClient } = await import('@opencode-ai/sdk')
     const c = createOpencodeClient({
-      baseUrl: getOpenCodeUrl(),
+      baseUrl: url,
     })
-    logger.info({ url: getOpenCodeUrl() }, 'OpenCode client initialized')
+    logger.info({ url }, 'OpenCode client initialized')
     clientPromise = Promise.resolve(c)
     return c as OpenCodeClient
   } catch (err) {
@@ -90,9 +123,9 @@ export async function sendPromptStructured(
   return JSON.parse(text)
 }
 
-export function getModelConfig(): { providerID: string; modelID: string } | undefined {
-  const provider = process.env.OPENCODE_PROVIDER
-  const model = process.env.OPENCODE_MODEL
+export async function getModelConfig(): Promise<{ providerID: string; modelID: string } | undefined> {
+  const provider = await getOpenCodeProvider()
+  const model = await getOpenCodeModel()
   if (provider && model) return { providerID: provider, modelID: model }
   return undefined
 }
