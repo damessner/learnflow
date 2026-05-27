@@ -194,6 +194,34 @@
         <FractionInput v-if="!readonly" :block="block" v-model="answers[block.id]" />
       </template>
 
+      <!-- Fraction Model (visual aid — always shown) -->
+      <template v-if="block.type === 'fraction_model'">
+        <div style="margin-bottom:0.5rem" v-if="block.text">{{ block.text }}</div>
+        <div style="display:flex;justify-content:center;padding:0.75rem">
+          <svg :viewBox="playerFractionViewBox(block)" width="220" height="auto" style="max-width:100%">
+            <template v-if="block.model_type === 'circle'">
+              <g v-for="i in playerFractionIndices(block)" :key="i">
+                <path :d="playerFractionSlicePath(i, block)" :fill="i < (block.numerator || 0) ? '#3b82f6' : '#f3f4f6'" stroke="#94a3b8" stroke-width="1" />
+              </g>
+              <circle cx="100" cy="100" r="98" fill="none" stroke="#64748b" stroke-width="1.5" />
+              <text v-if="block.show_labels" x="100" y="105" text-anchor="middle" font-size="16" font-weight="600" fill="#1e293b">
+                {{ block.numerator || 0 }}/{{ block.denominator || 1 }}
+              </text>
+            </template>
+            <template v-else>
+              <g v-for="i in playerFractionIndices(block)" :key="i">
+                <rect :x="i * (240 / Math.max(1, block.denominator || 1))" y="0"
+                  :width="Math.max(0, (240 / Math.max(1, block.denominator || 1)) - 1)" height="60"
+                  :fill="i < (block.numerator || 0) ? '#3b82f6' : '#f3f4f6'" stroke="#94a3b8" stroke-width="1" rx="2" />
+              </g>
+              <text v-if="block.show_labels" x="120" y="82" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">
+                {{ block.numerator || 0 }}/{{ block.denominator || 1 }}
+              </text>
+            </template>
+          </svg>
+        </div>
+      </template>
+
       <template v-if="block.type === 'arithmetic_grid'">
         <ArithmeticGrid v-if="!readonly" :block="block" v-model="answers[block.id]" />
       </template>
@@ -632,5 +660,28 @@ async function sendToTutor() {
   } finally {
     tutorLoading.value = false
   }
+}
+
+/* ---- Fraction model SVG helpers ---- */
+function playerFractionIndices(block) {
+  const n = Math.max(1, Math.min(block.denominator || 1, 20))
+  return Array.from({ length: n }, (_, i) => i)
+}
+function playerFractionViewBox(block) {
+  return block.model_type === 'circle' ? '0 0 200 200' : '0 0 240 90'
+}
+function playerFractionSlicePath(index, block) {
+  const n = Math.max(1, Math.min(block.denominator || 1, 20))
+  if (n === 0) return ''
+  const cx = 100, cy = 100, r = 95
+  const angle = (2 * Math.PI) / n
+  const startAngle = angle * index - Math.PI / 2
+  const endAngle = startAngle + angle
+  const x1 = cx + r * Math.cos(startAngle)
+  const y1 = cy + r * Math.sin(startAngle)
+  const x2 = cx + r * Math.cos(endAngle)
+  const y2 = cy + r * Math.sin(endAngle)
+  const largeArc = angle > Math.PI ? 1 : 0
+  return `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`
 }
 </script>

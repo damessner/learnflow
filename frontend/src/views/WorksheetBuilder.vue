@@ -130,6 +130,7 @@
           <h3 class="sidebar-heading">Mathematik</h3>
           <div class="block-grid">
             <button class="block-btn" @click="addBlock('fraction_input')"><span class="block-btn-icon">🧮</span> Bruch</button>
+            <button class="block-btn" @click="addBlock('fraction_model')"><span class="block-btn-icon">🍕</span> Bruchbild</button>
             <button class="block-btn" @click="addBlock('percentage')"><span class="block-btn-icon">💯</span> Prozent</button>
             <button class="block-btn" @click="addBlock('equation_entry')"><span class="block-btn-icon">=️⃣</span> Gleichung</button>
             <button class="block-btn" @click="addBlock('unit_conversion')"><span class="block-btn-icon">🔄</span> Einheiten</button>
@@ -424,6 +425,62 @@
               </div>
             </template>
 
+            <!-- Fraction Model (Visualizer) -->
+            <template v-if="block.type === 'fraction_model'">
+              <div class="form-group">
+                <textarea v-model="block.text" rows="2" placeholder="Frage oder Anweisung (optional)..." @input="autoExpand($event)"></textarea>
+              </div>
+              <div style="display:flex;gap:0.75rem;align-items:flex-start;flex-wrap:wrap">
+                <div style="display:flex;gap:0.5rem;align-items:center">
+                  <div class="form-group" style="width:70px;margin-bottom:0">
+                    <label>Zähler</label>
+                    <input v-model.number="block.numerator" type="number" min="0" />
+                  </div>
+                  <span style="font-size:1.2rem;margin-top:1.2rem">/</span>
+                  <div class="form-group" style="width:70px;margin-bottom:0">
+                    <label>Nenner</label>
+                    <input v-model.number="block.denominator" type="number" min="1" />
+                  </div>
+                </div>
+                <div class="form-group" style="width:100px;margin-bottom:0">
+                  <label>Darstellung</label>
+                  <select v-model="block.model_type">
+                    <option value="circle">Kreis</option>
+                    <option value="bar">Streifen</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;padding-top:1.2rem">
+                  <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.8rem">
+                    <input type="checkbox" v-model="block.show_labels" /> Beschriftung
+                  </label>
+                </div>
+              </div>
+              <!-- SVG preview -->
+              <div style="margin-top:0.75rem;display:flex;justify-content:center;background:var(--bg-card);border-radius:8px;padding:0.75rem;border:1px solid var(--border-color)">
+                <svg :viewBox="fractionViewBox(block)" :width="fractionSvgWidth(block)" :height="fractionSvgHeight(block)" style="max-width:100%">
+                  <template v-if="block.model_type === 'circle'">
+                    <g v-for="i in fractionIndices(block)" :key="i">
+                      <path :d="fractionSlicePath(i, block)" :fill="i < (block.numerator || 0) ? '#3b82f6' : '#f3f4f6'" stroke="#94a3b8" stroke-width="1" />
+                    </g>
+                    <circle cx="100" cy="100" r="98" fill="none" stroke="#64748b" stroke-width="1.5" />
+                    <text v-if="block.show_labels" x="100" y="105" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">
+                      {{ block.numerator || 0 }}/{{ block.denominator || 1 }}
+                    </text>
+                  </template>
+                  <template v-else>
+                    <g v-for="i in fractionIndices(block)" :key="i">
+                      <rect :x="i * (240 / Math.max(1, block.denominator || 1))" y="0"
+                        :width="Math.max(0, (240 / Math.max(1, block.denominator || 1)) - 1)" height="60"
+                        :fill="i < (block.numerator || 0) ? '#3b82f6' : '#f3f4f6'" stroke="#94a3b8" stroke-width="1" rx="2" />
+                    </g>
+                    <text v-if="block.show_labels" x="120" y="82" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">
+                      {{ block.numerator || 0 }}/{{ block.denominator || 1 }}
+                    </text>
+                  </template>
+                </svg>
+              </div>
+            </template>
+
             <!-- Arithmetic Grid -->
             <template v-if="block.type === 'arithmetic_grid'">
               <div style="display:flex;gap:0.5rem;align-items:center">
@@ -691,6 +748,7 @@ const blockIcons = {
   true_false: '⚖️',
   ordering: '🔢',
   drawing: '🎨',
+  fraction_model: '🍕',
 }
 
 const germanBlockLabel = {
@@ -704,6 +762,7 @@ const germanBlockLabel = {
   percentage: 'Prozent',
   unit_conversion: 'Einheiten',
   angle: 'Winkel',
+  fraction_model: 'Bruchbild',
 }
 
 function getRouteWorksheetId() {
@@ -733,6 +792,12 @@ function mapLoadedBlocks(rawBlocks) {
     if (loaded.type === 'fraction_input') {
       loaded.numerator = loaded.numerator ?? 1
       loaded.denominator = loaded.denominator ?? 2
+    }
+    if (loaded.type === 'fraction_model') {
+      loaded.numerator = loaded.numerator ?? 3
+      loaded.denominator = loaded.denominator ?? 4
+      loaded.model_type = loaded.model_type || 'circle'
+      loaded.show_labels = loaded.show_labels ?? true
     }
     if (loaded.type === 'arithmetic_grid') {
       loaded.operand1 = loaded.operand1 ?? 0
@@ -879,6 +944,39 @@ function inferMimeType(src, kind) {
   return 'video/mp4'
 }
 
+/* ---- Fraction model SVG helpers ---- */
+function fractionIndices(block) {
+  const n = Math.max(1, Math.min(block.denominator || 1, 20))
+  return Array.from({ length: n }, (_, i) => i)
+}
+
+function fractionViewBox(block) {
+  return block.model_type === 'circle' ? '0 0 200 200' : '0 0 240 90'
+}
+
+function fractionSvgWidth(block) {
+  return block.model_type === 'circle' ? 180 : 240
+}
+
+function fractionSvgHeight(block) {
+  return block.model_type === 'circle' ? 180 : 90
+}
+
+function fractionSlicePath(index, block) {
+  const n = Math.max(1, Math.min(block.denominator || 1, 20))
+  if (n === 0) return ''
+  const cx = 100, cy = 100, r = 95
+  const angle = (2 * Math.PI) / n
+  const startAngle = angle * index - Math.PI / 2
+  const endAngle = startAngle + angle
+  const x1 = cx + r * Math.cos(startAngle)
+  const y1 = cy + r * Math.sin(startAngle)
+  const x2 = cx + r * Math.cos(endAngle)
+  const y2 = cy + r * Math.sin(endAngle)
+  const largeArc = angle > Math.PI ? 1 : 0
+  return `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`
+}
+
 function canAiRegenerate(type) {
   return !['media', 'audio', 'video', 'youtube', 'drawing'].includes(type)
 }
@@ -926,6 +1024,13 @@ function addBlock(type) {
   if (type === 'fraction_input') {
     block.numerator = 1
     block.denominator = 2
+  }
+  if (type === 'fraction_model') {
+    block.points = 0
+    block.numerator = 3
+    block.denominator = 4
+    block.model_type = 'circle'
+    block.show_labels = true
   }
   if (type === 'arithmetic_grid') {
     block.operand1 = 23

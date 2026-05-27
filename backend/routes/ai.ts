@@ -80,6 +80,7 @@ const BlockSchema = z.object({
     'percentage',
     'unit_conversion',
     'angle',
+    'fraction_model',
   ]),
   points: z.number().optional().default(1),
   title: z.string().optional(),
@@ -126,6 +127,8 @@ const BlockSchema = z.object({
   to_unit: z.string().optional(),
   expected_degrees: z.number().optional(),
   angle_type: z.string().optional(),
+  model_type: z.string().optional(),
+  show_labels: z.boolean().optional(),
 })
 
 const GenerationSchema = z.object({
@@ -500,6 +503,14 @@ function normalizeGeneratedBlock(raw: unknown): GeneratedBlock | null {
       if (!text) return null
       return { id, type, points: clampPoints(candidate.points, 6), text, expected_degrees, angle_type }
     }
+    case 'fraction_model': {
+      const numerator = typeof candidate.numerator === 'number' ? candidate.numerator : NaN
+      const denominator = typeof candidate.denominator === 'number' ? candidate.denominator : NaN
+      const model_type = typeof candidate.model_type === 'string' ? candidate.model_type.trim() : 'circle'
+      const show_labels = typeof candidate.show_labels === 'boolean' ? candidate.show_labels : true
+      if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return null
+      return { id, type, points: 0, text, numerator, denominator, model_type, show_labels }
+    }
     default:
       return null
   }
@@ -727,6 +738,7 @@ ${blockType === 'drawing' ? `{"id":"uuid","type":"drawing","points":0,"text":"Dr
 ${blockType === 'percentage' ? `{"id":"uuid","type":"percentage","points":N,"text":"Calculate 20% of 50","percentage_value":20,"part_value":10,"whole_value":50}` : ''}
 ${blockType === 'unit_conversion' ? `{"id":"uuid","type":"unit_conversion","points":N,"text":"Convert 150 cm to meters","value":150,"from_unit":"cm","to_unit":"m"}` : ''}
 ${blockType === 'angle' ? `{"id":"uuid","type":"angle","points":N,"text":"What type of angle is 90 degrees?","expected_degrees":90,"angle_type":"right"}` : ''}
+${blockType === 'fraction_model' ? `{"id":"uuid","type":"fraction_model","points":0,"text":"What fraction is shaded?","numerator":3,"denominator":4,"model_type":"circle","show_labels":true}` : ''}
 
 RULES:
 - The block MUST be educationally useful and grade-appropriate
