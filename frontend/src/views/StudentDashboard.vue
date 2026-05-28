@@ -220,31 +220,73 @@
 
     <!-- Tab 2: Courses & Grammar (Kurse & Grammatik) -->
     <div v-if="tab === 'courses'" class="fade-in flex flex-col gap-md" style="display: flex; flex-direction: column; gap: 1rem;">
-      <!-- Grammar Academy Banner -->
-      <div 
-        class="card" 
-        style="
-          background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%), var(--bg-card);
-          border: 2px solid var(--primary-soft);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 1.5rem;
-          padding: 1.5rem;
-        "
-      >
-        <div style="flex: 1; min-width: 250px; text-align: left;">
-          <h3 style="margin-top: 0; background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 1.50rem; display: inline-block;">
-            🏆 Grammar Academy (Grammatik-Akademie)
-          </h3>
-          <p style="margin: 0.5rem 0 0; font-size: 0.95rem; color: var(--text-secondary);">
-            Meistere die 15 Kernbereiche der englischen Grammatik (Klasse 1 / Schulstufe 5) mit Explorer, Pioneer und Master Quests! Sammle Abzeichen und schalte dein maßgeschneidertes AI Finisher Quiz frei.
-          </p>
+
+      <!-- Tool Cards Row -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+
+        <!-- Grammar Academy Banner -->
+        <div
+          class="card"
+          style="
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%), var(--bg-card);
+            border: 2px solid var(--primary-soft);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1.5rem;
+          "
+        >
+          <div style="flex: 1; text-align: left;">
+            <h3 style="margin-top: 0; background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 1.35rem; display: inline-block;">
+              🏆 Grammar Academy
+            </h3>
+            <p style="margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">
+              Master 15 English grammar units with Explorer, Pioneer & Master quests. Earn badges and unlock your AI Finisher Quiz!
+            </p>
+            <div style="display: flex; gap: 0.4rem; margin-top: 0.75rem; flex-wrap: wrap;">
+              <span style="font-size: 0.78rem; background: rgba(99,102,241,0.12); color: var(--primary); padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600;">🧭 Explorer</span>
+              <span style="font-size: 0.78rem; background: rgba(139,92,246,0.12); color: #7c3aed; padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600;">🔍 Pioneer</span>
+              <span style="font-size: 0.78rem; background: rgba(245,158,11,0.12); color: #b45309; padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600;">🏆 Master</span>
+            </div>
+          </div>
+          <button class="btn-primary" style="width: 100%; padding: 0.75rem;" @click="router.push('/grammar-academy')">
+            Akademie betreten ➔
+          </button>
         </div>
-        <button class="btn-primary btn-lg" @click="router.push('/grammar-academy')">
-          Akademie betreten ➔
-        </button>
+
+        <!-- Writing Coach Banner -->
+        <div
+          class="card"
+          style="
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.10) 0%, rgba(6, 182, 212, 0.10) 100%), var(--bg-card);
+            border: 2px solid rgba(16, 185, 129, 0.35);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1.5rem;
+          "
+        >
+          <div style="flex: 1; text-align: left;">
+            <h3 style="margin-top: 0; background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 1.35rem; display: inline-block;">
+              ✍️ Writing Coach
+            </h3>
+            <p style="margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">
+              Guided curriculum writing tasks with pre-writing exercises, gamified word banks, real-time scoring and letter grades A–F.
+            </p>
+            <div style="display: flex; gap: 0.4rem; margin-top: 0.75rem; flex-wrap: wrap;">
+              <span style="font-size: 0.78rem; background: rgba(16,185,129,0.12); color: #059669; padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600;">✅ Pre-writing</span>
+              <span style="font-size: 0.78rem; background: rgba(6,182,212,0.12); color: #0891b2; padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600;">🎯 Word banks</span>
+              <span style="font-size: 0.78rem; background: rgba(99,102,241,0.12); color: var(--primary); padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600;">📊 A–F grades</span>
+            </div>
+          </div>
+          <button
+            class="btn-primary"
+            style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #10b981, #06b6d4); border: none;"
+            @click="router.push('/writing-coach')"
+          >
+            Start Writing ✍️
+          </button>
+        </div>
       </div>
 
       <!-- Assigned Courses Grid -->

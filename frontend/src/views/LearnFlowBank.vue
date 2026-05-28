@@ -3,16 +3,115 @@
     <!-- Header -->
     <div class="bank-header">
       <div class="bank-title-wrapper">
-        <h1 class="bank-title">🏛️ LearnFlowBank</h1>
+        <h1 class="bank-title">🏛️ LearnFlow Bank</h1>
         <p class="bank-subtitle">
-          Discover, preview, and clone premium interactive worksheets created by teachers worldwide.
+          Discover, preview, and clone premium interactive worksheets — including Grammar Academy exercises.
         </p>
       </div>
       <router-link to="/teacher" class="btn btn-secondary"> ← Dashboard </router-link>
     </div>
 
-    <!-- Search & Filter Controls -->
-    <div class="filter-card">
+    <!-- Content Type Switcher -->
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+      <button
+        :class="['tab-pill', { active: bankMode === 'worksheets' }]"
+        @click="bankMode = 'worksheets'"
+      >
+        📝 Worksheets
+      </button>
+      <button
+        :class="['tab-pill', { active: bankMode === 'grammar' }]"
+        @click="bankMode = 'grammar'"
+      >
+        🏆 Grammar Exercises
+      </button>
+    </div>
+
+    <!-- Grammar Exercises Panel -->
+    <div v-if="bankMode === 'grammar'">
+      <!-- Grammar Subject Filter -->
+      <div class="filter-card" style="margin-bottom: 1.5rem;">
+        <div class="filter-section">
+          <label class="filter-label">Grammar Unit:</label>
+          <div class="tags-container" style="margin-top: 0.5rem;">
+            <button :class="['tag-pill', { active: !grammarFilter }]" @click="grammarFilter = ''">All Units</button>
+            <button
+              v-for="unit in grammarUnits"
+              :key="unit.id"
+              :class="['tag-pill', { active: grammarFilter === unit.id }]"
+              @click="grammarFilter = unit.id"
+            >
+              Unit {{ unit.unit }}: {{ unit.title }}
+            </button>
+          </div>
+        </div>
+        <div class="filter-section" style="margin-top: 1rem;">
+          <label class="filter-label">Difficulty:</label>
+          <div class="grade-group" style="margin-top: 0.5rem;">
+            <button :class="['grade-btn', { active: !grammarDifficulty }]" @click="grammarDifficulty = ''">All Levels</button>
+            <button :class="['grade-btn', { active: grammarDifficulty === 'explorer' }]" @click="grammarDifficulty = 'explorer'">🧭 Explorer (Easy)</button>
+            <button :class="['grade-btn', { active: grammarDifficulty === 'pioneer' }]" @click="grammarDifficulty = 'pioneer'">🔍 Pioneer (Medium)</button>
+            <button :class="['grade-btn', { active: grammarDifficulty === 'master' }]" @click="grammarDifficulty = 'master'">🏆 Master (Hard)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grammar Cards Grid -->
+      <div v-if="filteredGrammarExercises.length === 0" class="empty-state">
+        <div class="empty-state-icon">🏆</div>
+        <div class="empty-state-title">No grammar exercises match your filter</div>
+        <div class="empty-state-text">Try clearing the unit or difficulty filters.</div>
+        <button class="btn btn-primary" style="margin-top: 1rem" @click="grammarFilter = ''; grammarDifficulty = ''">
+          Reset Filters
+        </button>
+      </div>
+      <div v-else class="worksheets-grid">
+        <div
+          v-for="ex in filteredGrammarExercises"
+          :key="ex.id"
+          class="ws-card"
+          style="cursor: default;"
+        >
+          <div class="ws-card-header">
+            <span
+              :class="['subject-badge', ex.difficulty === 'explorer' ? 'sub-english' : ex.difficulty === 'pioneer' ? 'sub-science' : 'sub-history']"
+            >
+              {{ ex.difficulty === 'explorer' ? '🧭 Explorer' : ex.difficulty === 'pioneer' ? '🔍 Pioneer' : '🏆 Master' }}
+            </span>
+            <span class="grade-badge">Unit {{ ex.unit }}</span>
+          </div>
+          <div class="ws-card-body">
+            <h3 class="ws-title">{{ ex.topicTitle }}</h3>
+            <p class="ws-desc">{{ ex.description }}</p>
+          </div>
+          <div class="ws-stats">
+            <div class="stat-item" title="Exercise count">
+              <span class="stat-icon">📝</span>
+              <span class="stat-value">{{ ex.questionCount }} Questions</span>
+            </div>
+            <div class="stat-item" title="Difficulty">
+              <span class="stat-icon">⚡</span>
+              <span class="stat-value" style="text-transform: capitalize;">{{ ex.difficulty }}</span>
+            </div>
+            <div class="stat-item" title="Grammar Academy topic">
+              <span class="stat-icon">🏆</span>
+              <span class="stat-value">Badge reward</span>
+            </div>
+          </div>
+          <div class="ws-actions">
+            <button
+              class="btn btn-primary flex-1"
+              @click="openGrammarAcademy(ex.unit)"
+            >
+              Open in Academy ➔
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search & Filter Controls (Worksheets mode) -->
+    <div v-if="bankMode === 'worksheets'" class="filter-card">
       <div class="search-row">
         <div class="search-input-wrapper">
           <span class="search-icon">🔍</span>
@@ -83,13 +182,13 @@
       </div>
     </div>
 
-    <!-- Main Content Area -->
-    <div v-if="loading" class="loading-state">
+    <!-- Main Content Area (Worksheets mode) -->
+    <div v-if="bankMode === 'worksheets' && loading" class="loading-state">
       <div class="spinner"></div>
       <p>Loading premium worksheets...</p>
     </div>
 
-    <template v-else>
+    <template v-if="bankMode === 'worksheets' && !loading">
       <!-- Empty State -->
       <div v-if="worksheets.length === 0" class="empty-state">
         <div class="empty-state-icon">🏛️</div>
@@ -162,7 +261,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWorksheetsStore } from '../stores/worksheets'
 import { useUiStore } from '../stores/ui'
@@ -199,6 +298,91 @@ const uiStore = useUiStore()
 const worksheets = ref([])
 const loading = ref(false)
 const cloningId = ref<string | null>(null)
+
+// Bank mode: 'worksheets' | 'grammar'
+const bankMode = ref<'worksheets' | 'grammar'>('worksheets')
+
+// Grammar filter state
+const grammarFilter = ref('')
+const grammarDifficulty = ref('')
+
+// Grammar exercises built from the curriculum (Units 4–15)
+const GRAMMAR_TOPIC_TITLES: Record<number, string> = {
+  1: 'Verb "to be" & Alphabet',
+  2: 'Articles, Colours & Numbers',
+  3: 'Family & Have Got',
+  4: 'Questions & Negatives with "to be"',
+  5: "Can/Can't & Possessives",
+  6: 'Present Simple Affirmative',
+  7: 'Present Simple Negatives & Articles',
+  8: 'Present Simple Questions',
+  9: 'Question Words & Object Pronouns',
+  10: 'Demonstratives & Prices',
+  11: 'Present Continuous',
+  12: 'Past Simple of "to be"',
+  13: 'Past Simple Regular Verbs',
+  14: 'Past Simple Negatives & Irregular Verbs',
+  15: 'Future Plans: "be going to"',
+}
+
+const GRAMMAR_TOPIC_DESCRIPTIONS: Record<number, string> = {
+  1: 'Introduction to the verb to be and the English alphabet.',
+  2: 'Practice articles (a/an/the), colours, and basic numbers.',
+  3: 'Describe family relationships using have got.',
+  4: 'Build questions and negative statements using the verb "to be".',
+  5: "Express ability using can/can't and describe possession.",
+  6: 'Form positive sentences in the Present Simple including third-person -s.',
+  7: "Use don't/doesn't, articles a/an, and frequency adverbs.",
+  8: 'Form Present Simple questions using do and does.',
+  9: 'Ask questions with question words and use object pronouns.',
+  10: 'Use demonstratives (this/that/these/those) and ask about prices.',
+  11: 'Describe ongoing actions using the -ing form.',
+  12: 'Talk about past events using was and were.',
+  13: 'Form regular past tense verbs with -ed endings.',
+  14: 'Form past negative sentences and use irregular past tense verbs.',
+  15: 'Plan ahead using the be going to future.',
+}
+
+// Flatten all units × 3 difficulties into exercise cards
+const grammarExercises = computed(() => {
+  const units = Object.keys(GRAMMAR_TOPIC_TITLES).map(Number)
+  const difficulties = [
+    { key: 'explorer', label: 'Explorer', questions: 5 },
+    { key: 'pioneer', label: 'Pioneer', questions: 5 },
+    { key: 'master', label: 'Master', questions: 5 },
+  ]
+  const result: any[] = []
+  for (const unit of units) {
+    for (const d of difficulties) {
+      result.push({
+        id: `grammar-${unit}-${d.key}`,
+        unit,
+        difficulty: d.key,
+        topicTitle: GRAMMAR_TOPIC_TITLES[unit],
+        description: GRAMMAR_TOPIC_DESCRIPTIONS[unit],
+        questionCount: d.questions,
+      })
+    }
+  }
+  return result
+})
+
+const grammarUnits = computed(() =>
+  Object.entries(GRAMMAR_TOPIC_TITLES).map(([u, title]) => ({ id: `unit-${u}`, unit: Number(u), title }))
+)
+
+const filteredGrammarExercises = computed(() => {
+  return grammarExercises.value.filter((ex) => {
+    const matchUnit = !grammarFilter.value || grammarFilter.value === `unit-${ex.unit}`
+    const matchDiff = !grammarDifficulty.value || ex.difficulty === grammarDifficulty.value
+    return matchUnit && matchDiff
+  })
+})
+
+function openGrammarAcademy(unit: number) {
+  // Navigate to Grammar Academy with the specific unit pre-selected
+  router.push(`/grammar-academy?unit=${unit}`)
+}
 
 const filters = reactive({
   search: '',
@@ -409,6 +593,7 @@ onMounted(() => {
   fetchWorksheets()
 })
 </script>
+
 
 <style scoped>
 .bank-header {
@@ -757,5 +942,58 @@ onMounted(() => {
 
 .flex-1 {
   flex: 1;
+}
+
+/* Mode switcher tabs */
+.tab-pill {
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  border: 1.5px solid var(--border-color);
+  background: white;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-pill:hover {
+  border-color: var(--primary-soft);
+  color: var(--primary);
+}
+
+.tab-pill.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  max-width: 400px;
 }
 </style>
