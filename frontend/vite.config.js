@@ -12,13 +12,16 @@ export default defineConfig({
     },
   },
   build: {
-    chunkSizeWarningLimit: 800,
+    chunkSizeWarningLimit: 2500,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (id.includes('mermaid')) {
               return 'mermaid'
+            }
+            if (id.includes('chart.js') || id.includes('vue-chartjs')) {
+              return 'chartjs'
             }
             return 'vendor'
           }

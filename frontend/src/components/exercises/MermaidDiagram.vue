@@ -28,13 +28,6 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import mermaid from 'mermaid'
-
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'default',
-  securityLevel: 'strict',
-})
 
 const props = defineProps({
   code: { type: String, default: '' },
@@ -43,12 +36,28 @@ const props = defineProps({
 const diagramEl = ref(null)
 const error = ref(false)
 
+let mermaidInstance = null
+
+async function getMermaid() {
+  if (mermaidInstance) return mermaidInstance
+  const mModule = await import('mermaid')
+  const m = mModule.default || mModule
+  m.initialize({
+    startOnLoad: false,
+    theme: 'default',
+    securityLevel: 'strict',
+  })
+  mermaidInstance = m
+  return m
+}
+
 async function render() {
   if (!props.code || !diagramEl.value) return
   error.value = false
   try {
+    const m = await getMermaid()
     const id = `mermaid-${Date.now()}-${Math.random().toString(36).substring(2)}`
-    const { svg } = await mermaid.render(id, props.code)
+    const { svg } = await m.render(id, props.code)
     diagramEl.value.innerHTML = svg
   } catch {
     error.value = true

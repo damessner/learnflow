@@ -357,7 +357,7 @@ const GRAMMAR_TOPICS: Topic[] = [
 // Dynamically generate default topics for Units 4 to 15 if not fully hardcoded
 for (let u = 4; u <= 15; u++) {
   const titles = [
-    "", "", "", // 1, 2, 3
+    "", "", "", "", // 0, 1, 2, 3
     'Questions & Negatives with "to be"', // 4
     "Can/Can't & Possessives", // 5
     "Present Simple Affirmative", // 6
@@ -373,7 +373,7 @@ for (let u = 4; u <= 15; u++) {
   ]
 
   const descriptions = [
-    "", "", "",
+    "", "", "", "",
     'Practice building questions and negative statements using the verb "to be".',
     "Learn to express actions using can/can't and describe possession.",
     'Master the Present Simple tense in positive sentences, including third-person "-s".',
