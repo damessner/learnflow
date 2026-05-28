@@ -14,7 +14,6 @@
   "dependencies": {
     "@azure/msal-node": "^2.16.2",
     "@learnflow/shared": "*",
-    "@opencode-ai/sdk": "^1.15.10",
     "better-sqlite3": "^12.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -56,6 +55,7 @@
     "vitest": "^4.0.0"
   },
   "optionalDependencies": {
+    "@opencode-ai/sdk": "^2.0.0",
     "@rolldown/binding-linux-x64-gnu": "^1.0.2"
   }
 }

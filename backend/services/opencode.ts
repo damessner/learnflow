@@ -1,6 +1,19 @@
 import logger from '../lib/logger'
-import type { OpenCodeClient } from '@opencode-ai/sdk'
 import { getKnex } from '../db/knex'
+
+// Minimal type for the OpenCode SDK client — avoids depending on @opencode-ai/sdk types
+// which may not be available in CommonJS environments.
+// Minimal client interface — avoids type dependency on @opencode-ai/sdk package.
+// The actual SDK types are richer, but we only access these fields at runtime.
+interface OpenCodeClient {
+  session: {
+    create: (opts: { body: Record<string, unknown> }) => Promise<any>
+    prompt: (opts: { path: { id: string }; body: Record<string, unknown> }) => Promise<any>
+  }
+  global: {
+    health: () => Promise<any>
+  }
+}
 
 let clientPromise: Promise<OpenCodeClient> | null = null
 let cachedDbSettings: Record<string, string> | null = null
@@ -51,8 +64,17 @@ async function getClient(): Promise<OpenCodeClient> {
     logger.info({ url }, 'OpenCode client initialized')
     clientPromise = Promise.resolve(c)
     return c as OpenCodeClient
-  } catch (err) {
-    logger.error({ err }, 'Failed to initialize OpenCode client')
+  } catch (err: any) {
+    const message = err?.message || String(err)
+    // Detect common SDK installation / compatibility issues
+    if (message.includes('ERR_PACKAGE_PATH_NOT_EXPORTED') || message.includes('Cannot find module') || message.includes('@opencode-ai/sdk')) {
+      logger.error(
+        { err },
+        'OpenCode SDK is not installed or incompatible. Use OPENCODE_ZEN_API_KEY instead (no SDK needed), or run: npm install @opencode-ai/sdk',
+      )
+    } else {
+      logger.error({ err }, 'Failed to initialize OpenCode client')
+    }
     clientPromise = null
     throw err
   }

@@ -386,7 +386,7 @@ export function buildWorksheetPrompt({
   parts.push(`- Use plausible distractors for choice questions; never make the correct answer obvious.`)
   parts.push(`- Include a progression: warm-up or orientation, core practice, then at least one more demanding item.`)
   parts.push(`- You MUST ALWAYS start the worksheet with a conceptual explanation inside a block of type "info_box". This block MUST contain:`)
-  parts.push(`  1. A visual Mermaid diagram (using the "mermaid" field) that illustrates the concept, structural flow, or grammatical relations.`)
+  parts.push(`  1. A visual Mermaid diagram (using the "mermaid" field) that illustrates the concept, structural flow, or grammatical relations. Include fun emojis in the diagram node labels to make it visually engaging for students (e.g. 🌟 for key ideas, 📝 for examples, 🔑 for rules, ⚠️ for common mistakes, ✅ for correct, ❌ for wrong).`)
   parts.push(`  2. A clear text explanation.`)
   parts.push(`  3. An informative title (e.g. "Merksatz", "Wusstest du?", "Auf einen Blick").`)
   parts.push(`- After the info_box, generate a variety of interactive exercises. Generate between 8 to 12 scored exercise blocks to make the worksheet longer rather than shorter.`)
@@ -817,6 +817,18 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
   try {
     const request = GenerateRequestSchema.parse(req.body)
     const { prompt, provider, difficulty, length, lernziele, subject, grade_level, title, description, style } = request
+    // Early provider check: fail fast with a helpful message if no provider is reachable
+    const hasGemini = !!process.env.GEMINI_API_KEY
+    const hasZen = !!getZenApiKey()
+    const hasOllama = !!process.env.OLLAMA_URL
+    if (!hasGemini && !hasZen && !hasOllama) {
+      console.error('AI generation failed: No AI provider configured. Set GEMINI_API_KEY or OPENCODE_ZEN_API_KEY in .env')
+      res.status(500).json({
+        error: 'No AI provider is configured. Ask your administrator to set up at least one AI provider (Gemini, OpenCode Zen, or Ollama) in the server .env file.',
+      })
+      return
+    }
+
     const maxAttempts = 3
     let attempt = 0
     let blocks: GeneratedBlock[] = []
@@ -966,6 +978,20 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
             lastError = geminiError || new Error('Gemini failed and no OpenCode Zen fallback configured')
           }
         }
+      }
+
+      // Catch-all: if no provider branch was taken (e.g. wrong provider name, or its key is missing)
+      if (candidateBlocks.length === 0 && !lastError) {
+        const keyStatus: string[] = []
+        if (getZenApiKey()) keyStatus.push('OpenCode Zen (key set)')
+        else keyStatus.push('OpenCode Zen (no key)')
+        if (process.env.GEMINI_API_KEY) keyStatus.push('Gemini (key set)')
+        else keyStatus.push('Gemini (no key)')
+        if (process.env.OLLAMA_URL) keyStatus.push('Ollama (configured)')
+        else keyStatus.push('Ollama (not configured)')
+        const msg = `No AI provider was reachable for provider="${provider}". Available: ${keyStatus.join(', ')}. Check the .env file.`
+        console.error(msg)
+        lastError = new Error(msg)
       }
 
       if (candidateBlocks.length > blocks.length) {
