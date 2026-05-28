@@ -1,15 +1,7 @@
 <template>
   <div class="page">
-    <div style="display: flex; justify-content: space-between; align-items: center">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
       <h2 class="page-title">Teacher Dashboard</h2>
-      <div class="flex gap-sm">
-        <router-link to="/teacher/workspace" class="btn-primary btn-lg"
-          >Subject Workspace</router-link
-        >
-        <router-link to="/teacher/bank" class="btn-primary btn-lg">LearnFlowBank</router-link>
-        <router-link to="/teacher/builder" class="btn-primary btn-lg">Create Worksheet</router-link>
-        <router-link to="/teacher/stories" class="btn-primary btn-lg">Stories</router-link>
-      </div>
     </div>
 
     <div class="tab-pills">
@@ -359,6 +351,135 @@
                         : 'var(--success)',
                   }"
                 ></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Consolidated Class Subject Workspace -->
+          <div class="divider"></div>
+          <div class="workspace-section mt-4" style="text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <h3 style="margin: 0; font-size: 1.25rem;">📚 Subject Groups (Class Workspace)</h3>
+                <p style="margin: 0.15rem 0 0; font-size: 0.85rem; color: var(--text-muted)">
+                  Create subject groups to group courses and standalone worksheets for this class.
+                </p>
+              </div>
+              <button class="btn-primary btn-sm" @click="createWorkspacePrompt">
+                + New Subject Group
+              </button>
+            </div>
+
+            <!-- Workspaces List -->
+            <div v-if="workspaceStore.workspaces.length === 0" class="card empty-state" style="padding: 2rem 1.5rem; text-align: center;">
+              <div class="empty-state-icon" style="font-size: 2.2rem; margin-bottom: 0.5rem;">📚</div>
+              <div class="empty-state-title" style="font-size: 1rem;">No subject groups created</div>
+              <div class="empty-state-text" style="font-size: 0.85rem;">Create a group to organize curriculum paths.</div>
+            </div>
+            
+            <div v-else style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <div 
+                v-for="workspace in workspaceStore.workspaces" 
+                :key="workspace.id"
+                class="card"
+                style="border-left: 4px solid var(--primary); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;"
+              >
+                <div>
+                  <strong style="font-size: 1.05rem;">{{ workspace.name }}</strong>
+                  <span class="badge" style="margin-left: 0.75rem;">
+                    {{ workspace.subject }}
+                  </span>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button class="btn-sm" @click="openWorkspace(workspace.id)">
+                    {{ workspaceData?.workspace?.id === workspace.id ? 'Close Editor' : 'Open Editor ⚙️' }}
+                  </button>
+                  <button class="btn-sm btn-danger" @click="deleteWorkspace(workspace.id)">Delete</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Workspace Details Editor -->
+            <div v-if="workspaceData && workspaceStore.workspaces.some(w => w.id === workspaceData.workspace.id)" class="grid grid-2" style="margin-top: 1.25rem; gap: 1rem;">
+              <!-- Left panel: Meta & Courses -->
+              <div class="card" style="padding: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+                  <h4 style="margin: 0; font-size: 1.1rem;">📚 Group Courses</h4>
+                  <div style="display: flex; gap: 0.25rem;">
+                    <select v-model="newCourseId" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                      <option value="">Add course...</option>
+                      <option v-for="course in availableCourses" :key="course.id" :value="course.id">
+                        {{ course.name }}
+                      </option>
+                    </select>
+                    <button class="btn-sm btn-primary" :disabled="!newCourseId" @click="addItem('course')">
+                      Add
+                    </button>
+                  </div>
+                </div>
+                
+                <div v-if="courseItems.length === 0" style="color: var(--text-muted); font-size: 0.85rem; padding: 1.5rem 0; text-align: center;">
+                  No courses added to this group.
+                </div>
+                <div v-else style="display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div
+                    v-for="(item, index) in courseItems"
+                    :key="item.id"
+                    style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.5rem 0.75rem; display: flex; justify-content: space-between; align-items: center;"
+                  >
+                    <div>
+                      <strong style="font-size: 0.9rem;">📚 {{ item.course_name }}</strong>
+                    </div>
+                    <div style="display: flex; gap: 0.25rem;">
+                      <button class="btn-sm" style="padding: 0.15rem 0.35rem; font-size: 0.75rem;" :disabled="index === 0" @click="moveItem(item.id, -1)">↑</button>
+                      <button class="btn-sm" style="padding: 0.15rem 0.35rem; font-size: 0.75rem;" :disabled="index === courseItems.length - 1" @click="moveItem(item.id, 1)">↓</button>
+                      <button class="btn-sm btn-danger" style="padding: 0.15rem 0.35rem; font-size: 0.75rem;" @click="removeItem(item.id)">×</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right panel: Worksheets -->
+              <div class="card" style="padding: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+                  <h4 style="margin: 0; font-size: 1.1rem;">📝 Standalone Worksheets</h4>
+                  <div style="display: flex; gap: 0.25rem;">
+                    <select v-model="newWorksheetId" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                      <option value="">Add worksheet...</option>
+                      <option
+                        v-for="worksheet in availableWorksheets"
+                        :key="worksheet.id"
+                        :value="worksheet.id"
+                      >
+                        {{ worksheet.title }}
+                      </option>
+                    </select>
+                    <button class="btn-sm btn-primary" :disabled="!newWorksheetId" @click="addItem('worksheet')">
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="worksheetItems.length === 0" style="color: var(--text-muted); font-size: 0.85rem; padding: 1.5rem 0; text-align: center;">
+                  No worksheets added to this group.
+                </div>
+                <div v-else style="display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div
+                    v-for="(item, index) in worksheetItems"
+                    :key="item.id"
+                    style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.5rem 0.75rem; display: flex; justify-content: space-between; align-items: center;"
+                  >
+                    <div>
+                      <strong style="font-size: 0.9rem;">📝 {{ item.worksheet_title }}</strong>
+                    </div>
+                    <div style="display: flex; gap: 0.25rem;">
+                      <button class="btn-sm" style="padding: 0.15rem 0.35rem; font-size: 0.75rem;" :disabled="index === 0" @click="moveItem(item.id, -1)">↑</button>
+                      <button class="btn-sm" style="padding: 0.15rem 0.35rem; font-size: 0.75rem;" :disabled="index === worksheetItems.length - 1" @click="moveItem(item.id, 1)">↓</button>
+                      <button class="btn-sm" style="padding: 0.15rem 0.35rem; font-size: 0.75rem;" @click="router.push(`/teacher/builder/${item.worksheet_id}`)">Edit</button>
+                      <button class="btn-sm btn-danger" style="padding: 0.15rem 0.35rem; font-size: 0.75rem;" @click="removeItem(item.id)">×</button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1747,6 +1868,7 @@ import { useSubmissionsStore } from '../stores/submissions'
 import { useLearningStore } from '../stores/learning'
 import { useUiStore } from '../stores/ui'
 import { useCoursesStore } from '../stores/courses'
+import { useWorkspacesStore } from '../stores/workspaces'
 import { api } from '../services/api'
 
 const router = useRouter()
@@ -1756,6 +1878,7 @@ const submissionsStore = useSubmissionsStore()
 const learningStore = useLearningStore()
 const uiStore = useUiStore()
 const coursesStore = useCoursesStore()
+const workspaceStore = useWorkspacesStore()
 
 const tab = ref('worksheets')
 const tabs = [
@@ -1781,6 +1904,29 @@ const assignmentMap = ref({})
 const assignmentLoading = ref({})
 const selectedClass = ref(null)
 const classProgress = ref([])
+
+const workspaceData = ref<any | null>(null)
+const workspaceForm = ref({ name: '', subject: '' })
+const newCourseId = ref('')
+const newWorksheetId = ref('')
+const draggedItemId = ref('')
+
+const courseItems = computed(() =>
+  (workspaceData.value?.items || []).filter((item: any) => item.item_type === 'course'),
+)
+const worksheetItems = computed(() =>
+  (workspaceData.value?.items || []).filter((item: any) => item.item_type === 'worksheet'),
+)
+
+const availableCourses = computed(() => {
+  const used = new Set(courseItems.value.map((item: any) => item.course_id))
+  return coursesStore.courses.filter((course: any) => !used.has(course.id))
+})
+
+const availableWorksheets = computed(() => {
+  const used = new Set(worksheetItems.value.map((item: any) => item.worksheet_id))
+  return wsStore.worksheets.filter((worksheet: any) => !used.has(worksheet.id))
+})
 const selectedAssignment = ref(null)
 const results = ref([])
 const remediationSummary = ref(null)
@@ -2202,14 +2348,139 @@ async function viewClassProgress(id) {
   if (selectedClass.value === id) {
     selectedClass.value = null
     classProgress.value = []
+    workspaceStore.workspaces = []
+    workspaceData.value = null
     return
   }
   selectedClass.value = id
   try {
     const data = await classesStore.fetchClassProgress(id)
     classProgress.value = data.progress
+    await workspaceStore.fetchWorkspaces(id)
+    workspaceData.value = null
   } catch {
     /* */
+  }
+}
+
+async function createWorkspacePrompt() {
+  if (!selectedClass.value) return
+  const subject = prompt('Subject for this group?', 'Mathematics')
+  if (!subject) return
+  const name = prompt('Name of this subject group?', `Group · ${subject}`)
+  if (!name) return
+
+  try {
+    await workspaceStore.createWorkspace({ class_id: selectedClass.value, subject, name })
+    await workspaceStore.fetchWorkspaces(selectedClass.value)
+    uiStore.showToast('Subject group created', 'success')
+  } catch (e: any) {
+    uiStore.showToast(e.message || 'Failed to create subject group', 'error')
+  }
+}
+
+async function openWorkspace(id: string) {
+  try {
+    if (workspaceData.value?.workspace?.id === id) {
+      workspaceData.value = null
+      return
+    }
+    workspaceData.value = await workspaceStore.fetchWorkspace(id)
+    workspaceForm.value = {
+      name: workspaceData.value.workspace.name || '',
+      subject: workspaceData.value.workspace.subject || '',
+    }
+  } catch (e: any) {
+    uiStore.showToast(e.message || 'Failed to load workspace', 'error')
+  }
+}
+
+async function saveWorkspaceMeta() {
+  if (!workspaceData.value) return
+  try {
+    await workspaceStore.updateWorkspace(workspaceData.value.workspace.id, workspaceForm.value)
+    await openWorkspace(workspaceData.value.workspace.id)
+    await workspaceStore.fetchWorkspaces(selectedClass.value)
+    uiStore.showToast('Workspace updated', 'success')
+  } catch (e: any) {
+    uiStore.showToast(e.message || 'Failed to update workspace', 'error')
+  }
+}
+
+async function deleteWorkspace(id: string) {
+  if (!confirm('Delete this subject group?')) return
+  try {
+    await workspaceStore.deleteWorkspace(id)
+    if (workspaceData.value?.workspace?.id === id) workspaceData.value = null
+    await workspaceStore.fetchWorkspaces(selectedClass.value)
+    uiStore.showToast('Workspace deleted', 'success')
+  } catch (e: any) {
+    uiStore.showToast(e.message || 'Failed to delete workspace', 'error')
+  }
+}
+
+async function addItem(type: 'course' | 'worksheet') {
+  if (!workspaceData.value) return
+  try {
+    await workspaceStore.addItem(workspaceData.value.workspace.id, {
+      item_type: type,
+      course_id: type === 'course' ? newCourseId.value : undefined,
+      worksheet_id: type === 'worksheet' ? newWorksheetId.value : undefined,
+    })
+    if (type === 'course') newCourseId.value = ''
+    else newWorksheetId.value = ''
+    workspaceData.value = await workspaceStore.fetchWorkspace(workspaceData.value.workspace.id)
+    uiStore.showToast(`${type === 'course' ? 'Course' : 'Worksheet'} added`, 'success')
+  } catch (e: any) {
+    uiStore.showToast(e.message || 'Failed to add item', 'error')
+  }
+}
+
+async function removeItem(itemId: string) {
+  if (!workspaceData.value) return
+  try {
+    await workspaceStore.removeItem(workspaceData.value.workspace.id, itemId)
+    workspaceData.value = await workspaceStore.fetchWorkspace(workspaceData.value.workspace.id)
+  } catch (e: any) {
+    uiStore.showToast(e.message || 'Failed to remove item', 'error')
+  }
+}
+
+function startDrag(itemId: string) {
+  draggedItemId.value = itemId
+}
+
+async function dropOn(targetItemId: string) {
+  if (!workspaceData.value || !draggedItemId.value || draggedItemId.value === targetItemId) return
+  const items = [...workspaceData.value.items]
+  const from = items.findIndex((item: any) => item.id === draggedItemId.value)
+  const to = items.findIndex((item: any) => item.id === targetItemId)
+  if (from === -1 || to === -1) return
+  const [moved] = items.splice(from, 1)
+  items.splice(to, 0, moved)
+  await persistOrder(items)
+}
+
+async function moveItem(itemId: string, delta: number) {
+  if (!workspaceData.value) return
+  const items = [...workspaceData.value.items]
+  const index = items.findIndex((item: any) => item.id === itemId)
+  const nextIndex = index + delta
+  if (index === -1 || nextIndex < 0 || nextIndex >= items.length) return
+  ;[items[index], items[nextIndex]] = [items[nextIndex], items[index]]
+  await persistOrder(items)
+}
+
+async function persistOrder(items: any[]) {
+  if (!workspaceData.value) return
+  try {
+    await workspaceStore.reorderItems(
+      workspaceData.value.workspace.id,
+      items.map((item) => item.id),
+    )
+    workspaceData.value.items = items
+  } catch (e: any) {
+    uiStore.showToast(e.message || 'Failed to save order', 'error')
   }
 }
 
