@@ -3,14 +3,38 @@ set -e
 cd /var/www/learnflow
 
 echo "=== LearnFlow Updater ==="
+echo ""
+
+# ── Force mode ──────────────────────────────────────────────────────────
+# If --force or -f is passed, stash all local changes before pulling.
+# This avoids "your local changes would be overwritten" errors.
+FORCE=false
+if [ "$1" = "--force" ] || [ "$1" = "-f" ]; then
+  FORCE=true
+  echo "⚠ Force mode: stashing all local changes..."
+fi
 
 echo "Pulling latest changes..."
+# Preserve .env file
+if [ -f backend/.env ]; then
+  cp backend/.env /tmp/learnflow.env.bak
+fi
+
+# Stash local changes in force mode
+if [ "$FORCE" = true ]; then
+  git stash --include-untracked 2>/dev/null || true
+fi
+
 # Preserve the live database — backup, remove (git may still track it from old history), pull, restore
 if [ -f backend/data/learnflow.db ]; then
   cp backend/data/learnflow.db /tmp/learnflow.db.bak
-  rm -f backend/data/learnflow.db
 fi
 git pull origin main
+# Restore .env
+if [ -f /tmp/learnflow.env.bak ]; then
+  cp /tmp/learnflow.env.bak backend/.env
+  rm /tmp/learnflow.env.bak
+fi
 if [ -f /tmp/learnflow.db.bak ]; then
   cp /tmp/learnflow.db.bak backend/data/learnflow.db
   rm -f /tmp/learnflow.db.bak

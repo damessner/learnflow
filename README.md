@@ -223,6 +223,14 @@ sudo nginx -t && sudo systemctl reload nginx
 cd /var/www/learnflow && bash deployment/update.sh
 ```
 
+**Force update** — if you have local test changes that conflict with `git pull`, this stashes everything first:
+
+```bash
+cd /var/www/learnflow && bash deployment/update.sh --force
+```
+
+The force mode saves your `.env` and database, **stashes all local file changes**, pulls fresh code, restores `.env` and database, rebuilds, and restarts. It's safe to run anytime — even on a first install.
+
 ---
 
 ## 🔌 API Overview
