@@ -1176,8 +1176,8 @@
                 💡 <strong>Crossword:</strong> Enter words and their descriptions/clues.
               </p>
               <div
-                v-for="(item, idx) in block.words || []"
-                :key="idx"
+                v-for="(item, wordIdx) in block.words || []"
+                :key="wordIdx"
                 style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem"
               >
                 <input
@@ -1195,7 +1195,7 @@
                 <button
                   class="btn-sm btn-danger"
                   @click="
-                    block.words.splice(idx, 1);
+                    block.words.splice(wordIdx, 1);
                     updateBlockPoints(block);
                   "
                 >
@@ -1232,8 +1232,8 @@
                 >
                 <div style="display: flex; gap: 0.3rem; flex-wrap: wrap">
                   <div
-                    v-for="(item, idx) in block.words.filter((w) => w.word.trim())"
-                    :key="'g-' + idx"
+                    v-for="(item, previewIdx) in block.words.filter((w) => w.word.trim())"
+                    :key="'g-' + previewIdx"
                     style="text-align: center"
                   >
                     <div style="display: flex; gap: 1px; margin-bottom: 0.15rem">
@@ -1258,7 +1258,7 @@
                       </div>
                     </div>
                     <span style="font-size: 0.62rem; color: var(--text-muted)"
-                      >#{{ Number(idx) + 1 }}</span
+                      >#{{ Number(previewIdx) + 1 }}</span
                     >
                   </div>
                 </div>
@@ -1724,25 +1724,25 @@
                 as the odd one out, and provide the explanation.
               </p>
               <div
-                v-for="(item, idx) in block.items || []"
-                :key="idx"
+                v-for="(item, itemIdx) in block.items || []"
+                :key="itemIdx"
                 style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem; align-items: center"
               >
                 <input
                   type="radio"
                   v-model="block.correct"
-                  :value="idx"
+                  :value="itemIdx"
                   name="odd_one_out_correct"
                 />
                 <input
-                  v-model="block.items[idx]"
-                  :placeholder="`Item ${idx + 1}`"
+                  v-model="block.items[itemIdx]"
+                  :placeholder="`Item ${itemIdx + 1}`"
                   style="flex: 1"
                 />
                 <button
                   class="btn-sm btn-danger"
                   @click="
-                    block.items.splice(idx, 1);
+                    block.items.splice(itemIdx, 1);
                     updateBlockPoints(block);
                   "
                 >

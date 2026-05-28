@@ -95,7 +95,7 @@
       </div>
 
       <p style="margin: 0.35rem 0 0.6rem; color: var(--text-muted); font-size: 0.85rem">
-        KI analysiert deine Fehler und erstellt bis zu 2 individuelle Übungsrunden.
+        KI analysiert deine Fehler und erstellt bis zu 3 individuelle Übungsrunden.
       </p>
 
       <div v-if="remediationLoading" style="color: var(--text-muted)">Loading remediation…</div>
@@ -105,7 +105,7 @@
       <div v-else>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem">
           <span class="badge">Wrong blocks: {{ remediationData.wrongBlocks?.length || 0 }}</span>
-          <span class="badge">Rounds used: {{ remediationData.roundsUsed || 0 }}/2</span>
+          <span class="badge">Rounds used: {{ remediationData.roundsUsed || 0 }}/3</span>
         </div>
 
         <div v-if="(remediationData.wrongBlocks || []).length" style="margin-bottom: 0.5rem">
@@ -621,6 +621,29 @@
         </div>
       </template>
 
+      <template v-if="block.type === 'true_false'">
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap">
+          <label style="display: flex; align-items: center; gap: 0.35rem">
+            <input
+              v-model="answers[block.id]"
+              type="radio"
+              :value="1"
+              :name="`tf_${block.id}`"
+            />
+            True
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.35rem">
+            <input
+              v-model="answers[block.id]"
+              type="radio"
+              :value="0"
+              :name="`tf_${block.id}`"
+            />
+            False
+          </label>
+        </div>
+      </template>
+
       <template v-if="block.type === 'matching'">
         <div
           v-for="(pair, pi) in block.pairs || []"
@@ -997,6 +1020,41 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </template>
+
+      <template v-if="block.type === 'ordering'">
+        <div style="display: flex; flex-direction: column; gap: 0.35rem">
+          <div
+            v-for="(item, orderIdx) in block.items || []"
+            :key="`${block.id}_ord_${orderIdx}`"
+            style="display: flex; gap: 0.5rem; align-items: center"
+          >
+            <span
+              style="
+                min-width: 2rem;
+                text-align: center;
+                font-size: 0.8rem;
+                color: var(--text-muted);
+              "
+              >{{ Number(orderIdx) + 1 }}</span
+            >
+            <input :value="item" readonly style="flex: 1; cursor: default" />
+            <button
+              class="btn-sm"
+              :disabled="readonly || orderIdx === 0"
+              @click="moveOrderingItem(block.id, Number(orderIdx), -1)"
+            >
+              ↑
+            </button>
+            <button
+              class="btn-sm"
+              :disabled="readonly || orderIdx === (block.items || []).length - 1"
+              @click="moveOrderingItem(block.id, Number(orderIdx), 1)"
+            >
+              ↓
+            </button>
+          </div>
         </div>
       </template>
 
@@ -1397,16 +1455,16 @@
           >
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
             <button
-              v-for="(item, idx) in block.items || []"
-              :key="idx"
-              @click="readonly ? null : setOddOneOutSelected(block.id, Number(idx))"
+              v-for="(item, itemIdx) in block.items || []"
+              :key="itemIdx"
+              @click="readonly ? null : setOddOneOutSelected(block.id, Number(itemIdx))"
               class="btn-sm"
               :style="{
                 background:
-                  getOddOneOutSelected(block.id) === Number(idx)
+                  getOddOneOutSelected(block.id) === Number(itemIdx)
                     ? 'var(--primary)'
                     : 'var(--bg-main)',
-                color: getOddOneOutSelected(block.id) === idx ? '#fff' : 'var(--text-main)',
+                color: getOddOneOutSelected(block.id) === itemIdx ? '#fff' : 'var(--text-main)',
                 border: '1px solid var(--border-color)',
                 fontWeight: '600',
                 borderRadius: '8px',
@@ -1788,6 +1846,7 @@ const remediationSelfAssessments = reactive({})
 const remediationSelfAssessmentSaving = reactive({})
 const remediationRoundStartedAt = reactive({})
 const remediationScrambleCache = reactive({})
+const ORDERING_SPLIT_REGEX = /[|,;]/
 
 // ===== Interactive Question Types State & Helpers =====
 const activeGap = ref<{ blockId: string; index: number } | null>(null)
@@ -1886,6 +1945,22 @@ function setQuestionTableValue(blockId: string, rowIndex: number | string, value
     answers[blockId] = {}
   }
   ;(answers[blockId] as Record<string, string>)[String(rowIndex)] = value
+}
+
+function moveOrderingItem(blockId: string, idx: number, direction: number): void {
+  const block = blocks.value.find((b: Record<string, unknown>) => String(b.id) === blockId)
+  if (!block || !Array.isArray(block.items)) return
+
+  const target = idx + direction
+  if (target < 0 || target >= block.items.length) return
+
+  ;[block.items[idx], block.items[target]] = [block.items[target], block.items[idx]]
+
+  const ordered = [...block.items]
+  answers[blockId] = {}
+  ordered.forEach((value, index) => {
+    ;(answers[blockId] as Record<string, string>)[String(index)] = String(value)
+  })
 }
 
 function playAudioUrl(url: string) {
@@ -2053,7 +2128,15 @@ onMounted(async () => {
           else if (b.type === 'matching') answers[b.id] = {}
           else if (b.type === 'word_scramble') answers[b.id] = []
           else if (b.type === 'single_choice') answers[b.id] = null
+          else if (b.type === 'true_false') answers[b.id] = null
           else if (b.type === 'gap_fill') answers[b.id] = {}
+          else if (b.type === 'ordering') {
+            const ordered = Array.isArray(b.items) ? [...b.items] : []
+            answers[b.id] = {}
+            ordered.forEach((value, index) => {
+              ;(answers[b.id] as Record<string, string>)[String(index)] = String(value)
+            })
+          }
           else if (b.type === 'vocabulary') answers[b.id] = {}
           else if (b.type === 'contextual_dialogue') answers[b.id] = {}
           else if (b.type === 'drag_drop') answers[b.id] = {}
@@ -2245,8 +2328,9 @@ watch(
 async function submit() {
   submitting.value = true
   try {
+    const normalizedAnswers = normalizeSubmissionAnswers({ ...(answers as Record<string, unknown>) })
     const result = await store.submitAssignment(route.params.id, {
-      answers: { ...answers },
+      answers: normalizedAnswers,
       wagers: { ...wagers },
       per_block_confidence: { ...blockConfidence },
     })
@@ -2457,6 +2541,36 @@ function normalizeRoundResponses(round: Record<string, unknown>): Record<string,
     normalized[exId] = hasAnyNonEmptyValue(value) ? value : ''
   })
 
+  return normalized
+}
+
+function normalizeSubmissionAnswers(rawAnswers: Record<string, unknown>): Record<string, unknown> {
+  const normalized: Record<string, unknown> = {}
+  for (const block of blocks.value as Array<Record<string, unknown>>) {
+    const blockId = String(block.id || '')
+    if (!blockId) continue
+    const value = rawAnswers[blockId]
+    const type = String(block.type || '')
+
+    if (type === 'ordering') {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const orderedValues = Object.entries(value as Record<string, unknown>)
+          .sort((a, b) => Number(a[0]) - Number(b[0]))
+          .map(([, v]) => String(v))
+        normalized[blockId] = orderedValues
+      } else if (typeof value === 'string') {
+        normalized[blockId] = value
+          .split(ORDERING_SPLIT_REGEX)
+          .map((s) => s.trim())
+          .filter(Boolean)
+      } else {
+        normalized[blockId] = value
+      }
+      continue
+    }
+
+    normalized[blockId] = value
+  }
   return normalized
 }
 

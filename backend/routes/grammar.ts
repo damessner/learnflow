@@ -2,29 +2,49 @@ import { Router, Request, Response, NextFunction } from 'express'
 import fs from 'fs'
 import path from 'path'
 import { requireAuth } from '../middleware/requireAuth'
+import logger from '../lib/logger'
 
 const router = Router()
 const PROGRESS_FILE = path.join(__dirname, '..', 'data', 'grammar_progress.json')
 
+type CompletionState = {
+  explorer: boolean
+  pioneer: boolean
+  master: boolean
+  quizGrade: string | null
+}
+
+type QuizQuestion = {
+  correctIndex: number
+}
+
+type UserProgress = {
+  completions: Record<string, CompletionState>
+  badges: string[]
+  quizzes: Record<string, { questions: QuizQuestion[]; userAnswers?: unknown; grade?: string }>
+}
+
+type GrammarProgressStore = Record<string, UserProgress>
+
 // Helper to read progress
-function readProgress(): Record<string, any> {
+function readProgress(): GrammarProgressStore {
   if (!fs.existsSync(PROGRESS_FILE)) {
     return {}
   }
   try {
-    return JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf-8'))
-  } catch (e) {
-    console.error('Error reading grammar progress file, resetting...', e)
+    return JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf-8')) as GrammarProgressStore
+  } catch (err) {
+    logger.error({ err }, 'Error reading grammar progress file, resetting')
     return {}
   }
 }
 
 // Helper to write progress
-function writeProgress(data: Record<string, any>) {
+function writeProgress(data: GrammarProgressStore) {
   try {
     fs.writeFileSync(PROGRESS_FILE, JSON.stringify(data, null, 2), 'utf-8')
-  } catch (e) {
-    console.error('Error writing grammar progress file', e)
+  } catch (err) {
+    logger.error({ err }, 'Error writing grammar progress file')
   }
 }
 
@@ -533,8 +553,18 @@ router.get('/topics', requireAuth, async (req: Request, res: Response, next: Nex
 router.post('/topics/:id/submit-worksheet', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const topicId = req.params.id as string
-    const { answers, level } = req.body // level: 'explorer' | 'pioneer' | 'master'
+    const {
+      answers,
+      level: rawLevel,
+    } = req.body as { answers?: unknown[]; level?: 'explorer' | 'pioneer' | 'master' }
     const userId = req.user!.userId
+
+    if (!rawLevel || !['explorer', 'pioneer', 'master'].includes(rawLevel)) {
+       res.status(400).json({ error: 'Invalid level' })
+       return
+    }
+    const level = rawLevel
+    const answerList = Array.isArray(answers) ? answers : []
 
     const topic = GRAMMAR_TOPICS.find((t) => t.id === topicId)
     if (!topic) {
@@ -563,28 +593,26 @@ router.post('/topics/:id/submit-worksheet', requireAuth, async (req: Request, re
     if (level === 'explorer') {
       const questions = topic.explorer
       questions.forEach((q, idx) => {
-        const correct = Number(answers[idx]) === q.correctIndex
+        const correct = Number(answerList[idx]) === q.correctIndex
         evaluation.push(correct)
         if (!correct) isCorrect = false
       })
     } else if (level === 'pioneer') {
       const questions = topic.pioneer
       questions.forEach((q, idx) => {
-        const correct = String(answers[idx] || '').trim().toLowerCase() === q.correctAnswer.toLowerCase()
+        const correct =
+          String(answerList[idx] || '').trim().toLowerCase() === q.correctAnswer.toLowerCase()
         evaluation.push(correct)
         if (!correct) isCorrect = false
       })
     } else if (level === 'master') {
       const questions = topic.master
       questions.forEach((q, idx) => {
-        const input = String(answers[idx] || '').trim().toLowerCase()
+        const input = String(answerList[idx] || '').trim().toLowerCase()
         const match = q.correctAnswers.some(ans => ans.toLowerCase() === input)
         evaluation.push(match)
         if (!match) isCorrect = false
       })
-    } else {
-       res.status(400).json({ error: 'Invalid level' })
-       return
     }
 
     // Award badge if all are correct
@@ -600,10 +628,9 @@ router.post('/topics/:id/submit-worksheet', requireAuth, async (req: Request, re
         
         // Award XP via gamification service if possible (or simulate it locally)
         try {
-          const knex = require('../db/knex').getKnex()
           const { addXp } = require('../services/gamification')
           await addXp(userId, 25) // 25 XP per level
-        } catch (e) {
+        } catch (_e) {
           // ignore if gamification unavailable in context
         }
       }
@@ -727,7 +754,7 @@ router.post('/topics/:id/quiz/generate', requireAuth, async (req: Request, res: 
 router.post('/topics/:id/quiz/submit', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const topicId = req.params.id as string
-    const { answers } = req.body // array of 10 answers
+    const { answers } = req.body as { answers?: unknown[] } // array of 10 answers
     const userId = req.user!.userId
 
     const progress = readProgress()
@@ -738,9 +765,10 @@ router.post('/topics/:id/quiz/submit', requireAuth, async (req: Request, res: Re
     }
 
     const quiz = userProgress.quizzes[topicId]
+    const answerList = Array.isArray(answers) ? answers : []
     let correctCount = 0
-    const evaluation = quiz.questions.map((q: any, idx: number) => {
-      const correct = Number(answers[idx]) === q.correctIndex
+    const evaluation = quiz.questions.map((q: QuizQuestion, idx: number) => {
+      const correct = Number(answerList[idx]) === q.correctIndex
       if (correct) correctCount++
       return correct
     })
@@ -756,15 +784,14 @@ router.post('/topics/:id/quiz/submit', requireAuth, async (req: Request, res: Re
 
     // Update completions
     userProgress.completions[topicId].quizGrade = grade
-    quiz.userAnswers = answers
+    quiz.userAnswers = answerList
     quiz.grade = grade
 
     // Award XP for completing finisher quiz
     try {
-      const knex = require('../db/knex').getKnex()
       const { addXp } = require('../services/gamification')
       await addXp(userId, 50) // 50 XP for Finisher Quiz
-    } catch (e) {
+    } catch (_e) {
       // ignore
     }
 

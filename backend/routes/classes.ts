@@ -8,6 +8,15 @@ import crypto from 'crypto'
 
 const router = Router()
 
+function generateSecureClassCode(): string {
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789'
+  let raw = ''
+  for (let i = 0; i < 8; i++) {
+    raw += chars[crypto.randomInt(0, chars.length)]
+  }
+  return `${raw.slice(0, 4)}-${raw.slice(4)}`
+}
+
 function escapeCsvField(field: string): string {
   const str = String(field ?? '')
   if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
@@ -48,7 +57,19 @@ router.post('/', requireAuth, requireRole('teacher', 'admin'), async (req, res, 
   try {
     const knex = getKnex()
     const id = uuidv4()
-    const classCode = `${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 6)}`
+    let classCode = ''
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const candidate = generateSecureClassCode()
+      const exists = await knex('classes').where({ class_code: candidate }).first()
+      if (!exists) {
+        classCode = candidate
+        break
+      }
+    }
+    if (!classCode) {
+      res.status(503).json({ error: 'Unable to allocate unique class code. Please retry.' })
+      return
+    }
 
     await knex('classes').insert({
       id,

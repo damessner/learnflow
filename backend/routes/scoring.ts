@@ -53,6 +53,8 @@ interface Block {
   type: string
   points: number
   correct?: number[] | number
+  correct_answer?: boolean
+  correct_order?: number[]
   options?: string[]
   pairs?: [string, string][]
   items?: string[]
@@ -120,6 +122,41 @@ function getGapValue(answer: Record<string, unknown>, index: number, key: string
   return String(answer[key] || '')
 }
 
+function normalizeBoolLike(value: unknown): boolean | null {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'number') {
+    if (value === 1) return true
+    if (value === 0) return false
+  }
+  if (typeof value === 'string') {
+    const lowered = value.trim().toLowerCase()
+    if (['true', '1', 'yes', 'y'].includes(lowered)) return true
+    if (['false', '0', 'no', 'n'].includes(lowered)) return false
+  }
+  return null
+}
+
+function normalizeOrderingAnswer(answer: unknown): Array<string | number> {
+  if (Array.isArray(answer)) return answer.map((v) => (typeof v === 'number' ? v : String(v).trim()))
+
+  if (answer && typeof answer === 'object') {
+    const values = Object.entries(answer as Record<string, unknown>)
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([, v]) => v)
+    return values.map((v) => (typeof v === 'number' ? v : String(v).trim()))
+  }
+
+  if (typeof answer === 'string') {
+    const normalized = answer
+      .split(/[|,;]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+    return normalized
+  }
+
+  return []
+}
+
 export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>): ScoreResult {
   let totalScore = 0
   let totalMax = 0
@@ -157,6 +194,17 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           } else {
             feedback.push('Single choice: incorrect')
           }
+          break
+        }
+        case 'true_false': {
+          const expected =
+            typeof block.correct_answer === 'boolean'
+              ? block.correct_answer
+              : normalizeBoolLike(block.correct)
+          const actual = normalizeBoolLike(userAnswer)
+          const isCorrect = expected !== null && actual !== null && expected === actual
+          earned = isCorrect ? block.points : 0
+          feedback.push(`True/false: ${isCorrect ? 'correct' : 'incorrect'}`)
           break
         }
         case 'matching':
@@ -310,6 +358,30 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           }
           earned = rows.length > 0 ? Math.round((correctCount / rows.length) * block.points) : 0
           feedback.push(`Question table: ${correctCount}/${rows.length}`)
+          break
+        }
+        case 'ordering': {
+          const expectedByText = (block.items || []).map((i) => i.trim())
+          const expectedByIndex =
+            Array.isArray(block.correct_order) && block.correct_order.length === expectedByText.length
+              ? block.correct_order
+              : expectedByText.map((_, i) => i)
+
+          const normalizedAnswer = normalizeOrderingAnswer(userAnswer)
+          const asText = normalizedAnswer.map((v) => String(v).trim())
+          const asIndex = normalizedAnswer.map((v) => Number(v))
+
+          const textMatch =
+            asText.length === expectedByText.length &&
+            asText.every((value, idx) => value === expectedByText[idx])
+
+          const indexMatch =
+            asIndex.length === expectedByIndex.length &&
+            asIndex.every((value, idx) => Number.isFinite(value) && value === expectedByIndex[idx])
+
+          const isCorrect = textMatch || indexMatch
+          earned = isCorrect ? block.points : 0
+          feedback.push(`Ordering: ${isCorrect ? 'correct' : 'incorrect'}`)
           break
         }
         case 'crossword': {
