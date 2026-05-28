@@ -621,11 +621,23 @@
                 💡 <strong>Crossword:</strong> Enter words and their descriptions/clues.
               </p>
               <div v-for="(item, idx) in block.words || []" :key="idx" style="display:flex;gap:0.5rem;margin-bottom:0.25rem">
-                <input v-model="item.word" placeholder="Word (e.g. HELLO)" style="flex: 1" @input="updateBlockPoints(block)" />
+                <input v-model="item.word" placeholder="Word (e.g. HELLO)" style="flex: 1;text-transform:uppercase;font-family:monospace" @input="updateBlockPoints(block)" />
                 <input v-model="item.description" placeholder="Description/Clue (e.g. A greeting)" style="flex: 2" @input="updateBlockPoints(block)" />
                 <button class="btn-sm btn-danger" @click="block.words.splice(idx, 1); updateBlockPoints(block)">×</button>
               </div>
               <button class="btn-sm" @click="block.words = [...(block.words || []), { word: '', description: '' }]; updateBlockPoints(block)">+ Add Clue/Word</button>
+              <!-- Live grid preview -->
+              <div v-if="(block.words || []).length > 0" style="margin-top:0.5rem;padding:0.5rem;background:var(--bg-main);border-radius:6px">
+                <span style="font-size:0.7rem;color:var(--text-muted);display:block;margin-bottom:0.35rem">Grid Preview:</span>
+                <div style="display:flex;gap:0.3rem;flex-wrap:wrap">
+                  <div v-for="(item, idx) in block.words.filter(w => w.word.trim())" :key="'g-'+idx" style="text-align:center">
+                    <div style="display:flex;gap:1px;margin-bottom:0.15rem">
+                      <div v-for="ch in item.word.toUpperCase()" :key="ch" style="width:22px;height:22px;border:1px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:monospace;background:#fff;border-radius:2px">{{ ch }}</div>
+                    </div>
+                    <span style="font-size:0.62rem;color:var(--text-muted)">#{{ Number(idx) + 1 }}</span>
+                  </div>
+                </div>
+              </div>
             </template>
 
             <!-- Media / Audio / Video -->

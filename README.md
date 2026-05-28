@@ -87,7 +87,7 @@ It's self-hosted, runs on modest hardware, works offline as a PWA, and it's comp
 | 🖥️ **Backend** | Node.js 22+, Express 4, TypeScript (strict) |
 | 🎨 **Frontend** | Vue 3 (Composition API), Vite 6, Pinia, Vue Router 4 |
 | 🗄️ **Database** | SQLite (dev) / PostgreSQL (prod), **Knex** query builder + migrations |
-| 🤖 **AI Providers** | Google Gemini 3.5 Flash, **OpenCode** (75+ providers via OpenCode server — DeepSeek V4 Flash, Claude, GPT-4o, etc.), Ollama (local models) |
+| 🤖 **AI Providers** | **Google Gemini 2.0 Flash**, **OpenCode Zen** (free DeepSeek V4 Flash via API — no server needed), **OpenCode** (75+ providers via OpenCode server — DeepSeek V4 Flash, Claude, GPT-4o, etc.), **Ollama** (local models) |
 | 🧮 **SRS Engine** | [ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs) v5 |
 | 📊 **Diagrams** | Mermaid.js |
 | 📐 **Math** | KaTeX |
@@ -133,17 +133,23 @@ Log in with one of the seed accounts:
 
 Guest class code: `5a1b-c3d4`
 
+> **💡 Tip:** If you configure both Gemini and OpenCode Zen, the system automatically **falls back** to OpenCode Zen if Gemini fails — giving you two shots at generation.
+
 ### 🧠 Connect an AI Provider
 
 ```bash
-# Option A: Google Gemini (simplest)
+# Option A: OpenCode Zen (free, no server needed — recommended)
+# Get your API key at https://opencode.ai/auth
+OPENCODE_ZEN_API_KEY=oc_your-key-here
+
+# Option B: Google Gemini
 GEMINI_API_KEY=your-key-here
 
-# Option B: Ollama (local, free)
+# Option C: Ollama (local, free)
 OLLAMA_URL=http://localhost:11434
 OLLAMA_MODEL=llama3
 
-# Option C: OpenCode (75+ models — DeepSeek, Claude, GPT, etc.)
+# Option D: OpenCode server (75+ models — DeepSeek, Claude, GPT, etc.)
 # npm install -g opencode-ai
 # opencode serve --port 4096
 OPENCODE_URL=http://127.0.0.1:4096

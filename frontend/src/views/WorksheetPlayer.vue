@@ -690,28 +690,94 @@
 
       <!-- Crossword -->
       <template v-if="block.type === 'crossword'">
-        <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:0.5rem">
-          <div v-for="(item, idx) in block.words || []" :key="idx" style="background:var(--bg-main);padding:0.75rem;border-radius:8px;border:1px solid var(--border-color)">
-            <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.4rem">
-              {{ Number(idx) + 1 }}. {{ item.description }} <span style="font-size:0.8rem;color:var(--text-muted)">({{ (item.word || '').length }} letters)</span>
+        <div v-if="crosswordLayout.rows > 0" style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:0.5rem">
+          <!-- Crossword Grid -->
+          <div style="flex-shrink:0">
+            <div
+              :style="{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${crosswordLayout.cols}, 36px)`,
+                gap: '1px',
+                background: '#bbb',
+                border: '2px solid #999',
+                borderRadius: '4px',
+                overflow: 'hidden',
+              }"
+            >
+              <template v-for="r in crosswordLayout.rows" :key="r">
+                <div
+                  v-for="c in crosswordLayout.cols"
+                  :key="`${r}-${c}`"
+                  :style="{
+                    width: '36px',
+                    height: '36px',
+                    background: crosswordLayout.grid[r-1][c-1].isActive ? '#fff' : '#333',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    boxSizing: 'border-box',
+                  }"
+                >
+                  <!-- Cell number -->
+                  <span
+                    v-if="crosswordLayout.grid[r-1][c-1].number"
+                    style="position:absolute;top:1px;left:3px;font-size:9px;font-weight:700;color:#666;pointer-events:none;line-height:1"
+                  >
+                    {{ crosswordLayout.grid[r-1][c-1].number }}
+                  </span>
+                  <!-- Letter input (active cells only) -->
+                  <input
+                    v-if="crosswordLayout.grid[r-1][c-1].isActive"
+                    :ref="(el) => setCrosswordCellRef(r-1, c-1, el as HTMLInputElement | null)"
+                    maxlength="1"
+                    :disabled="readonly"
+                    :value="getCrosswordChar(block.id, crosswordLayout.grid[r-1][c-1].wordIndices[0], crosswordLayout.grid[r-1][c-1].charPositions[crosswordLayout.grid[r-1][c-1].wordIndices[0]])"
+                    @input="onCrosswordInput(block.id, crosswordLayout.grid[r-1][c-1], ($event.target as HTMLInputElement).value, $event)"
+                    @keydown="onCrosswordKeydown(block.id, crosswordLayout.grid[r-1][c-1], $event)"
+                    :style="{
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                      textAlign: 'center',
+                      fontSize: '18px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      padding: 0,
+                      outline: 'none',
+                      background: 'transparent',
+                      caretColor: readonly ? 'transparent' : 'var(--primary)',
+                    }"
+                    class="crossword-cell-input"
+                  />
+                </div>
+              </template>
             </div>
-            <!-- Letter Boxes -->
-            <div style="display:flex;gap:0.25rem">
-              <input
-                v-for="charIdx in (item.word || '').length"
-                :key="charIdx"
-                maxlength="1"
-                :disabled="readonly"
-                :value="getCrosswordChar(block.id, Number(idx), Number(charIdx) - 1)"
-                @input="setCrosswordChar(block.id, Number(idx), Number(charIdx) - 1, ($event.target as HTMLInputElement).value, item.word.length, $event)"
-                style="width:32px;height:32px;text-align:center;font-size:1.1rem;font-weight:bold;text-transform:uppercase;padding:0;border:1px solid var(--border-color);border-radius:4px"
-                class="crossword-char-input"
-                :data-word="idx"
-                :data-char="charIdx - 1"
-              />
+          </div>
+
+          <!-- Clues -->
+          <div style="flex:1;min-width:200px">
+            <div v-if="crosswordLayout.acrossClues.length" style="margin-bottom:1rem">
+              <h4 style="font-size:0.9rem;margin-bottom:0.35rem">Across</h4>
+              <div v-for="clue in crosswordLayout.acrossClues" :key="'a'+clue.number" style="font-size:0.85rem;margin-bottom:0.2rem">
+                <strong>{{ clue.number }}.</strong> {{ clue.clue }}
+                <span style="color:var(--text-muted);font-size:0.75rem">
+                  ({{ block.words?.[clue.wordIdx]?.word?.length || '?' }})
+                </span>
+              </div>
+            </div>
+            <div v-if="crosswordLayout.downClues.length">
+              <h4 style="font-size:0.9rem;margin-bottom:0.35rem">Down</h4>
+              <div v-for="clue in crosswordLayout.downClues" :key="'d'+clue.number" style="font-size:0.85rem;margin-bottom:0.2rem">
+                <strong>{{ clue.number }}.</strong> {{ clue.clue }}
+                <span style="color:var(--text-muted);font-size:0.75rem">
+                  ({{ block.words?.[clue.wordIdx]?.word?.length || '?' }})
+                </span>
+              </div>
             </div>
           </div>
         </div>
+        <p v-else style="color:var(--text-muted);font-size:0.85rem">No crossword words configured.</p>
       </template>
 
       <template v-if="block.type === 'vocabulary'">
@@ -1046,6 +1112,7 @@ import Flashcards from '../components/exercises/Flashcards.vue'
 import MemoryMatch from '../components/exercises/MemoryMatch.vue'
 import DragDrop from '../components/exercises/DragDrop.vue'
 import ScratchpadCanvas from '../components/exercises/ScratchpadCanvas.vue'
+import { useCrosswordGrid, type GridCell } from '../composables/useCrosswordGrid'
 
 function youtubeEmbed(url: string) {
   if (!url) return ''
@@ -1064,6 +1131,116 @@ const blocks = ref([])
 const answers = reactive({})
 const submitted = ref(false)
 const readonly = ref(false)
+
+// --- Crossword grid ---
+const crosswordCellRefs = reactive<Record<string, HTMLInputElement | null>>({})
+
+const crosswordLayout = computed(() => {
+  for (const block of blocks.value) {
+    if (block.type === 'crossword') {
+      return useCrosswordGrid(block.words || [])
+    }
+  }
+  return { grid: [], rows: 0, cols: 0, acrossClues: [], downClues: [], placedWords: [] }
+})
+
+function setCrosswordCellRef(row: number, col: number, el: HTMLInputElement | null) {
+  if (el) crosswordCellRefs[`${row}_${col}`] = el
+}
+
+// Read a single character from a word's stored answer string
+function getCrosswordChar(blockId: string, wordIdx: number, charPos: number): string {
+  const blockAnswers = answers[blockId]
+  if (!blockAnswers || typeof blockAnswers !== 'object') return ''
+  const stored = String((blockAnswers as Record<string, string>)[String(wordIdx)] || '')
+  return stored[Number(charPos)] || ''
+}
+
+// Write a single character to a word's stored answer string
+function setCrosswordWordChar(blockId: string, wordIdx: number, charPos: number, ch: string): void {
+  const words = (blocks.value.find((b: Record<string, unknown>) => b.id === blockId)?.words || []) as Array<Record<string, unknown>>
+  const expectedWord = String(words[wordIdx]?.word || '')
+  const wordLen = expectedWord.length
+  if (!blockId || wordLen === 0) return
+  if (!answers[blockId] || typeof answers[blockId] !== 'object') {
+    answers[blockId] = {}
+  }
+  const existing = String((answers[blockId] as Record<string, string>)[String(wordIdx)] || '').padEnd(wordLen, ' ')
+  const arr = existing.split('')
+  arr[Number(charPos)] = ch.toUpperCase()
+  ;(answers[blockId] as Record<string, string>)[String(wordIdx)] = arr.join('')
+}
+
+// Handle input into a grid cell
+function onCrosswordInput(blockId: string, cell: GridCell, value: string, event: Event): void {
+  if (!cell.isActive || cell.wordIndices.length === 0 || readonly.value) return
+  const ch = String(value || '').slice(0, 1).toUpperCase()
+
+  for (const wi of cell.wordIndices) {
+    const charPos = cell.charPositions[wi]
+    if (charPos !== undefined) {
+      setCrosswordWordChar(blockId, wi, charPos, ch)
+    }
+  }
+
+  // Auto-advance to next cell in the same word
+  if (ch) {
+    const wi = cell.wordIndices[0]
+    const placedWord = crosswordLayout.value.placedWords.find(pw => pw.wordIdx === wi)
+    if (placedWord) {
+      const nextPos = cell.charPositions[wi] + 1
+      if (nextPos < placedWord.word.length) {
+        const nextRow = placedWord.direction === 'across' ? placedWord.row : placedWord.row + nextPos
+        const nextCol = placedWord.direction === 'across' ? placedWord.col + nextPos : placedWord.col
+        const refKey = `${nextRow}_${nextCol}`
+        setTimeout(() => crosswordCellRefs[refKey]?.focus(), 10)
+      }
+    }
+  }
+}
+
+// Handle keyboard navigation in crossword cells
+function onCrosswordKeydown(blockId: string, cell: GridCell, event: KeyboardEvent): void {
+  if (!cell.isActive || cell.wordIndices.length === 0 || readonly.value) return
+  const wi = cell.wordIndices[0]
+  const placedWord = crosswordLayout.value.placedWords.find(pw => pw.wordIdx === wi)
+  if (!placedWord) return
+
+  const charPos = cell.charPositions[wi]
+  if (charPos === undefined) return
+
+  if (event.key === 'Backspace') {
+    // Clear current cell and move back
+    setCrosswordWordChar(blockId, wi, charPos, ' ')
+    event.preventDefault()
+    // Also clear intersecting words
+    for (const wi2 of cell.wordIndices) {
+      if (wi2 !== wi) {
+        setCrosswordWordChar(blockId, wi2, cell.charPositions[wi2], ' ')
+      }
+    }
+    // Move back
+    if (charPos > 0) {
+      const prevRow = placedWord.direction === 'across' ? placedWord.row : placedWord.row + charPos - 1
+      const prevCol = placedWord.direction === 'across' ? placedWord.col + charPos - 1 : placedWord.col
+      setTimeout(() => crosswordCellRefs[`${prevRow}_${prevCol}`]?.focus(), 10)
+    }
+  } else if (event.key === 'ArrowRight' || (event.key === 'ArrowDown' && placedWord.direction === 'down')) {
+    event.preventDefault()
+    if (charPos + 1 < placedWord.word.length) {
+      const nextRow = placedWord.direction === 'across' ? placedWord.row : placedWord.row + charPos + 1
+      const nextCol = placedWord.direction === 'across' ? placedWord.col + charPos + 1 : placedWord.col
+      crosswordCellRefs[`${nextRow}_${nextCol}`]?.focus()
+    }
+  } else if (event.key === 'ArrowLeft' || (event.key === 'ArrowUp' && placedWord.direction === 'down')) {
+    event.preventDefault()
+    if (charPos > 0) {
+      const prevRow = placedWord.direction === 'across' ? placedWord.row : placedWord.row + charPos - 1
+      const prevCol = placedWord.direction === 'across' ? placedWord.col + charPos - 1 : placedWord.col
+      crosswordCellRefs[`${prevRow}_${prevCol}`]?.focus()
+    }
+  }
+}
 interface SubmitResult {
   score: number
   maxScore: number
@@ -1208,28 +1385,6 @@ function setQuestionTableValue(blockId: string, rowIndex: number | string, value
     answers[blockId] = {}
   }
   ;(answers[blockId] as Record<string, string>)[String(rowIndex)] = value
-}
-
-function getCrosswordChar(blockId: string, wordIdx: number | string, charIdx: number | string): string {
-  const blockAnswers = answers[blockId]
-  if (!blockAnswers || typeof blockAnswers !== 'object') return ''
-  const val = (blockAnswers as Record<string, string>)[String(wordIdx)] || ''
-  return val[charIdx] || ''
-}
-
-function setCrosswordChar(blockId: string, wordIdx: number | string, charIdx: number | string, char: string, wordLength: number, event: Event): void {
-  const cIdx = Number(charIdx)
-  const key = `cw_${blockId}_${wordIdx}`
-  const existing = typeof answers[key] === 'string' ? answers[key] : ''
-  const arr = existing.padEnd(wordLength, ' ').split('')
-  arr[cIdx] = (char || ' ').toUpperCase()
-  const newVal = arr.join('')
-  ;(answers[blockId] as Record<string, string>)[String(wordIdx)] = newVal
-
-  if (char && cIdx < wordLength - 1) {
-    const nextInput = document.querySelector(`.crossword-char-input[data-word="${wordIdx}"][data-char="${cIdx + 1}"]`) as HTMLInputElement | null
-    if (nextInput) nextInput.focus()
-  }
 }
 
 function playAudioUrl(url: string) {

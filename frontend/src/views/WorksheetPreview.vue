@@ -186,9 +186,26 @@
 
       <!-- Crossword -->
       <template v-if="block.type === 'crossword'">
-        <div v-for="(item, idx) in block.words || []" :key="idx" style="margin-bottom:0.25rem">
-          <strong>{{ Number(idx) + 1 }}. {{ item.word }}</strong>: {{ item.description }}
+        <div v-if="block.words?.length" style="display:flex;gap:1.5rem;flex-wrap:wrap">
+          <div>
+            <div v-for="(item, idx) in block.words" :key="idx" style="margin-bottom:0.35rem;font-size:0.85rem">
+              <strong>{{ Number(idx) + 1 }}.</strong>
+              <span style="font-family:monospace;background:var(--bg-main);padding:0.1rem 0.25rem;border-radius:3px;margin:0 0.25rem">{{ item.word }}</span>
+              {{ item.description }}
+            </div>
+          </div>
+          <div style="display:flex;gap:0.2rem;flex-wrap:wrap;align-items:center">
+            <span style="font-size:0.75rem;color:var(--text-muted)">Preview:</span>
+            <div v-for="(item, idx) in block.words" :key="'box-'+idx" style="display:flex;gap:1px">
+              <div
+                v-for="(ch, ci) in item.word"
+                :key="ci"
+                style="width:24px;height:24px;border:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;font-family:monospace;text-transform:uppercase;background:var(--bg-card);border-radius:2px"
+              >{{ ch }}</div>
+            </div>
+          </div>
         </div>
+        <p v-else style="color:var(--text-muted);font-size:0.85rem">No crossword words configured.</p>
       </template>
 
       <!-- Audio Match -->
