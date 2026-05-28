@@ -32,6 +32,13 @@
             <router-link v-if="authStore.role === 'admin'" to="/admin" class="nav-link">
               Admin
             </router-link>
+            <router-link
+              v-slot="{ isActive }"
+              to="/writing-coach"
+              class="nav-link"
+            >
+              Writing Coach
+            </router-link>
           </template>
           <div class="nav-actions">
             <template v-if="authStore.isAuthenticated">

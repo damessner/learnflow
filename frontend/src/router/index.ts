@@ -11,6 +11,7 @@ import AdminDashboard from '../views/AdminDashboard.vue'
 import StoryGenerator from '../views/StoryGenerator.vue'
 import ClassWorkspace from '../views/ClassWorkspace.vue'
 import LearnFlowBank from '../views/LearnFlowBank.vue'
+import WritingCoach from '../views/WritingCoach.vue'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
@@ -69,6 +70,11 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: ['teacher', 'admin'] },
   },
   { path: '/admin', component: AdminDashboard, meta: { requiresAuth: true, role: 'admin' } },
+  {
+    path: '/writing-coach',
+    component: WritingCoach,
+    meta: { requiresAuth: true },
+  },
 ]
 
 // Vite can expose an empty BASE_URL depending on how it was built/served.
