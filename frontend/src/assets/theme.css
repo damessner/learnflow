@@ -120,7 +120,8 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 55%),
+  background:
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 55%),
     radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.14), transparent 55%),
     var(--bg-main);
   color: var(--text-main);
@@ -393,7 +394,10 @@ label {
   border-radius: var(--radius-md);
   padding: 1.25rem;
   box-shadow: var(--shadow-card);
-  transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
+  transition:
+    box-shadow var(--transition),
+    border-color var(--transition),
+    transform var(--transition);
 }
 .card:hover {
   border-color: var(--primary-soft);
@@ -580,10 +584,18 @@ tr:hover td {
 .justify-between {
   justify-content: space-between;
 }
-.gap-xs { gap: 0.25rem; }
-.gap-sm { gap: 0.5rem; }
-.gap-md { gap: 1rem; }
-.gap-lg { gap: 1.5rem; }
+.gap-xs {
+  gap: 0.25rem;
+}
+.gap-sm {
+  gap: 0.5rem;
+}
+.gap-md {
+  gap: 1rem;
+}
+.gap-lg {
+  gap: 1.5rem;
+}
 
 /* Toast Notifications */
 .toast-container {
@@ -609,10 +621,18 @@ tr:hover td {
   max-width: 380px;
   backdrop-filter: blur(8px);
 }
-.toast-info { background: var(--gradient-primary); }
-.toast-success { background: var(--gradient-primary); }
-.toast-error { background: linear-gradient(135deg, #ef4444, #dc2626); }
-.toast-warning { background: var(--gradient-accent); }
+.toast-info {
+  background: var(--gradient-primary);
+}
+.toast-success {
+  background: var(--gradient-primary);
+}
+.toast-error {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+.toast-warning {
+  background: var(--gradient-accent);
+}
 
 /* Builder Sidebar */
 .builder-sidebar {
@@ -676,49 +696,98 @@ tr:hover td {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeScale {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes modalIn {
-  from { opacity: 0; transform: scale(0.92) translateY(10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 @keyframes toastIn {
-  from { transform: translateX(120%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes skeletonPulse {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  33% { transform: translateY(-10px) rotate(1deg); }
-  66% { transform: translateY(5px) rotate(-1deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+  66% {
+    transform: translateY(5px) rotate(-1deg);
+  }
 }
 
 /* Skeleton Loading */
 .skeleton {
-  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--border-color) 50%, var(--bg-hover) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--bg-hover) 25%,
+    var(--border-color) 50%,
+    var(--bg-hover) 75%
+  );
   background-size: 200% 100%;
   animation: skeletonPulse 1.5s ease-in-out infinite;
   border-radius: var(--radius-sm);
@@ -727,7 +796,9 @@ tr:hover td {
 /* Page Transition */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 .fade-enter-from {
   opacity: 0;
@@ -754,7 +825,15 @@ tr:hover td {
   border-radius: 50%;
   display: inline-block;
 }
-.status-dot-success { background: var(--success); }
-.status-dot-warning { background: var(--warning); }
-.status-dot-danger { background: var(--danger); }
-.status-dot-muted { background: var(--text-muted); }
+.status-dot-success {
+  background: var(--success);
+}
+.status-dot-warning {
+  background: var(--warning);
+}
+.status-dot-danger {
+  background: var(--danger);
+}
+.status-dot-muted {
+  background: var(--text-muted);
+}

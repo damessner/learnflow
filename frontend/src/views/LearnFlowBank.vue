@@ -4,11 +4,11 @@
     <div class="bank-header">
       <div class="bank-title-wrapper">
         <h1 class="bank-title">🏛️ LearnFlowBank</h1>
-        <p class="bank-subtitle">Discover, preview, and clone premium interactive worksheets created by teachers worldwide.</p>
+        <p class="bank-subtitle">
+          Discover, preview, and clone premium interactive worksheets created by teachers worldwide.
+        </p>
       </div>
-      <router-link to="/teacher" class="btn btn-secondary">
-        ← Dashboard
-      </router-link>
+      <router-link to="/teacher" class="btn btn-secondary"> ← Dashboard </router-link>
     </div>
 
     <!-- Search & Filter Controls -->
@@ -40,13 +40,12 @@
       <div class="filter-section">
         <div class="flex items-center justify-between">
           <label class="filter-label">Subject:</label>
-          <button v-if="filters.subject" class="clear-link" @click="selectSubject('')">Clear subject</button>
+          <button v-if="filters.subject" class="clear-link" @click="selectSubject('')">
+            Clear subject
+          </button>
         </div>
         <div class="tags-container">
-          <button
-            :class="['tag-pill', { active: !filters.subject }]"
-            @click="selectSubject('')"
-          >
+          <button :class="['tag-pill', { active: !filters.subject }]" @click="selectSubject('')">
             All Subjects
           </button>
           <button
@@ -61,16 +60,15 @@
       </div>
 
       <!-- Grade Filter Button Group -->
-      <div class="filter-section" style="margin-top: 1rem;">
+      <div class="filter-section" style="margin-top: 1rem">
         <div class="flex items-center justify-between">
           <label class="filter-label">Grade / Class Level:</label>
-          <button v-if="filters.grade_level" class="clear-link" @click="selectGrade('')">Clear grade</button>
+          <button v-if="filters.grade_level" class="clear-link" @click="selectGrade('')">
+            Clear grade
+          </button>
         </div>
         <div class="grade-group">
-          <button
-            :class="['grade-btn', { active: !filters.grade_level }]"
-            @click="selectGrade('')"
-          >
+          <button :class="['grade-btn', { active: !filters.grade_level }]" @click="selectGrade('')">
             All Grades
           </button>
           <button
@@ -96,29 +94,36 @@
       <div v-if="worksheets.length === 0" class="empty-state">
         <div class="empty-state-icon">🏛️</div>
         <div class="empty-state-title">No worksheets found</div>
-        <div class="empty-state-text">We couldn't find any public worksheets matching your search query or filters. Try adjusting them!</div>
-        <button class="btn btn-primary" style="margin-top: 1rem;" @click="resetFilters">Reset Filters</button>
+        <div class="empty-state-text">
+          We couldn't find any public worksheets matching your search query or filters. Try
+          adjusting them!
+        </div>
+        <button class="btn btn-primary" style="margin-top: 1rem" @click="resetFilters">
+          Reset Filters
+        </button>
       </div>
 
       <!-- Worksheets Grid -->
       <div v-else class="worksheets-grid">
-        <div
-          v-for="ws in worksheets"
-          :key="ws.id"
-          class="ws-card"
-        >
+        <div v-for="ws in worksheets" :key="ws.id" class="ws-card">
           <!-- Card Header & Badge -->
           <div class="ws-card-header">
             <span :class="['subject-badge', getSubjectClass(ws.subject)]">
               {{ getSubjectEmoji(ws.subject) }} {{ ws.subject }}
             </span>
-            <span class="grade-badge">{{ GRADE_LABELS[ws.grade_level] || `Klasse ${ws.grade_level}` }}</span>
+            <span class="grade-badge">{{
+              GRADE_LABELS[ws.grade_level] || `Klasse ${ws.grade_level}`
+            }}</span>
           </div>
 
           <!-- Card Content -->
           <div class="ws-card-body">
             <h3 class="ws-title">{{ ws.title }}</h3>
-            <p class="ws-desc">{{ ws.description || 'Interactive learning resource covering concepts and exercises.' }}</p>
+            <p class="ws-desc">
+              {{
+                ws.description || 'Interactive learning resource covering concepts and exercises.'
+              }}
+            </p>
           </div>
 
           <!-- Stats Row -->
@@ -139,10 +144,7 @@
 
           <!-- Card Actions -->
           <div class="ws-actions">
-            <button
-              class="btn btn-secondary flex-1"
-              @click="previewWorksheet(ws.id)"
-            >
+            <button class="btn btn-secondary flex-1" @click="previewWorksheet(ws.id)">
               👁️ Preview
             </button>
             <button
@@ -274,28 +276,45 @@ async function cloneWorksheet(ws: any) {
 // Helpers for subject styling/metadata
 function getSubjectEmoji(subject: string): string {
   switch (subject) {
-    case 'Mathematics': return '🧮'
-    case 'German': return '🇩🇪'
-    case 'English': return '🇬🇧'
-    case 'Science': return '🧪'
-    case 'History': return '⏳'
-    case 'Geography': return '🗺️'
-    case 'Art': return '🎨'
-    case 'Music': return '🎵'
-    case 'Physical Education': return '🏃'
-    default: return '📝'
+    case 'Mathematics':
+      return '🧮'
+    case 'German':
+      return '🇩🇪'
+    case 'English':
+      return '🇬🇧'
+    case 'Science':
+      return '🧪'
+    case 'History':
+      return '⏳'
+    case 'Geography':
+      return '🗺️'
+    case 'Art':
+      return '🎨'
+    case 'Music':
+      return '🎵'
+    case 'Physical Education':
+      return '🏃'
+    default:
+      return '📝'
   }
 }
 
 function getSubjectClass(subject: string): string {
   switch (subject) {
-    case 'Mathematics': return 'sub-math'
-    case 'German': return 'sub-german'
-    case 'English': return 'sub-english'
-    case 'Science': return 'sub-science'
-    case 'History': return 'sub-history'
-    case 'Geography': return 'sub-geography'
-    default: return 'sub-default'
+    case 'Mathematics':
+      return 'sub-math'
+    case 'German':
+      return 'sub-german'
+    case 'English':
+      return 'sub-english'
+    case 'Science':
+      return 'sub-science'
+    case 'History':
+      return 'sub-history'
+    case 'Geography':
+      return 'sub-geography'
+    default:
+      return 'sub-default'
   }
 }
 
@@ -304,18 +323,42 @@ function getWorksheetStats(ws: any) {
   try {
     const content = JSON.parse(ws.content)
     const blocks = content.blocks || []
-    
+
     // Count scored tasks
     const exerciseTypes = new Set([
-      'gap_fill', 'multiple_choice', 'single_choice', 'matching', 'word_scramble',
-      'short_answer', 'true_false', 'ordering', 'vocabulary', 'semantic_sorter',
-      'flashcards', 'drag_words', 'correct_words', 'question_table', 'crossword',
-      'audio_match', 'dictation', 'word_search', 'sentence_builder', 'odd_one_out',
-      'number_line', 'equation_entry', 'fraction_input', 'arithmetic_grid',
-      'graph_plot', 'geometry_shape', 'word_problem', 'percentage', 'unit_conversion', 'angle'
+      'gap_fill',
+      'multiple_choice',
+      'single_choice',
+      'matching',
+      'word_scramble',
+      'short_answer',
+      'true_false',
+      'ordering',
+      'vocabulary',
+      'semantic_sorter',
+      'flashcards',
+      'drag_words',
+      'correct_words',
+      'question_table',
+      'crossword',
+      'audio_match',
+      'dictation',
+      'word_search',
+      'sentence_builder',
+      'odd_one_out',
+      'number_line',
+      'equation_entry',
+      'fraction_input',
+      'arithmetic_grid',
+      'graph_plot',
+      'geometry_shape',
+      'word_problem',
+      'percentage',
+      'unit_conversion',
+      'angle',
     ])
     const taskCount = blocks.filter((b: any) => exerciseTypes.has(b.type)).length
-    
+
     // Estimate work time
     const profile = content.pupil_profile || 'default'
     const grade = Number(ws.grade_level) || 4
@@ -334,7 +377,11 @@ function getWorksheetStats(ws: any) {
         totalSeconds += 120
       } else if (block.type === 'drawing') {
         totalSeconds += 120
-      } else if (block.type === 'gap_fill' || block.type === 'drag_words' || block.type === 'correct_words') {
+      } else if (
+        block.type === 'gap_fill' ||
+        block.type === 'drag_words' ||
+        block.type === 'correct_words'
+      ) {
         const gaps = ((block.template || '').match(/\(\(.*?\)\)/g) || []).length
         totalSeconds += gaps * 15 + 10
       } else if (block.type === 'question_table') {
@@ -351,7 +398,7 @@ function getWorksheetStats(ws: any) {
     const minutes = Math.floor(finalSeconds / 60)
     const seconds = finalSeconds % 60
     const timeFormatted = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`
-    
+
     return { taskCount, timeFormatted }
   } catch {
     return { taskCount: 0, timeFormatted: '5m' }
@@ -578,7 +625,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .worksheets-grid {
@@ -629,13 +678,27 @@ onMounted(() => {
 }
 
 /* Custom subject gradient background */
-.sub-math { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
-.sub-german { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-.sub-english { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
-.sub-science { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); }
-.sub-history { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-.sub-geography { background: linear-gradient(135deg, #65a30d 0%, #4d7c0f 100%); }
-.sub-default { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
+.sub-math {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+.sub-german {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+.sub-english {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+.sub-science {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+}
+.sub-history {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+.sub-geography {
+  background: linear-gradient(135deg, #65a30d 0%, #4d7c0f 100%);
+}
+.sub-default {
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+}
 
 .ws-card-body {
   flex: 1;

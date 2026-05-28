@@ -13,12 +13,16 @@ const grammarTemplates: GrammarTemplate[] = [
     type: 'gap_fill',
     languages: ['de', 'en', 'fr', 'es'],
     generateBlocks(inputs) {
-      const verbs = (inputs.verbs || '').split(',').map(s => s.trim()).filter(Boolean)
+      const verbs = (inputs.verbs || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
       const tense = inputs.tense || 'present'
-      const pronouns = inputs.language === 'de'
-        ? ['ich', 'du', 'er/sie/es', 'wir', 'ihr', 'sie/Sie']
-        : ['I', 'you', 'he/she/it', 'we', 'you (pl)', 'they']
-      
+      const pronouns =
+        inputs.language === 'de'
+          ? ['ich', 'du', 'er/sie/es', 'wir', 'ihr', 'sie/Sie']
+          : ['I', 'you', 'he/she/it', 'we', 'you (pl)', 'they']
+
       const blocks: Record<string, unknown>[] = []
       for (const verb of verbs) {
         for (let i = 0; i < pronouns.length; i++) {
@@ -43,12 +47,20 @@ const grammarTemplates: GrammarTemplate[] = [
       const templates: Record<string, string[]> = {
         nominativ: ['((Der)) Mann geht.', '((Die)) Frau liest.', '((Das)) Kind spielt.'],
         akkusativ: ['Ich sehe ((den)) Mann.', 'Ich sehe ((die)) Frau.', 'Ich sehe ((das)) Kind.'],
-        dativ: ['Ich gebe ((dem)) Mann das Buch.', 'Ich gebe ((der)) Frau das Buch.', 'Ich gebe ((dem)) Kind das Buch.'],
-        genitiv: ['Das ist das Buch ((des)) Mannes.', 'Das ist das Buch ((der)) Frau.', 'Das ist das Buch ((des)) Kindes.'],
+        dativ: [
+          'Ich gebe ((dem)) Mann das Buch.',
+          'Ich gebe ((der)) Frau das Buch.',
+          'Ich gebe ((dem)) Kind das Buch.',
+        ],
+        genitiv: [
+          'Das ist das Buch ((des)) Mannes.',
+          'Das ist das Buch ((der)) Frau.',
+          'Das ist das Buch ((des)) Kindes.',
+        ],
       }
-      
+
       const sentences = templates[focus] || templates['dativ']
-      return sentences.map(s => ({
+      return sentences.map((s) => ({
         id: crypto.randomUUID?.(),
         type: 'gap_fill',
         points: 1,
@@ -62,8 +74,11 @@ const grammarTemplates: GrammarTemplate[] = [
     type: 'ordering',
     languages: ['de', 'en', 'nl'],
     generateBlocks(inputs) {
-      const sentences = (inputs.sentences || '').split('|').map(s => s.trim()).filter(Boolean)
-      return sentences.map(s => ({
+      const sentences = (inputs.sentences || '')
+        .split('|')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      return sentences.map((s) => ({
         id: crypto.randomUUID?.(),
         type: 'ordering',
         points: s.split(' ').length,
@@ -89,7 +104,7 @@ const grammarTemplates: GrammarTemplate[] = [
       for (const p of preps) {
         sentences.push(`Der Stift liegt ((${p})) dem Tisch.`)
       }
-      return sentences.map(s => ({
+      return sentences.map((s) => ({
         id: crypto.randomUUID?.(),
         type: 'gap_fill',
         points: 1,
@@ -101,14 +116,14 @@ const grammarTemplates: GrammarTemplate[] = [
 
 export function getGrammarTemplates(language?: string): GrammarTemplate[] {
   if (!language) return grammarTemplates
-  return grammarTemplates.filter(t => t.languages.includes(language))
+  return grammarTemplates.filter((t) => t.languages.includes(language))
 }
 
 export function generateGrammarExercise(
   templateName: string,
   inputs: Record<string, string>,
 ): Record<string, unknown>[] {
-  const template = grammarTemplates.find(t => t.name === templateName)
+  const template = grammarTemplates.find((t) => t.name === templateName)
   if (!template) throw new Error(`Grammar template "${templateName}" not found`)
   return template.generateBlocks(inputs)
 }

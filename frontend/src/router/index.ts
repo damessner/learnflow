@@ -99,7 +99,9 @@ router.onError((error, to) => {
 
     if (!alreadyReloaded) {
       sessionStorage.setItem(reloadKey, to.fullPath)
-      window.location.assign(to.fullPath + (to.fullPath.includes('?') ? '&' : '?') + '_t=' + Date.now())
+      window.location.assign(
+        to.fullPath + (to.fullPath.includes('?') ? '&' : '?') + '_t=' + Date.now(),
+      )
       return
     }
   }

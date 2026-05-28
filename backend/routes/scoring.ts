@@ -166,7 +166,10 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           let matchCount = 0
           for (let i = 0; i < pairs.length; i++) {
             const key = String(i)
-            if (ans[key] && ans[key].trim().toLowerCase() === (pairs[i][1] || '').trim().toLowerCase()) {
+            if (
+              ans[key] &&
+              ans[key].trim().toLowerCase() === (pairs[i][1] || '').trim().toLowerCase()
+            ) {
               matchCount++
             }
           }
@@ -207,7 +210,8 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           const ans = (userAnswer as string[]) || []
           let correct = 0
           for (let i = 0; i < words.length; i++) {
-            if (ans[i]?.trim().toLowerCase() === (words[i].word || '').trim().toLowerCase()) correct++
+            if (ans[i]?.trim().toLowerCase() === (words[i].word || '').trim().toLowerCase())
+              correct++
           }
           earned = words.length > 0 ? Math.round((correct / words.length) * block.points) : 0
           feedback.push(`Word scramble: ${correct}/${words.length}`)
@@ -280,12 +284,15 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
             const inner = matches[i].slice(2, -2)
             const parts = inner.split('/')
             const expected = (parts[1] || parts[0] || '').trim().toLowerCase()
-            const userVal = String(ans[String(i)] || ans[i] || '').trim().toLowerCase()
+            const userVal = String(ans[String(i)] || ans[i] || '')
+              .trim()
+              .toLowerCase()
             if (userVal === expected || isAcceptableVariant(userVal, expected)) {
               correctCount++
             }
           }
-          earned = matches.length > 0 ? Math.round((correctCount / matches.length) * block.points) : 0
+          earned =
+            matches.length > 0 ? Math.round((correctCount / matches.length) * block.points) : 0
           feedback.push(`Correct words: ${correctCount}/${matches.length}`)
           break
         }
@@ -296,7 +303,9 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           for (let i = 0; i < rows.length; i++) {
             const parts = rows[i].split('##')
             const expected = (parts[1] || '').trim().toLowerCase()
-            const userVal = String(ans[String(i)] || ans[i] || '').trim().toLowerCase()
+            const userVal = String(ans[String(i)] || ans[i] || '')
+              .trim()
+              .toLowerCase()
             if (userVal === expected) correctCount++
           }
           earned = rows.length > 0 ? Math.round((correctCount / rows.length) * block.points) : 0
@@ -309,7 +318,9 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           let correctCount = 0
           for (let i = 0; i < words.length; i++) {
             const expected = (words[i].word || '').trim().toLowerCase()
-            const userVal = String(ans[String(i)] || ans[i] || '').trim().toLowerCase()
+            const userVal = String(ans[String(i)] || ans[i] || '')
+              .trim()
+              .toLowerCase()
             if (userVal === expected) correctCount++
           }
           earned = words.length > 0 ? Math.round((correctCount / words.length) * block.points) : 0
@@ -318,7 +329,9 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
         }
         case 'dictation': {
           const expected = (block.audioText || '').trim().toLowerCase()
-          const userVal = String(userAnswer || '').trim().toLowerCase()
+          const userVal = String(userAnswer || '')
+            .trim()
+            .toLowerCase()
           const pass = userVal === expected || isAcceptableVariant(userVal, expected)
           earned = pass ? block.points : 0
           feedback.push(`Dictation: ${pass ? 'correct' : 'incorrect'}`)
@@ -326,27 +339,46 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
         }
         case 'word_search': {
           const expectedWords = (block.words || []).map((w) => (w.word || '').trim().toLowerCase())
-          const userWords = (Array.isArray(userAnswer) ? userAnswer : []).map((w) => String(w).trim().toLowerCase())
+          const userWords = (Array.isArray(userAnswer) ? userAnswer : []).map((w) =>
+            String(w).trim().toLowerCase(),
+          )
           let correctCount = 0
           for (const w of expectedWords) {
             if (userWords.includes(w)) correctCount++
           }
-          earned = expectedWords.length > 0 ? Math.round((correctCount / expectedWords.length) * block.points) : 0
+          earned =
+            expectedWords.length > 0
+              ? Math.round((correctCount / expectedWords.length) * block.points)
+              : 0
           feedback.push(`Word search: ${correctCount}/${expectedWords.length}`)
           break
         }
         case 'sentence_builder': {
-          const expected = (block.sentence || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "")
+          const expected = (block.sentence || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase()
+            .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, '')
           const rawVal = Array.isArray(userAnswer) ? userAnswer.join(' ') : String(userAnswer || '')
-          const userVal = rawVal.replace(/\s+/g, ' ').trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "")
+          const userVal = rawVal
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase()
+            .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, '')
           const pass = userVal === expected || isAcceptableVariant(userVal, expected)
           earned = pass ? block.points : 0
           feedback.push(`Sentence builder: ${pass ? 'correct' : 'incorrect'}`)
           break
         }
         case 'odd_one_out': {
-          const selected = userAnswer && typeof userAnswer === 'object' && 'selected' in userAnswer ? Number((userAnswer as any).selected) : Number(userAnswer)
-          const reason = userAnswer && typeof userAnswer === 'object' && 'reason' in userAnswer ? String((userAnswer as any).reason).trim() : ''
+          const selected =
+            userAnswer && typeof userAnswer === 'object' && 'selected' in userAnswer
+              ? Number((userAnswer as Record<string, unknown>).selected)
+              : Number(userAnswer)
+          const reason =
+            userAnswer && typeof userAnswer === 'object' && 'reason' in userAnswer
+              ? String((userAnswer as Record<string, unknown>).reason).trim()
+              : ''
           const isCorrect = selected === block.correct
           if (isCorrect) {
             const hasReason = reason.length >= 3

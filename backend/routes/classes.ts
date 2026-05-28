@@ -1,8 +1,6 @@
 import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import multer from 'multer'
-import path from 'path'
-import fs from 'fs'
 import { getKnex } from '../db/knex'
 import { requireAuth, requireRole } from '../middleware/requireAuth'
 import { importStudentsFromPdf, setImportTeacherId } from '../services/studentImporter'
@@ -345,38 +343,44 @@ const pdfUpload = multer({
   },
 })
 
-router.post('/import-pdf', requireAuth, requireRole('teacher', 'admin'), pdfUpload.single('file'), async (req, res, next) => {
-  try {
-    if (!req.file) {
-      res.status(400).json({ error: 'No PDF file uploaded' })
-      return
+router.post(
+  '/import-pdf',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  pdfUpload.single('file'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) {
+        res.status(400).json({ error: 'No PDF file uploaded' })
+        return
+      }
+
+      setImportTeacherId(req.user!.userId)
+      const summary = await importStudentsFromPdf(req.file.buffer)
+
+      res.json({
+        message: `Import complete: ${summary.studentsCreated} students created, ${summary.studentsSkipped} skipped`,
+        summary: {
+          classesCreated: summary.classesCreated,
+          classesSkipped: summary.classesSkipped,
+          studentsCreated: summary.studentsCreated,
+          studentsSkipped: summary.studentsSkipped,
+          classNames: summary.classNames,
+          errorCount: summary.errors.length,
+        },
+        credentials: summary.credentials.map((c) => ({
+          name: c.name,
+          username: c.username,
+          password: c.password,
+          class: c.className,
+        })),
+        errors: summary.errors.slice(0, 20),
+      })
+    } catch (err) {
+      next(err)
     }
-
-    setImportTeacherId(req.user!.userId)
-    const summary = await importStudentsFromPdf(req.file.buffer)
-
-    res.json({
-      message: `Import complete: ${summary.studentsCreated} students created, ${summary.studentsSkipped} skipped`,
-      summary: {
-        classesCreated: summary.classesCreated,
-        classesSkipped: summary.classesSkipped,
-        studentsCreated: summary.studentsCreated,
-        studentsSkipped: summary.studentsSkipped,
-        classNames: summary.classNames,
-        errorCount: summary.errors.length,
-      },
-      credentials: summary.credentials.map((c) => ({
-        name: c.name,
-        username: c.username,
-        password: c.password,
-        class: c.className,
-      })),
-      errors: summary.errors.slice(0, 20),
-    })
-  } catch (err) {
-    next(err)
-  }
-})
+  },
+)
 
 router.post('/join', requireAuth, async (req, res, next) => {
   try {

@@ -22,11 +22,12 @@ export function getKnex(): Knex {
       connection: { filename: dbPath },
       useNullAsDefault: true,
       pool: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         afterCreate: (db: any, cb: any) => {
           try {
             db.pragma('journal_mode = WAL')
             db.pragma('synchronous = NORMAL')
-          } catch (e) {
+          } catch (_e) {
             // ignore
           }
           cb(null, db)

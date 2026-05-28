@@ -1,10 +1,6 @@
 <template>
   <div>
-    <video
-      v-if="block.src"
-      controls
-      style="max-width: 100%; border-radius: var(--radius-sm)"
-    >
+    <video v-if="block.src" controls style="max-width: 100%; border-radius: var(--radius-sm)">
       <source :src="block.src" :type="mimeType" />
     </video>
     <div

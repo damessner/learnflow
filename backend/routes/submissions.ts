@@ -19,50 +19,52 @@ const router = Router()
 const MAX_REMEDIATION_ROUNDS = 3
 const REMEDIATION_TIMEOUT_MS = 60_000
 
-const RemediationExerciseSchema = z.object({
-  title: z.string(),
-  type: z.string(),
-  id: z.string().optional(),
-  points: z.number().optional(),
-  kc_ids: z.array(z.string()).optional(),
-  template: z.string().optional(),
-  pairs: z.array(z.tuple([z.string(), z.string()])).optional(),
-  options: z.array(z.string()).optional(),
-  correct: z.union([z.array(z.number()), z.number()]).optional(),
-  keywords: z.array(z.string()).optional(),
-  sampleAnswer: z.string().optional(),
-  words: z.array(z.object({ word: z.string() })).optional(),
-  markers: z.array(z.number()).optional(),
-  range: z.tuple([z.number(), z.number()]).optional(),
-  equation: z.string().optional(),
-  final_answer: z.string().optional(),
-  numerator: z.number().optional(),
-  denominator: z.number().optional(),
-  operand1: z.number().optional(),
-  operand2: z.number().optional(),
-  operation: z.string().optional(),
-  points_to_plot: z.array(z.tuple([z.number(), z.number()])).optional(),
-  shape_type: z.string().optional(),
-  problem_text: z.string().optional(),
-  steps: z.array(z.object({ description: z.string(), expected: z.string() })).optional(),
-  statement: z.string().optional(),
-  items: z.array(z.string()).optional(),
-  correct_order: z.array(z.number()).optional(),
-  value: z.number().optional(),
-  total: z.number().optional(),
-  from_value: z.number().optional(),
-  from_unit: z.string().optional(),
-  to_unit: z.string().optional(),
-  angle_value: z.number().optional(),
-  angle_type: z.string().optional(),
-  columns: z.array(z.string()).optional(),
-  rows: z.array(z.string()).optional(),
-  sentence: z.string().optional(),
-  audioText: z.string().optional(),
-  voice: z.string().optional(),
-  audioUrl: z.string().optional(),
-  reason: z.string().optional(),
-}).passthrough()
+const RemediationExerciseSchema = z
+  .object({
+    title: z.string(),
+    type: z.string(),
+    id: z.string().optional(),
+    points: z.number().optional(),
+    kc_ids: z.array(z.string()).optional(),
+    template: z.string().optional(),
+    pairs: z.array(z.tuple([z.string(), z.string()])).optional(),
+    options: z.array(z.string()).optional(),
+    correct: z.union([z.array(z.number()), z.number()]).optional(),
+    keywords: z.array(z.string()).optional(),
+    sampleAnswer: z.string().optional(),
+    words: z.array(z.object({ word: z.string() })).optional(),
+    markers: z.array(z.number()).optional(),
+    range: z.tuple([z.number(), z.number()]).optional(),
+    equation: z.string().optional(),
+    final_answer: z.string().optional(),
+    numerator: z.number().optional(),
+    denominator: z.number().optional(),
+    operand1: z.number().optional(),
+    operand2: z.number().optional(),
+    operation: z.string().optional(),
+    points_to_plot: z.array(z.tuple([z.number(), z.number()])).optional(),
+    shape_type: z.string().optional(),
+    problem_text: z.string().optional(),
+    steps: z.array(z.object({ description: z.string(), expected: z.string() })).optional(),
+    statement: z.string().optional(),
+    items: z.array(z.string()).optional(),
+    correct_order: z.array(z.number()).optional(),
+    value: z.number().optional(),
+    total: z.number().optional(),
+    from_value: z.number().optional(),
+    from_unit: z.string().optional(),
+    to_unit: z.string().optional(),
+    angle_value: z.number().optional(),
+    angle_type: z.string().optional(),
+    columns: z.array(z.string()).optional(),
+    rows: z.array(z.string()).optional(),
+    sentence: z.string().optional(),
+    audioText: z.string().optional(),
+    voice: z.string().optional(),
+    audioUrl: z.string().optional(),
+    reason: z.string().optional(),
+  })
+  .passthrough()
 
 const RemediationResultSchema = z.object({
   summary: z.string(),
@@ -76,21 +78,35 @@ type BlockScore = { blockId: string; score: number; maxScore: number }
 
 function normalizeBlockText(block: Record<string, unknown>): string {
   return String(
-    block.text ||
-      block.problem_text ||
-      block.template ||
-      block.title ||
-      block.type ||
-      '',
+    block.text || block.problem_text || block.template || block.title || block.type || '',
   )
 }
 
 const SUPPORTED_EXERCISE_TYPES = new Set([
-  'gap_fill', 'matching', 'multiple_choice', 'single_choice', 'short_answer',
-  'word_scramble', 'true_false', 'ordering', 'info', 'text', 'read_aloud', 'drawing',
-  'vocabulary', 'semantic_sorter', 'flashcards',
-  'drag_words', 'correct_words', 'question_table', 'crossword', 'audio_match',
-  'dictation', 'word_search', 'sentence_builder', 'odd_one_out'
+  'gap_fill',
+  'matching',
+  'multiple_choice',
+  'single_choice',
+  'short_answer',
+  'word_scramble',
+  'true_false',
+  'ordering',
+  'info',
+  'text',
+  'read_aloud',
+  'drawing',
+  'vocabulary',
+  'semantic_sorter',
+  'flashcards',
+  'drag_words',
+  'correct_words',
+  'question_table',
+  'crossword',
+  'audio_match',
+  'dictation',
+  'word_search',
+  'sentence_builder',
+  'odd_one_out',
 ])
 
 const FREE_TEXT_EXERCISE_TYPES = new Set(['short_answer', 'dictation', 'odd_one_out'])
@@ -121,11 +137,11 @@ function inferExercisePoints(exercise: Record<string, unknown>): number {
       return Math.max(1, items.length * 2)
     }
     case 'vocabulary': {
-      const pairs = ((exercise.vocabulary as any)?.pairs || []) as unknown[]
+      const pairs = ((exercise.vocabulary as Record<string, unknown>)?.pairs || []) as unknown[]
       return Math.max(1, pairs.length * 2)
     }
     case 'semantic_sorter': {
-      const categories = (exercise.categories || []) as any[]
+      const categories = (exercise.categories || []) as Record<string, unknown>[]
       let totalItems = 0
       for (const cat of categories) {
         totalItems += (cat.words || []).length
@@ -144,15 +160,20 @@ function inferExercisePoints(exercise: Record<string, unknown>): number {
       const words = (exercise.words || []) as unknown[]
       return Math.max(1, words.length * 2)
     }
-    case 'dictation': return 8
-    case 'sentence_builder': return 6
-    case 'odd_one_out': return 6
+    case 'dictation':
+      return 8
+    case 'sentence_builder':
+      return 6
+    case 'odd_one_out':
+      return 6
     case 'multiple_choice': {
       const opts = (exercise.options || []) as unknown[]
       return Math.max(1, opts.length > 4 ? 2 : 1)
     }
-    case 'single_choice': return 1
-    case 'true_false': return 1
+    case 'single_choice':
+      return 1
+    case 'true_false':
+      return 1
     default:
       return 1
   }
@@ -188,7 +209,7 @@ function getVariantInstruction(variant: 'A' | 'B'): string {
     return [
       'INSTRUCTION STYLE: DIRECT CORRECTIVE',
       '- Clearly state the correct answer for each exercise.',
-      '- Explain step-by-step why the student\'s original answer was incorrect.',
+      "- Explain step-by-step why the student's original answer was incorrect.",
       '- Provide the correct method or rule explicitly.',
       '- Use direct, clear language without rhetorical questions.',
       '- Example: "The correct answer is X because Y. Your answer was Z because you forgot to..."',
@@ -205,9 +226,7 @@ function getVariantInstruction(variant: 'A' | 'B'): string {
   ].join('\n')
 }
 
-function buildPriorRoundsContext(
-  rounds: Record<string, unknown>[],
-): string {
+function buildPriorRoundsContext(rounds: Record<string, unknown>[]): string {
   if (rounds.length === 0) return ''
   const lines: string[] = ['PRIOR REMEDIATION ROUNDS:']
   for (const r of rounds) {
@@ -216,17 +235,23 @@ function buildPriorRoundsContext(
     const summary = analysis.summary || ''
     const exes = JSON.parse(String(r.exercises_json || '[]'))
     const titles = (Array.isArray(exes) ? exes : [])
-      .map((e: Record<string, unknown>) => `  - "${e.title || 'Untitled'}" (${e.type || 'unknown'})`)
+      .map(
+        (e: Record<string, unknown>) => `  - "${e.title || 'Untitled'}" (${e.type || 'unknown'})`,
+      )
       .join('\n')
     lines.push(`Round ${roundNum}: ${summary}`)
     if (titles) lines.push(`Exercises already given:\n${titles}`)
   }
   lines.push('')
-  lines.push('CRITICAL: Do NOT repeat or closely paraphrase any of the above exercises. Create entirely new exercises that target the same concepts from a different angle.')
+  lines.push(
+    'CRITICAL: Do NOT repeat or closely paraphrase any of the above exercises. Create entirely new exercises that target the same concepts from a different angle.',
+  )
   return lines.join('\n')
 }
 
-function buildDifficultyCalibration(wrongDetails: { blockText: string; blockType: string; score: number; maxScore: number }[]): string {
+function buildDifficultyCalibration(
+  wrongDetails: { blockText: string; blockType: string; score: number; maxScore: number }[],
+): string {
   if (wrongDetails.length === 0) return ''
   const lines: string[] = ['DIFFICULTY CALIBRATION PER MISTAKE:']
   for (const w of wrongDetails) {
@@ -234,13 +259,21 @@ function buildDifficultyCalibration(wrongDetails: { blockText: string; blockType
     let level = 'prerequisite'
     if (ratio >= 0.7) level = 'hint'
     else if (ratio >= 0.3) level = 'scaffold'
-    lines.push(`- "${w.blockText}" (${w.blockType}): score=${w.score}/${w.maxScore} (ratio=${ratio.toFixed(2)}) -> difficulty=${level}`)
+    lines.push(
+      `- "${w.blockText}" (${w.blockType}): score=${w.score}/${w.maxScore} (ratio=${ratio.toFixed(2)}) -> difficulty=${level}`,
+    )
   }
   lines.push('')
   lines.push('Calibration rules for generated exercises:')
-  lines.push('- "hint" difficulty: Student nearly got it. Generate exercises with subtle hints that nudge them to the correct answer.')
-  lines.push('- "scaffold" difficulty: Student has partial understanding. Break the concept into smaller steps or sub-skills.')
-  lines.push('- "prerequisite" difficulty: Student lacks foundational knowledge. Generate exercises on prerequisite concepts first, then build up.')
+  lines.push(
+    '- "hint" difficulty: Student nearly got it. Generate exercises with subtle hints that nudge them to the correct answer.',
+  )
+  lines.push(
+    '- "scaffold" difficulty: Student has partial understanding. Break the concept into smaller steps or sub-skills.',
+  )
+  lines.push(
+    '- "prerequisite" difficulty: Student lacks foundational knowledge. Generate exercises on prerequisite concepts first, then build up.',
+  )
   return lines.join('\n')
 }
 
@@ -274,7 +307,11 @@ async function generateRemediationWithOpenCode(
   }
 }
 
-async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = REMEDIATION_TIMEOUT_MS): Promise<Response> {
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs = REMEDIATION_TIMEOUT_MS,
+): Promise<Response> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -443,7 +480,10 @@ router.get('/assignment/:id/remediation', requireAuth, async (req, res, next) =>
     }
 
     const answers = submission.answers ? JSON.parse(submission.answers) : {}
-    const score = scoreAnswers(blocks as Array<{ id: string; type: string; points: number }>, answers)
+    const score = scoreAnswers(
+      blocks as Array<{ id: string; type: string; points: number }>,
+      answers,
+    )
     const wrong = score.blockScores.filter((b) => b.maxScore > 0 && b.score < b.maxScore)
 
     const rounds = await knex('submission_remediation_rounds')
@@ -459,9 +499,13 @@ router.get('/assignment/:id/remediation', requireAuth, async (req, res, next) =>
       maxScore: submission.max_score,
       roundsUsed: rounds.length,
       roundsLeft: Math.max(0, MAX_REMEDIATION_ROUNDS - rounds.length),
-      canGenerateRound: !!submission.submitted_at && wrong.length > 0 && rounds.length < MAX_REMEDIATION_ROUNDS,
+      canGenerateRound:
+        !!submission.submitted_at && wrong.length > 0 && rounds.length < MAX_REMEDIATION_ROUNDS,
       wrongBlocks: wrong.map((w) => {
-        const block = blocks.find((b) => String(b.id) === w.blockId) || { id: w.blockId, type: 'unknown' }
+        const block = blocks.find((b) => String(b.id) === w.blockId) || {
+          id: w.blockId,
+          type: 'unknown',
+        }
         return {
           blockId: w.blockId,
           blockType: String(block.type || 'unknown'),
@@ -518,7 +562,9 @@ router.post('/assignment/:id/remediation/generate', requireAuth, async (req, res
       .orderBy('round_number', 'asc')
 
     if (rounds.length >= MAX_REMEDIATION_ROUNDS) {
-      res.status(400).json({ error: `Maximum ${MAX_REMEDIATION_ROUNDS} remediation rounds reached` })
+      res
+        .status(400)
+        .json({ error: `Maximum ${MAX_REMEDIATION_ROUNDS} remediation rounds reached` })
       return
     }
 
@@ -531,7 +577,10 @@ router.post('/assignment/:id/remediation/generate', requireAuth, async (req, res
     }
 
     const answers = submission.answers ? JSON.parse(submission.answers) : {}
-    const score = scoreAnswers(blocks as Array<{ id: string; type: string; points: number }>, answers)
+    const score = scoreAnswers(
+      blocks as Array<{ id: string; type: string; points: number }>,
+      answers,
+    )
     const wrong = score.blockScores.filter((b) => b.maxScore > 0 && b.score < b.maxScore)
 
     if (wrong.length === 0) {
@@ -540,7 +589,10 @@ router.post('/assignment/:id/remediation/generate', requireAuth, async (req, res
     }
 
     const wrongDetails = wrong.map((w: BlockScore) => {
-      const block = blocks.find((b) => String(b.id) === w.blockId) || { id: w.blockId, type: 'unknown' }
+      const block = blocks.find((b) => String(b.id) === w.blockId) || {
+        id: w.blockId,
+        type: 'unknown',
+      }
       return {
         blockId: w.blockId,
         blockType: String(block.type || 'unknown'),
@@ -573,35 +625,39 @@ router.post('/assignment/:id/remediation/generate', requireAuth, async (req, res
       variantInst,
       '',
       'Return remediation JSON with this exact schema:',
-      JSON.stringify({
-        summary: 'Brief summary of student issues and mistakes, explaining the errors clearly.',
-        misconceptions: ['list of misconceptions found'],
-        custom_instructions: ['practical next steps for this student'],
-        mermaid: 'optional mermaid diagram code',
-        exercises: [
-          {
-            title: 'Exercise title',
-            type: 'gap_fill|matching|multiple_choice|single_choice|short_answer|word_scramble|true_false|ordering|vocabulary|semantic_sorter|flashcards|drag_words|correct_words|question_table|crossword|audio_match|dictation|word_search|sentence_builder|odd_one_out',
-            // Type-specific fields (see rules below):
-            template: 'Text with ((gap)) placeholders or ((wrong/correct)) placeholders', // for gap_fill, drag_words, correct_words
-            pairs: [['left', 'right']],                       // for matching, audio_match
-            options: ['A', 'B', 'C', 'D'],                    // for multiple_choice / single_choice
-            correct: 0,                                       // for single_choice (index), true_false (0/1), odd_one_out (index)
-            keywords: ['kw1', 'kw2'],                         // for short_answer
-            sampleAnswer: 'expected answer',                  // for short_answer
-            words: [{ word: 'scrambled' }],                   // for word_scramble, word_search (list of words), crossword (with description field below)
-            // For crossword: words should be [{ word: 'HELLO', description: 'A greeting' }]
-            columns: ['True', 'False'],                       // for question_table (possible answer columns)
-            rows: ['The sun is a star##True'],                // for question_table (statements with ##Answer suffix)
-            sentence: 'The sky is blue.',                     // for sentence_builder
-            audioText: 'Sentence to be spoken',               // for dictation, audio_match
-            voice: 'de-DE-KatjaNeural|en-US-JennyNeural',     // for dictation, audio_match (German/English voice selection)
-            items: ['first', 'second', 'third'],              // for ordering, odd_one_out
-            reason: 'reason why this item is odd',            // for odd_one_out
-            kc_ids: ['kc-id-1'],                              // optional knowledge component IDs
-          },
-        ],
-      }, null, 2),
+      JSON.stringify(
+        {
+          summary: 'Brief summary of student issues and mistakes, explaining the errors clearly.',
+          misconceptions: ['list of misconceptions found'],
+          custom_instructions: ['practical next steps for this student'],
+          mermaid: 'optional mermaid diagram code',
+          exercises: [
+            {
+              title: 'Exercise title',
+              type: 'gap_fill|matching|multiple_choice|single_choice|short_answer|word_scramble|true_false|ordering|vocabulary|semantic_sorter|flashcards|drag_words|correct_words|question_table|crossword|audio_match|dictation|word_search|sentence_builder|odd_one_out',
+              // Type-specific fields (see rules below):
+              template: 'Text with ((gap)) placeholders or ((wrong/correct)) placeholders', // for gap_fill, drag_words, correct_words
+              pairs: [['left', 'right']], // for matching, audio_match
+              options: ['A', 'B', 'C', 'D'], // for multiple_choice / single_choice
+              correct: 0, // for single_choice (index), true_false (0/1), odd_one_out (index)
+              keywords: ['kw1', 'kw2'], // for short_answer
+              sampleAnswer: 'expected answer', // for short_answer
+              words: [{ word: 'scrambled' }], // for word_scramble, word_search (list of words), crossword (with description field below)
+              // For crossword: words should be [{ word: 'HELLO', description: 'A greeting' }]
+              columns: ['True', 'False'], // for question_table (possible answer columns)
+              rows: ['The sun is a star##True'], // for question_table (statements with ##Answer suffix)
+              sentence: 'The sky is blue.', // for sentence_builder
+              audioText: 'Sentence to be spoken', // for dictation, audio_match
+              voice: 'de-DE-KatjaNeural|en-US-JennyNeural', // for dictation, audio_match (German/English voice selection)
+              items: ['first', 'second', 'third'], // for ordering, odd_one_out
+              reason: 'reason why this item is odd', // for odd_one_out
+              kc_ids: ['kc-id-1'], // optional knowledge component IDs
+            },
+          ],
+        },
+        null,
+        2,
+      ),
       '',
       'RULES:',
       '- Keep language age-appropriate and encouraging.',
@@ -722,7 +778,9 @@ router.post('/remediation/round/:roundId/responses', requireAuth, async (req, re
       responses,
     )
 
-    const attempted = exercises.filter((ex) => String(responses[String(ex.id || '')] ?? '') !== '').length
+    const attempted = exercises.filter(
+      (ex) => String(responses[String(ex.id || '')] ?? '') !== '',
+    ).length
     const correctCount = scoringResult.blockScores.filter(
       (bs) => bs.maxScore > 0 && bs.score >= bs.maxScore,
     ).length
@@ -785,9 +843,7 @@ router.post('/remediation/round/:roundId/responses', requireAuth, async (req, re
 
     if (existingMastery) {
       masteryBefore = existingMastery.mastery_level
-      masteryAfter = pass
-        ? Math.min(100, masteryBefore + 5)
-        : Math.max(0, masteryBefore - 3)
+      masteryAfter = pass ? Math.min(100, masteryBefore + 5) : Math.max(0, masteryBefore - 3)
       await knex('learning_mastery')
         .where({ id: existingMastery.id })
         .update({ mastery_level: masteryAfter, last_practiced_at: knex.fn.now() })
@@ -850,7 +906,11 @@ router.post('/remediation/round/:roundId/self-assessment', requireAuth, async (r
     }
 
     const { self_assessment } = req.body as { self_assessment?: string }
-    if (!self_assessment || typeof self_assessment !== 'string' || self_assessment.trim().length < 10) {
+    if (
+      !self_assessment ||
+      typeof self_assessment !== 'string' ||
+      self_assessment.trim().length < 10
+    ) {
       res.status(400).json({ error: 'self_assessment must be at least 10 characters' })
       return
     }
@@ -866,61 +926,66 @@ router.post('/remediation/round/:roundId/self-assessment', requireAuth, async (r
 })
 
 // ─── A/B prompt variant metrics (teacher/admin) ────────────────────────
-router.get('/remediation/ab-metrics', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    const rounds = await knex('submission_remediation_rounds').select('*')
+router.get(
+  '/remediation/ab-metrics',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const rounds = await knex('submission_remediation_rounds').select('*')
 
-    const byVariant: Record<string, Record<string, unknown>[]> = { A: [], B: [] }
-    for (const r of rounds as Record<string, unknown>[]) {
-      const v = String(r.remediation_prompt_variant || 'A')
-      if (!byVariant[v]) byVariant[v] = []
-      byVariant[v].push(r)
-    }
-
-    const result: Record<string, unknown> = {}
-    for (const [variant, variantRounds] of Object.entries(byVariant)) {
-      const n = variantRounds.length
-      const totalAttempted = variantRounds.reduce(
-        (s, r) => s + (Number(r.exercises_attempted) || 0), 0,
-      )
-      const totalCorrect = variantRounds.reduce(
-        (s, r) => s + (Number(r.exercises_correct) || 0), 0,
-      )
-      const totalTime = variantRounds.reduce(
-        (s, r) => s + (Number(r.time_spent_seconds) || 0), 0,
-      )
-
-      result[variant] = {
-        rounds: n,
-        avg_exercises_attempted: n > 0 ? Math.round((totalAttempted / n) * 100) / 100 : 0,
-        avg_exercises_correct: n > 0 ? Math.round((totalCorrect / n) * 100) / 100 : 0,
-        avg_time_spent_seconds: n > 0 ? Math.round((totalTime / n) * 100) / 100 : 0,
+      const byVariant: Record<string, Record<string, unknown>[]> = { A: [], B: [] }
+      for (const r of rounds as Record<string, unknown>[]) {
+        const v = String(r.remediation_prompt_variant || 'A')
+        if (!byVariant[v]) byVariant[v] = []
+        byVariant[v].push(r)
       }
+
+      const result: Record<string, unknown> = {}
+      for (const [variant, variantRounds] of Object.entries(byVariant)) {
+        const n = variantRounds.length
+        const totalAttempted = variantRounds.reduce(
+          (s, r) => s + (Number(r.exercises_attempted) || 0),
+          0,
+        )
+        const totalCorrect = variantRounds.reduce(
+          (s, r) => s + (Number(r.exercises_correct) || 0),
+          0,
+        )
+        const totalTime = variantRounds.reduce((s, r) => s + (Number(r.time_spent_seconds) || 0), 0)
+
+        result[variant] = {
+          rounds: n,
+          avg_exercises_attempted: n > 0 ? Math.round((totalAttempted / n) * 100) / 100 : 0,
+          avg_exercises_correct: n > 0 ? Math.round((totalCorrect / n) * 100) / 100 : 0,
+          avg_time_spent_seconds: n > 0 ? Math.round((totalTime / n) * 100) / 100 : 0,
+        }
+      }
+
+      // round2_rate: fraction of submissions with >=2 rounds
+      const subCounts = await knex('submission_remediation_rounds')
+        .select('submission_id')
+        .count({ count: '*' })
+        .groupBy('submission_id')
+        .havingRaw('count(*) >= 2')
+
+      const totalSubmissions = await knex('submission_remediation_rounds')
+        .distinct('submission_id')
+        .count({ count: '*' })
+        .first()
+
+      const totalSubCount = Number((totalSubmissions as Record<string, unknown>)?.count || 0)
+      const multiRoundCount = subCounts.length
+
+      result.round2_rate = totalSubCount > 0 ? multiRoundCount / totalSubCount : 0
+
+      res.json(result)
+    } catch (err) {
+      next(err)
     }
-
-    // round2_rate: fraction of submissions with >=2 rounds
-    const subCounts = await knex('submission_remediation_rounds')
-      .select('submission_id')
-      .count({ count: '*' })
-      .groupBy('submission_id')
-      .havingRaw('count(*) >= 2')
-
-    const totalSubmissions = await knex('submission_remediation_rounds')
-      .distinct('submission_id')
-      .count({ count: '*' })
-      .first()
-
-    const totalSubCount = Number((totalSubmissions as Record<string, unknown>)?.count || 0)
-    const multiRoundCount = subCounts.length
-
-    result.round2_rate = totalSubCount > 0 ? multiRoundCount / totalSubCount : 0
-
-    res.json(result)
-  } catch (err) {
-    next(err)
-  }
-})
+  },
+)
 
 // ─── Student remediation history ───────────────────────────────────────
 router.get('/student/remediation-history', requireAuth, async (req, res, next) => {
@@ -950,16 +1015,19 @@ router.get('/student/remediation-history', requireAuth, async (req, res, next) =
       .orderBy('submission_remediation_rounds.round_number', 'asc')
 
     // Group by assignment
-    const grouped: Record<string, {
-      assignment_id: string
-      worksheet_id: string
-      worksheet_title: string
-      subject: string
-      rounds: Record<string, unknown>[]
-      round_count: number
-      attempted: number
-      correct: number
-    }> = {}
+    const grouped: Record<
+      string,
+      {
+        assignment_id: string
+        worksheet_id: string
+        worksheet_title: string
+        subject: string
+        rounds: Record<string, unknown>[]
+        round_count: number
+        attempted: number
+        correct: number
+      }
+    > = {}
 
     for (const row of rows as Record<string, unknown>[]) {
       const assId = String(row.assignment_id || '')

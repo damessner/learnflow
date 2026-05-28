@@ -5,12 +5,23 @@
       {{ worksheet.description }}
     </p>
 
-    <div v-if="assignment?.due_date" class="card" style="margin-bottom: 1rem; padding: 0.75rem 1rem">
+    <div
+      v-if="assignment?.due_date"
+      class="card"
+      style="margin-bottom: 1rem; padding: 0.75rem 1rem"
+    >
       <strong>Due:</strong>
-      <span :style="{ color: isOverdue && !submitted ? 'var(--danger)' : 'var(--text-main)', marginLeft: '0.35rem' }">
+      <span
+        :style="{
+          color: isOverdue && !submitted ? 'var(--danger)' : 'var(--text-main)',
+          marginLeft: '0.35rem',
+        }"
+      >
         {{ new Date(assignment.due_date).toLocaleString() }}
       </span>
-      <span v-if="isOverdue && !submitted" class="badge-danger badge" style="margin-left: 0.5rem">Overdue</span>
+      <span v-if="isOverdue && !submitted" class="badge-danger badge" style="margin-left: 0.5rem"
+        >Overdue</span
+      >
     </div>
 
     <div
@@ -57,40 +68,61 @@
       <p>{{ submitResult.feedback }}</p>
     </div>
 
-    <div v-if="submitted" class="card" style="margin-bottom:1rem">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap">
-        <h3 style="margin:0">🧠 Personalisierte Nacharbeit</h3>
+    <div v-if="submitted" class="card" style="margin-bottom: 1rem">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        "
+      >
+        <h3 style="margin: 0">🧠 Personalisierte Nacharbeit</h3>
         <button
           class="btn-primary"
-          :disabled="remediationLoading || remediationGenerating || !remediationData?.canGenerateRound"
+          :disabled="
+            remediationLoading || remediationGenerating || !remediationData?.canGenerateRound
+          "
           @click="generateRemediationRound"
         >
-          {{ remediationGenerating ? 'Generating...' : `Generate Round (${remediationData?.roundsLeft ?? 0} left)` }}
+          {{
+            remediationGenerating
+              ? 'Generating...'
+              : `Generate Round (${remediationData?.roundsLeft ?? 0} left)`
+          }}
         </button>
       </div>
 
-      <p style="margin:0.35rem 0 0.6rem;color:var(--text-muted);font-size:0.85rem">
+      <p style="margin: 0.35rem 0 0.6rem; color: var(--text-muted); font-size: 0.85rem">
         KI analysiert deine Fehler und erstellt bis zu 2 individuelle Übungsrunden.
       </p>
 
-      <div v-if="remediationLoading" style="color:var(--text-muted)">Loading remediation…</div>
-      <div v-else-if="!remediationData" style="color:var(--text-muted)">No remediation data yet.</div>
+      <div v-if="remediationLoading" style="color: var(--text-muted)">Loading remediation…</div>
+      <div v-else-if="!remediationData" style="color: var(--text-muted)">
+        No remediation data yet.
+      </div>
       <div v-else>
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem">
           <span class="badge">Wrong blocks: {{ remediationData.wrongBlocks?.length || 0 }}</span>
           <span class="badge">Rounds used: {{ remediationData.roundsUsed || 0 }}/2</span>
         </div>
 
-        <div v-if="(remediationData.wrongBlocks || []).length" style="margin-bottom:0.5rem">
-          <h4 style="margin:0 0 0.35rem;font-size:0.95rem">Fehlerübersicht</h4>
-          <ul style="margin:0;padding-left:1rem">
-            <li v-for="wb in remediationData.wrongBlocks" :key="wb.blockId" style="margin-bottom:0.2rem">
-              <strong>{{ wb.blockType }}</strong>: {{ wb.blockText }}
+        <div v-if="(remediationData.wrongBlocks || []).length" style="margin-bottom: 0.5rem">
+          <h4 style="margin: 0 0 0.35rem; font-size: 0.95rem">Fehlerübersicht</h4>
+          <ul style="margin: 0; padding-left: 1rem">
+            <li
+              v-for="wb in remediationData.wrongBlocks"
+              :key="wb.blockId"
+              style="margin-bottom: 0.2rem"
+            >
+              <strong>{{ wb.blockType }}</strong
+              >: {{ wb.blockText }}
             </li>
           </ul>
         </div>
 
-        <div v-if="!(remediationData.rounds || []).length" style="color:var(--text-muted)">
+        <div v-if="!(remediationData.rounds || []).length" style="color: var(--text-muted)">
           Noch keine KI-Nacharbeit erstellt. Klicke auf "Generate Round".
         </div>
 
@@ -98,25 +130,35 @@
           v-for="round in remediationData.rounds || []"
           :key="round.id"
           class="card"
-          style="padding:0.75rem;margin-top:0.5rem;border:1px solid var(--border-color)"
+          style="padding: 0.75rem; margin-top: 0.5rem; border: 1px solid var(--border-color)"
         >
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              gap: 0.5rem;
+              flex-wrap: wrap;
+            "
+          >
             <strong>Round {{ round.round_number }}</strong>
-            <span style="font-size:0.75rem;color:var(--text-muted)">{{ new Date(round.created_at).toLocaleString() }}</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted)">{{
+              new Date(round.created_at).toLocaleString()
+            }}</span>
           </div>
 
-          <p style="margin:0.4rem 0 0.5rem">{{ round.analysis?.summary }}</p>
+          <p style="margin: 0.4rem 0 0.5rem">{{ round.analysis?.summary }}</p>
 
-          <div v-if="round.analysis?.misconceptions?.length" style="margin-bottom:0.45rem">
-            <strong style="font-size:0.85rem">Misconceptions:</strong>
-            <ul style="margin:0.25rem 0 0;padding-left:1rem">
+          <div v-if="round.analysis?.misconceptions?.length" style="margin-bottom: 0.45rem">
+            <strong style="font-size: 0.85rem">Misconceptions:</strong>
+            <ul style="margin: 0.25rem 0 0; padding-left: 1rem">
               <li v-for="m in round.analysis.misconceptions" :key="m">{{ m }}</li>
             </ul>
           </div>
 
-          <div v-if="round.analysis?.custom_instructions?.length" style="margin-bottom:0.45rem">
-            <strong style="font-size:0.85rem">Custom instructions:</strong>
-            <ol style="margin:0.25rem 0 0;padding-left:1rem">
+          <div v-if="round.analysis?.custom_instructions?.length" style="margin-bottom: 0.45rem">
+            <strong style="font-size: 0.85rem">Custom instructions:</strong>
+            <ol style="margin: 0.25rem 0 0; padding-left: 1rem">
               <li v-for="c in round.analysis.custom_instructions" :key="c">{{ c }}</li>
             </ol>
           </div>
@@ -125,46 +167,85 @@
             v-if="round.analysis?.mermaid"
             :code="round.analysis.mermaid"
             alt-text="Remediation diagram"
-            style="margin-bottom:0.5rem"
+            style="margin-bottom: 0.5rem"
           />
 
           <div v-if="round.exercises?.length">
-            <strong style="font-size:0.85rem">Individual exercises:</strong>
+            <strong style="font-size: 0.85rem">Individual exercises:</strong>
             <div
               v-for="(ex, exIdx) in round.exercises"
               :key="`${round.id}_${exIdx}`"
-              style="margin-top:0.35rem;padding:0.6rem;border:1px dashed var(--border-color);border-radius:6px"
+              style="
+                margin-top: 0.35rem;
+                padding: 0.6rem;
+                border: 1px dashed var(--border-color);
+                border-radius: 6px;
+              "
             >
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap">
-                <div style="font-weight:600">{{ ex.title }}</div>
-                <div style="display:flex;gap:0.35rem;align-items:center">
-                  <span class="badge" style="font-size:0.7rem">{{ ex.type }}</span>
-                  <span class="badge" style="font-size:0.7rem">{{ ex.points ?? 0 }} pts</span>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  gap: 0.5rem;
+                  flex-wrap: wrap;
+                "
+              >
+                <div style="font-weight: 600">{{ ex.title }}</div>
+                <div style="display: flex; gap: 0.35rem; align-items: center">
+                  <span class="badge" style="font-size: 0.7rem">{{ ex.type }}</span>
+                  <span class="badge" style="font-size: 0.7rem">{{ ex.points ?? 0 }} pts</span>
                 </div>
               </div>
 
-              <div v-if="ex.prompt" style="white-space:pre-wrap;margin-top:0.35rem">{{ ex.prompt }}</div>
-              <div v-if="ex.problem_text" style="white-space:pre-wrap;margin-top:0.35rem">{{ ex.problem_text }}</div>
+              <div v-if="ex.prompt" style="white-space: pre-wrap; margin-top: 0.35rem">
+                {{ ex.prompt }}
+              </div>
+              <div v-if="ex.problem_text" style="white-space: pre-wrap; margin-top: 0.35rem">
+                {{ ex.problem_text }}
+              </div>
 
-              <div style="margin-top:0.5rem">
+              <div style="margin-top: 0.5rem">
                 <template v-if="ex.type === 'gap_fill'">
-                  <template v-for="seg in getGapSegments(ex.template || '')" :key="`${round.id}_${getRemediationExerciseId(ex, exIdx)}_${seg.key}`">
-                    <span v-if="seg.type === 'text'" style="white-space: pre-wrap">{{ seg.text }}</span>
+                  <template
+                    v-for="seg in getGapSegments(ex.template || '')"
+                    :key="`${round.id}_${getRemediationExerciseId(ex, exIdx)}_${seg.key}`"
+                  >
+                    <span v-if="seg.type === 'text'" style="white-space: pre-wrap">{{
+                      seg.text
+                    }}</span>
                     <input
                       v-else
                       type="text"
-                      :value="remediationRoundResponses[round.id]?.[getRemediationExerciseId(ex, exIdx)]?.[String(seg.index)] || ''"
-                      @input="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][String(seg.index)] = ($event.target as HTMLInputElement).value"
-                      style="display:inline;width:auto;min-width:80px;padding:0.2rem 0.5rem;border:1px dashed var(--primary);border-radius:4px"
+                      :value="
+                        remediationRoundResponses[round.id]?.[
+                          getRemediationExerciseId(ex, exIdx)
+                        ]?.[String(seg.index)] || ''
+                      "
+                      @input="
+                        remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][
+                          String(seg.index)
+                        ] = ($event.target as HTMLInputElement).value
+                      "
+                      style="
+                        display: inline;
+                        width: auto;
+                        min-width: 80px;
+                        padding: 0.2rem 0.5rem;
+                        border: 1px dashed var(--primary);
+                        border-radius: 4px;
+                      "
                     />
                   </template>
                 </template>
 
                 <template v-else-if="ex.type === 'multiple_choice'">
-                  <div v-for="(opt, oi) in ex.options || []" :key="oi" style="margin:0.2rem 0">
-                    <label style="display:flex;align-items:center;gap:0.5rem">
+                  <div v-for="(opt, oi) in ex.options || []" :key="oi" style="margin: 0.2rem 0">
+                    <label style="display: flex; align-items: center; gap: 0.5rem">
                       <input
-                        v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                        v-model="
+                          remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]
+                        "
                         type="checkbox"
                         :value="oi"
                       />
@@ -174,10 +255,12 @@
                 </template>
 
                 <template v-else-if="ex.type === 'single_choice'">
-                  <div v-for="(opt, oi) in ex.options || []" :key="oi" style="margin:0.2rem 0">
-                    <label style="display:flex;align-items:center;gap:0.5rem">
+                  <div v-for="(opt, oi) in ex.options || []" :key="oi" style="margin: 0.2rem 0">
+                    <label style="display: flex; align-items: center; gap: 0.5rem">
                       <input
-                        v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                        v-model="
+                          remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]
+                        "
                         type="radio"
                         :value="oi"
                         :name="`rem_sc_${round.id}_${getRemediationExerciseId(ex, exIdx)}`"
@@ -188,19 +271,23 @@
                 </template>
 
                 <template v-else-if="ex.type === 'true_false'">
-                  <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
-                    <label style="display:flex;align-items:center;gap:0.35rem">
+                  <div style="display: flex; gap: 0.75rem; flex-wrap: wrap">
+                    <label style="display: flex; align-items: center; gap: 0.35rem">
                       <input
-                        v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                        v-model="
+                          remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]
+                        "
                         type="radio"
                         :value="1"
                         :name="`rem_tf_${round.id}_${getRemediationExerciseId(ex, exIdx)}`"
                       />
                       True
                     </label>
-                    <label style="display:flex;align-items:center;gap:0.35rem">
+                    <label style="display: flex; align-items: center; gap: 0.35rem">
                       <input
-                        v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                        v-model="
+                          remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]
+                        "
                         type="radio"
                         :value="0"
                         :name="`rem_tf_${round.id}_${getRemediationExerciseId(ex, exIdx)}`"
@@ -214,11 +301,15 @@
                   <div
                     v-for="(pair, pi) in ex.pairs || []"
                     :key="pi"
-                    style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem"
+                    style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem"
                   >
-                    <span style="min-width:120px">{{ pair[0] }}</span>
+                    <span style="min-width: 120px">{{ pair[0] }}</span>
                     <input
-                      v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][String(pi)]"
+                      v-model="
+                        remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][
+                          String(pi)
+                        ]
+                      "
                       :placeholder="'Match for ' + pair[0]"
                     />
                   </div>
@@ -228,59 +319,95 @@
                   <div
                     v-for="(w, wi) in ex.words || []"
                     :key="wi"
-                    style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem"
+                    style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem"
                   >
                     <span style="font-family: monospace; letter-spacing: 2px">
-                      {{ getRemediationScrambled(String(round.id), getRemediationExerciseId(ex, exIdx), wi, w.word) }}
+                      {{
+                        getRemediationScrambled(
+                          String(round.id),
+                          getRemediationExerciseId(ex, exIdx),
+                          wi,
+                          w.word,
+                        )
+                      }}
                     </span>
                     <input
-                      v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][wi]"
+                      v-model="
+                        remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][wi]
+                      "
                       placeholder="Unscramble"
                     />
                   </div>
                 </template>
 
                 <template v-else-if="ex.type === 'word_problem'">
-                  <div v-for="(step, si) in ex.steps || []" :key="si" style="margin-bottom:0.35rem">
-                    <label style="display:block;font-size:0.8rem;color:var(--text-muted)">
+                  <div
+                    v-for="(step, si) in ex.steps || []"
+                    :key="si"
+                    style="margin-bottom: 0.35rem"
+                  >
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted)">
                       Step {{ Number(si) + 1 }}: {{ step.description }}
                     </label>
-                    <input v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][String(si)]" />
+                    <input
+                      v-model="
+                        remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][
+                          String(si)
+                        ]
+                      "
+                    />
                   </div>
-                  <label style="display:block;font-size:0.8rem;color:var(--text-muted)">Final answer</label>
-                  <input v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)].final_answer" />
+                  <label style="display: block; font-size: 0.8rem; color: var(--text-muted)"
+                    >Final answer</label
+                  >
+                  <input
+                    v-model="
+                      remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]
+                        .final_answer
+                    "
+                  />
                 </template>
 
                 <template v-else-if="ex.type === 'fraction_input'">
-                  <div style="display:flex;gap:0.5rem;align-items:center">
+                  <div style="display: flex; gap: 0.5rem; align-items: center">
                     <input
-                      v-model.number="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)].numerator"
+                      v-model.number="
+                        remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]
+                          .numerator
+                      "
                       type="number"
                       placeholder="Numerator"
-                      style="width:120px"
+                      style="width: 120px"
                     />
                     <span>/</span>
                     <input
-                      v-model.number="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)].denominator"
+                      v-model.number="
+                        remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]
+                          .denominator
+                      "
                       type="number"
                       placeholder="Denominator"
-                      style="width:120px"
+                      style="width: 120px"
                     />
                   </div>
                 </template>
 
                 <template v-else-if="ex.type === 'number_line'">
                   <input
-                    v-model.number="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                    v-model.number="
+                      remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]
+                    "
                     type="number"
                     placeholder="Pick a number"
-                    style="width:180px"
+                    style="width: 180px"
                   />
                 </template>
 
                 <template v-else-if="ex.type === 'graph_plot'">
                   <textarea
-                    v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                    v-model="
+                      remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]
+                    "
                     rows="2"
                     placeholder="Enter points as x,y; x,y"
                   ></textarea>
@@ -288,14 +415,19 @@
 
                 <template v-else-if="ex.type === 'geometry_shape'">
                   <input
-                    v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)].shape_name"
+                    v-model="
+                      remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]
+                        .shape_name
+                    "
                     placeholder="Shape name"
                   />
                 </template>
 
                 <template v-else-if="ex.type === 'short_answer'">
                   <textarea
-                    v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                    v-model="
+                      remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]
+                    "
                     rows="3"
                     placeholder="Your answer..."
                   ></textarea>
@@ -303,44 +435,65 @@
 
                 <template v-else>
                   <input
-                    v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]"
+                    v-model="
+                      remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)]
+                    "
                     placeholder="Your answer"
                   />
                 </template>
               </div>
 
-              <div v-if="ex.answer_hint" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem">
+              <div
+                v-if="ex.answer_hint"
+                style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem"
+              >
                 Hint: {{ ex.answer_hint }}
               </div>
             </div>
 
-            <div style="margin-top:0.6rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+            <div
+              style="
+                margin-top: 0.6rem;
+                display: flex;
+                gap: 0.5rem;
+                align-items: center;
+                flex-wrap: wrap;
+              "
+            >
               <button
                 class="btn-primary btn-sm"
                 :disabled="remediationRoundSubmitting[round.id]"
                 @click="submitRoundResponses(round)"
               >
-                {{ remediationRoundSubmitting[round.id] ? 'Submitting...' : 'Submit Round Responses' }}
+                {{
+                  remediationRoundSubmitting[round.id] ? 'Submitting...' : 'Submit Round Responses'
+                }}
               </button>
-              <span
-                v-if="remediationRoundResults[round.id]"
-                class="badge"
-              >
-                Score: {{ remediationRoundResults[round.id].score }}/{{ remediationRoundResults[round.id].maxScore }} ·
-                Correct: {{ remediationRoundResults[round.id].exercises_correct }}/{{ remediationRoundResults[round.id].exercises_attempted }}
+              <span v-if="remediationRoundResults[round.id]" class="badge">
+                Score: {{ remediationRoundResults[round.id].score }}/{{
+                  remediationRoundResults[round.id].maxScore
+                }}
+                · Correct: {{ remediationRoundResults[round.id].exercises_correct }}/{{
+                  remediationRoundResults[round.id].exercises_attempted
+                }}
               </span>
-              <span
-                v-else-if="getRoundHistoryMetrics(round.round_number)"
-                class="badge"
-              >
-                Attempts: {{ getRoundHistoryMetrics(round.round_number)?.exercises_attempted || 0 }} ·
+              <span v-else-if="getRoundHistoryMetrics(round.round_number)" class="badge">
+                Attempts:
+                {{ getRoundHistoryMetrics(round.round_number)?.exercises_attempted || 0 }} ·
                 Correct: {{ getRoundHistoryMetrics(round.round_number)?.exercises_correct || 0 }} ·
                 Time: {{ getRoundHistoryMetrics(round.round_number)?.time_spent_seconds || 0 }}s
               </span>
             </div>
 
-            <div style="margin-top:0.55rem">
-              <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.25rem">
+            <div style="margin-top: 0.55rem">
+              <label
+                style="
+                  display: block;
+                  font-size: 0.8rem;
+                  color: var(--text-muted);
+                  margin-bottom: 0.25rem;
+                "
+              >
                 Self-assessment (min. 10 chars): What did you understand better after this round?
               </label>
               <textarea
@@ -348,7 +501,7 @@
                 rows="2"
                 placeholder="I understood that..."
               ></textarea>
-              <div style="margin-top:0.4rem">
+              <div style="margin-top: 0.4rem">
                 <button
                   class="btn-sm"
                   :disabled="remediationSelfAssessmentSaving[round.id]"
@@ -361,16 +514,35 @@
           </div>
         </div>
 
-        <div style="margin-top:0.75rem;border-top:1px solid var(--border-color);padding-top:0.6rem">
-          <h4 style="margin:0 0 0.35rem;font-size:0.9rem">Your remediation history (this worksheet)</h4>
-          <div v-if="remediationHistoryLoading" style="color:var(--text-muted);font-size:0.8rem">Loading history…</div>
-          <div v-else-if="!currentAssignmentRemediationHistory" style="color:var(--text-muted);font-size:0.8rem">
+        <div
+          style="
+            margin-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.6rem;
+          "
+        >
+          <h4 style="margin: 0 0 0.35rem; font-size: 0.9rem">
+            Your remediation history (this worksheet)
+          </h4>
+          <div v-if="remediationHistoryLoading" style="color: var(--text-muted); font-size: 0.8rem">
+            Loading history…
+          </div>
+          <div
+            v-else-if="!currentAssignmentRemediationHistory"
+            style="color: var(--text-muted); font-size: 0.8rem"
+          >
             No completed history yet.
           </div>
-          <div v-else style="display:flex;gap:0.45rem;flex-wrap:wrap">
-            <span class="badge">Rounds: {{ currentAssignmentRemediationHistory.round_count || 0 }}</span>
-            <span class="badge">Attempted: {{ currentAssignmentRemediationHistory.attempted || 0 }}</span>
-            <span class="badge">Correct: {{ currentAssignmentRemediationHistory.correct || 0 }}</span>
+          <div v-else style="display: flex; gap: 0.45rem; flex-wrap: wrap">
+            <span class="badge"
+              >Rounds: {{ currentAssignmentRemediationHistory.round_count || 0 }}</span
+            >
+            <span class="badge"
+              >Attempted: {{ currentAssignmentRemediationHistory.attempted || 0 }}</span
+            >
+            <span class="badge"
+              >Correct: {{ currentAssignmentRemediationHistory.correct || 0 }}</span
+            >
           </div>
         </div>
       </div>
@@ -418,7 +590,14 @@
               type="text"
               :value="getGapValue(block.id, seg.index)"
               @input="setGapValue(block.id, seg.index, ($event.target as HTMLInputElement).value)"
-              style="display:inline;width:auto;min-width:80px;padding:0.2rem 0.5rem;border:1px dashed var(--primary);border-radius:4px"
+              style="
+                display: inline;
+                width: auto;
+                min-width: 80px;
+                padding: 0.2rem 0.5rem;
+                border: 1px dashed var(--primary);
+                border-radius: 4px;
+              "
             />
           </template>
         </div>
@@ -464,24 +643,51 @@
       <!-- Media / Image Block -->
       <template v-if="block.type === 'media'">
         <div style="text-align: center; margin-top: 0.5rem">
-          <img :src="block.src" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid var(--border-color)" />
-          <p v-if="block.caption" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem">{{ block.caption }}</p>
+          <img
+            :src="block.src"
+            style="
+              max-width: 100%;
+              max-height: 400px;
+              border-radius: 8px;
+              border: 1px solid var(--border-color);
+            "
+          />
+          <p
+            v-if="block.caption"
+            style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem"
+          >
+            {{ block.caption }}
+          </p>
         </div>
       </template>
 
       <!-- Audio Block -->
       <template v-if="block.type === 'audio'">
         <div style="margin-top: 0.5rem">
-          <audio :src="block.src" controls style="width:100%"></audio>
-          <p v-if="block.caption" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem">{{ block.caption }}</p>
+          <audio :src="block.src" controls style="width: 100%"></audio>
+          <p
+            v-if="block.caption"
+            style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem"
+          >
+            {{ block.caption }}
+          </p>
         </div>
       </template>
 
       <!-- Video Block -->
       <template v-if="block.type === 'video'">
         <div style="text-align: center; margin-top: 0.5rem">
-          <video :src="block.src" controls style="max-width:100%; max-height:400px; border-radius:8px"></video>
-          <p v-if="block.caption" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem">{{ block.caption }}</p>
+          <video
+            :src="block.src"
+            controls
+            style="max-width: 100%; max-height: 400px; border-radius: 8px"
+          ></video>
+          <p
+            v-if="block.caption"
+            style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem"
+          >
+            {{ block.caption }}
+          </p>
         </div>
       </template>
 
@@ -497,17 +703,24 @@
             frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowfullscreen
-            style="max-width:100%; border-radius:8px"
+            style="max-width: 100%; border-radius: 8px"
           ></iframe>
-          <div v-else style="color:var(--text-muted)">Invalid YouTube Link</div>
-          <p v-if="block.caption" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem">{{ block.caption }}</p>
+          <div v-else style="color: var(--text-muted)">Invalid YouTube Link</div>
+          <p
+            v-if="block.caption"
+            style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem"
+          >
+            {{ block.caption }}
+          </p>
         </div>
       </template>
 
       <!-- Drawing Block -->
       <template v-if="block.type === 'drawing'">
         <div style="margin-top: 0.5rem">
-          <div style="font-weight: 500; margin-bottom: 0.25rem">{{ block.text || 'Draw here:' }}</div>
+          <div style="font-weight: 500; margin-bottom: 0.25rem">
+            {{ block.text || 'Draw here:' }}
+          </div>
           <ScratchpadCanvas />
         </div>
       </template>
@@ -525,10 +738,20 @@
             user-select: none;
           "
         >
-          <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--primary)">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+              font-weight: 600;
+              color: var(--primary);
+            "
+          >
             <span style="font-size: 1.1rem">💡</span>
             <span style="flex: 1">{{ block.title || 'Click to learn more' }}</span>
-            <span style="font-size: 0.85rem; color: var(--text-muted)">{{ infoBoxOpen[block.id] ? '▼' : '▶' }}</span>
+            <span style="font-size: 0.85rem; color: var(--text-muted)">{{
+              infoBoxOpen[block.id] ? '▼' : '▶'
+            }}</span>
           </div>
           <div
             v-if="infoBoxOpen[block.id]"
@@ -558,7 +781,9 @@
           :key="wi"
           style="display: flex; gap: 0.5rem; margin-bottom: 0.25rem"
         >
-          <span style="font-family: monospace; letter-spacing: 3px">{{ getScrambled(block.id, wi) }}</span>
+          <span style="font-family: monospace; letter-spacing: 3px">{{
+            getScrambled(block.id, wi)
+          }}</span>
           <input v-model="answers[block.id][wi]" placeholder="Unscramble" />
         </div>
       </template>
@@ -579,37 +804,61 @@
                   height: '28px',
                   padding: '0.1rem 0.6rem',
                   margin: '0 0.25rem',
-                  border: activeGap?.blockId === block.id && activeGap?.index === seg.index ? '2px solid var(--primary)' : '1px dashed var(--text-muted)',
+                  border:
+                    activeGap?.blockId === block.id && activeGap?.index === seg.index
+                      ? '2px solid var(--primary)'
+                      : '1px dashed var(--text-muted)',
                   borderRadius: '6px',
-                  background: getGapValue(block.id, seg.index) ? 'var(--primary-light)' : 'var(--bg-main)',
+                  background: getGapValue(block.id, seg.index)
+                    ? 'var(--primary-light)'
+                    : 'var(--bg-main)',
                   color: 'var(--text-main)',
                   textAlign: 'center',
                   cursor: readonly ? 'default' : 'pointer',
                   fontWeight: '600',
                   verticalAlign: 'middle',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
                 }"
               >
                 {{ getGapValue(block.id, seg.index) || 'Drop here' }}
-                <span v-if="getGapValue(block.id, seg.index) && !readonly" @click.stop="setGapValue(block.id, seg.index, '')" style="color:red;margin-left:4px;font-weight:bold;font-size:0.8rem">×</span>
+                <span
+                  v-if="getGapValue(block.id, seg.index) && !readonly"
+                  @click.stop="setGapValue(block.id, seg.index, '')"
+                  style="color: red; margin-left: 4px; font-weight: bold; font-size: 0.8rem"
+                  >×</span
+                >
               </span>
             </template>
           </div>
           <!-- Options list -->
-          <div v-if="!readonly" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.75rem;background:var(--bg-card);padding:0.5rem;border-radius:8px;border:1px solid var(--border-color)">
+          <div
+            v-if="!readonly"
+            style="
+              display: flex;
+              gap: 0.5rem;
+              flex-wrap: wrap;
+              margin-top: 0.75rem;
+              background: var(--bg-card);
+              padding: 0.5rem;
+              border-radius: 8px;
+              border: 1px solid var(--border-color);
+            "
+          >
             <button
               v-for="word in dragWordsOptions[block.id] || []"
               :key="word"
               @click="onSelectDragWord(block.id, word)"
               class="btn-sm"
               :style="{
-                background: isDragWordUsed(block.id, word) ? 'var(--border-color)' : 'var(--primary)',
+                background: isDragWordUsed(block.id, word)
+                  ? 'var(--border-color)'
+                  : 'var(--primary)',
                 color: isDragWordUsed(block.id, word) ? 'var(--text-muted)' : '#fff',
                 cursor: isDragWordUsed(block.id, word) ? 'not-allowed' : 'pointer',
                 opacity: isDragWordUsed(block.id, word) ? 0.6 : 1,
                 border: 'none',
                 fontWeight: '600',
-                borderRadius: '6px'
+                borderRadius: '6px',
               }"
               :disabled="isDragWordUsed(block.id, word)"
             >
@@ -622,57 +871,120 @@
       <!-- Correct Words -->
       <template v-if="block.type === 'correct_words'">
         <div style="line-height: 2; font-size: 1.05rem">
-            <template v-for="(seg, si) in getCorrectWordsSegments(block.template)" :key="si">
-              <span v-if="seg.type === 'text'" style="white-space: pre-wrap">{{ seg.text }}</span>
-              <span v-else-if="seg.type === 'word'" style="position:relative;display:inline-block;margin:0 0.25rem">
-                <span
-                  @click="readonly ? null : toggleCorrectWordsInput(block.id, seg.index)"
-                  style="text-decoration: underline dashed red; cursor: pointer; color: #dc2626; font-weight:600"
-                >
-                  {{ seg.wrong }}
-                </span>
-                <!-- Inline edit bubble -->
-                <div
-                  v-if="activeCorrectWordsInput?.blockId === block.id && activeCorrectWordsInput?.index === seg.index && !readonly"
-                  style="position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:0.5rem;box-shadow:var(--shadow-lg);z-index:100;display:flex;gap:0.25rem;align-items:center;min-width:180px"
-                >
-                  <input
-                    :value="getCorrectWordsValue(block.id, seg.index)"
-                    @input="setCorrectWordsValue(block.id, seg.index, ($event.target as HTMLInputElement).value)"
-                    placeholder="Enter correction..."
-                    style="font-size:0.8rem;padding:0.2rem 0.4rem;flex:1"
-                    @keyup.enter="activeCorrectWordsInput = null"
-                    autofocus
-                  />
-                  <button class="btn-sm btn-primary" style="font-size:0.75rem;padding:0.2rem 0.4rem" @click="activeCorrectWordsInput = null">✓</button>
-                </div>
-                <!-- Display typed correction below if filled -->
-                <span v-if="getCorrectWordsValue(block.id, seg.index)" style="font-size:0.75rem;color:var(--primary);display:block;text-align:center;line-height:1;margin-top:-2px">
-                  ({{ getCorrectWordsValue(block.id, seg.index) }})
-                </span>
+          <template v-for="(seg, si) in getCorrectWordsSegments(block.template)" :key="si">
+            <span v-if="seg.type === 'text'" style="white-space: pre-wrap">{{ seg.text }}</span>
+            <span
+              v-else-if="seg.type === 'word'"
+              style="position: relative; display: inline-block; margin: 0 0.25rem"
+            >
+              <span
+                @click="readonly ? null : toggleCorrectWordsInput(block.id, seg.index)"
+                style="
+                  text-decoration: underline dashed red;
+                  cursor: pointer;
+                  color: #dc2626;
+                  font-weight: 600;
+                "
+              >
+                {{ seg.wrong }}
               </span>
-            </template>
-          </div>
+              <!-- Inline edit bubble -->
+              <div
+                v-if="
+                  activeCorrectWordsInput?.blockId === block.id &&
+                  activeCorrectWordsInput?.index === seg.index &&
+                  !readonly
+                "
+                style="
+                  position: absolute;
+                  bottom: 100%;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  background: var(--bg-card);
+                  border: 1px solid var(--border-color);
+                  border-radius: 8px;
+                  padding: 0.5rem;
+                  box-shadow: var(--shadow-lg);
+                  z-index: 100;
+                  display: flex;
+                  gap: 0.25rem;
+                  align-items: center;
+                  min-width: 180px;
+                "
+              >
+                <input
+                  :value="getCorrectWordsValue(block.id, seg.index)"
+                  @input="
+                    setCorrectWordsValue(
+                      block.id,
+                      seg.index,
+                      ($event.target as HTMLInputElement).value,
+                    )
+                  "
+                  placeholder="Enter correction..."
+                  style="font-size: 0.8rem; padding: 0.2rem 0.4rem; flex: 1"
+                  @keyup.enter="activeCorrectWordsInput = null"
+                  autofocus
+                />
+                <button
+                  class="btn-sm btn-primary"
+                  style="font-size: 0.75rem; padding: 0.2rem 0.4rem"
+                  @click="activeCorrectWordsInput = null"
+                >
+                  ✓
+                </button>
+              </div>
+              <!-- Display typed correction below if filled -->
+              <span
+                v-if="getCorrectWordsValue(block.id, seg.index)"
+                style="
+                  font-size: 0.75rem;
+                  color: var(--primary);
+                  display: block;
+                  text-align: center;
+                  line-height: 1;
+                  margin-top: -2px;
+                "
+              >
+                ({{ getCorrectWordsValue(block.id, seg.index) }})
+              </span>
+            </span>
+          </template>
+        </div>
       </template>
 
       <!-- Question Table -->
       <template v-if="block.type === 'question_table'">
-        <div style="overflow-x:auto;margin-top:0.5rem">
-          <table style="width:100%;border-collapse:collapse;border:1px solid var(--border-color)">
+        <div style="overflow-x: auto; margin-top: 0.5rem">
+          <table
+            style="width: 100%; border-collapse: collapse; border: 1px solid var(--border-color)"
+          >
             <thead>
-              <tr style="border-bottom:2px solid var(--border-color)">
-                <th style="text-align:left;padding:0.5rem">Statement / Question</th>
-                <th v-for="col in block.columns || []" :key="col" style="text-align:center;padding:0.5rem">
+              <tr style="border-bottom: 2px solid var(--border-color)">
+                <th style="text-align: left; padding: 0.5rem">Statement / Question</th>
+                <th
+                  v-for="col in block.columns || []"
+                  :key="col"
+                  style="text-align: center; padding: 0.5rem"
+                >
                   {{ col }}
                 </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(row, ri) in block.rows || []" :key="ri" style="border-bottom:1px solid var(--border-color)">
-                <td style="padding:0.5rem;color:var(--text-main)">
+              <tr
+                v-for="(row, ri) in block.rows || []"
+                :key="ri"
+                style="border-bottom: 1px solid var(--border-color)"
+              >
+                <td style="padding: 0.5rem; color: var(--text-main)">
                   {{ row.split('##')[0] }}
                 </td>
-                <td v-for="col in block.columns || []" :key="col" style="text-align:center;padding:0.5rem">
+                <td
+                  v-for="col in block.columns || []"
+                  :key="col"
+                  style="text-align: center; padding: 0.5rem"
+                >
                   <input
                     type="radio"
                     :name="`${block.id}_row_${ri}`"
@@ -690,9 +1002,12 @@
 
       <!-- Crossword -->
       <template v-if="block.type === 'crossword'">
-        <div v-if="crosswordLayout.rows > 0" style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:0.5rem">
+        <div
+          v-if="crosswordLayout.rows > 0"
+          style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.5rem"
+        >
           <!-- Crossword Grid -->
-          <div style="flex-shrink:0">
+          <div style="flex-shrink: 0">
             <div
               :style="{
                 display: 'grid',
@@ -711,7 +1026,7 @@
                   :style="{
                     width: '36px',
                     height: '36px',
-                    background: crosswordLayout.grid[r-1][c-1].isActive ? '#fff' : '#333',
+                    background: crosswordLayout.grid[r - 1][c - 1].isActive ? '#fff' : '#333',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -721,20 +1036,46 @@
                 >
                   <!-- Cell number -->
                   <span
-                    v-if="crosswordLayout.grid[r-1][c-1].number"
-                    style="position:absolute;top:1px;left:3px;font-size:9px;font-weight:700;color:#666;pointer-events:none;line-height:1"
+                    v-if="crosswordLayout.grid[r - 1][c - 1].number"
+                    style="
+                      position: absolute;
+                      top: 1px;
+                      left: 3px;
+                      font-size: 9px;
+                      font-weight: 700;
+                      color: #666;
+                      pointer-events: none;
+                      line-height: 1;
+                    "
                   >
-                    {{ crosswordLayout.grid[r-1][c-1].number }}
+                    {{ crosswordLayout.grid[r - 1][c - 1].number }}
                   </span>
                   <!-- Letter input (active cells only) -->
                   <input
-                    v-if="crosswordLayout.grid[r-1][c-1].isActive"
-                    :ref="(el) => setCrosswordCellRef(r-1, c-1, el as HTMLInputElement | null)"
+                    v-if="crosswordLayout.grid[r - 1][c - 1].isActive"
+                    :ref="(el) => setCrosswordCellRef(r - 1, c - 1, el as HTMLInputElement | null)"
                     maxlength="1"
                     :disabled="readonly"
-                    :value="getCrosswordChar(block.id, crosswordLayout.grid[r-1][c-1].wordIndices[0], crosswordLayout.grid[r-1][c-1].charPositions[crosswordLayout.grid[r-1][c-1].wordIndices[0]])"
-                    @input="onCrosswordInput(block.id, crosswordLayout.grid[r-1][c-1], ($event.target as HTMLInputElement).value, $event)"
-                    @keydown="onCrosswordKeydown(block.id, crosswordLayout.grid[r-1][c-1], $event)"
+                    :value="
+                      getCrosswordChar(
+                        block.id,
+                        crosswordLayout.grid[r - 1][c - 1].wordIndices[0],
+                        crosswordLayout.grid[r - 1][c - 1].charPositions[
+                          crosswordLayout.grid[r - 1][c - 1].wordIndices[0]
+                        ],
+                      )
+                    "
+                    @input="
+                      onCrosswordInput(
+                        block.id,
+                        crosswordLayout.grid[r - 1][c - 1],
+                        ($event.target as HTMLInputElement).value,
+                        $event,
+                      )
+                    "
+                    @keydown="
+                      onCrosswordKeydown(block.id, crosswordLayout.grid[r - 1][c - 1], $event)
+                    "
                     :style="{
                       width: '100%',
                       height: '100%',
@@ -756,28 +1097,38 @@
           </div>
 
           <!-- Clues -->
-          <div style="flex:1;min-width:200px">
-            <div v-if="crosswordLayout.acrossClues.length" style="margin-bottom:1rem">
-              <h4 style="font-size:0.9rem;margin-bottom:0.35rem">Across</h4>
-              <div v-for="clue in crosswordLayout.acrossClues" :key="'a'+clue.number" style="font-size:0.85rem;margin-bottom:0.2rem">
+          <div style="flex: 1; min-width: 200px">
+            <div v-if="crosswordLayout.acrossClues.length" style="margin-bottom: 1rem">
+              <h4 style="font-size: 0.9rem; margin-bottom: 0.35rem">Across</h4>
+              <div
+                v-for="clue in crosswordLayout.acrossClues"
+                :key="'a' + clue.number"
+                style="font-size: 0.85rem; margin-bottom: 0.2rem"
+              >
                 <strong>{{ clue.number }}.</strong> {{ clue.clue }}
-                <span style="color:var(--text-muted);font-size:0.75rem">
+                <span style="color: var(--text-muted); font-size: 0.75rem">
                   ({{ block.words?.[clue.wordIdx]?.word?.length || '?' }})
                 </span>
               </div>
             </div>
             <div v-if="crosswordLayout.downClues.length">
-              <h4 style="font-size:0.9rem;margin-bottom:0.35rem">Down</h4>
-              <div v-for="clue in crosswordLayout.downClues" :key="'d'+clue.number" style="font-size:0.85rem;margin-bottom:0.2rem">
+              <h4 style="font-size: 0.9rem; margin-bottom: 0.35rem">Down</h4>
+              <div
+                v-for="clue in crosswordLayout.downClues"
+                :key="'d' + clue.number"
+                style="font-size: 0.85rem; margin-bottom: 0.2rem"
+              >
                 <strong>{{ clue.number }}.</strong> {{ clue.clue }}
-                <span style="color:var(--text-muted);font-size:0.75rem">
+                <span style="color: var(--text-muted); font-size: 0.75rem">
                   ({{ block.words?.[clue.wordIdx]?.word?.length || '?' }})
                 </span>
               </div>
             </div>
           </div>
         </div>
-        <p v-else style="color:var(--text-muted);font-size:0.85rem">No crossword words configured.</p>
+        <p v-else style="color: var(--text-muted); font-size: 0.85rem">
+          No crossword words configured.
+        </p>
       </template>
 
       <template v-if="block.type === 'vocabulary'">
@@ -786,23 +1137,46 @@
 
       <!-- Audio Match -->
       <template v-if="block.type === 'audio_match'">
-        <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem">
-          <div v-for="(pair, pi) in block.pairs || []" :key="pi" style="display:flex;align-items:center;gap:0.75rem;background:var(--bg-main);padding:0.5rem 0.75rem;border-radius:8px;border:1px solid var(--border-color)">
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem">
+          <div
+            v-for="(pair, pi) in block.pairs || []"
+            :key="pi"
+            style="
+              display: flex;
+              align-items: center;
+              gap: 0.75rem;
+              background: var(--bg-main);
+              padding: 0.5rem 0.75rem;
+              border-radius: 8px;
+              border: 1px solid var(--border-color);
+            "
+          >
             <button
               class="btn-sm"
-              style="padding:0.25rem 0.5rem;font-size:0.9rem;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center"
+              style="
+                padding: 0.25rem 0.5rem;
+                font-size: 0.9rem;
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
               @click="playAudioUrl(block.audioUrls?.[pi] || '')"
               :disabled="!block.audioUrls?.[pi]"
             >
               🔊
             </button>
-            <span style="font-size:0.85rem;color:var(--text-muted)">Audio #{{ Number(pi) + 1 }}</span>
-            <span style="color:var(--text-muted)">→</span>
+            <span style="font-size: 0.85rem; color: var(--text-muted)"
+              >Audio #{{ Number(pi) + 1 }}</span
+            >
+            <span style="color: var(--text-muted)">→</span>
             <input
               v-model="answers[block.id][pi]"
               :disabled="readonly"
               placeholder="Enter matching text..."
-              style="flex:1"
+              style="flex: 1"
             />
           </div>
         </div>
@@ -810,24 +1184,40 @@
 
       <!-- Dictation -->
       <template v-if="block.type === 'dictation'">
-        <div style="background:var(--bg-main);padding:1rem;border-radius:8px;border:1px solid var(--border-color);margin-top:0.5rem">
-          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.75rem">
+        <div
+          style="
+            background: var(--bg-main);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-top: 0.5rem;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem">
             <button
               class="btn-primary"
-              style="padding:0.4rem 0.8rem;display:flex;align-items:center;gap:0.4rem;border-radius:24px"
+              style="
+                padding: 0.4rem 0.8rem;
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                border-radius: 24px;
+              "
               @click="playAudioUrl(block.audioUrl || '')"
               :disabled="!block.audioUrl"
             >
               <span>🔊 Play Dictation</span>
             </button>
-            <span style="font-size:0.8rem;color:var(--text-muted)">Listen to the speaker and type what you hear.</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted)"
+              >Listen to the speaker and type what you hear.</span
+            >
           </div>
           <textarea
             v-model="answers[block.id]"
             :disabled="readonly"
             rows="2"
             placeholder="Type your transcription here..."
-            style="width:100%"
+            style="width: 100%"
           ></textarea>
         </div>
       </template>
@@ -842,43 +1232,81 @@
 
       <!-- Word Search -->
       <template v-if="block.type === 'word_search'">
-        <div style="margin-top:0.5rem">
+        <div style="margin-top: 0.5rem">
           {{ initWordSearch(block) }}
           <!-- Grid display -->
-          <div style="display:grid;grid-template-columns:repeat(12, 1fr);gap:2px;max-width:360px;margin:0.5rem auto;background:var(--border-color);padding:4px;border-radius:8px">
-              <template v-for="(row, r) in wordSearchGrids[block.id] || []" :key="r">
-                <div
-                  v-for="(char, c) in row"
-                  :key="c"
-                  style="background:var(--bg-card);aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.9rem;border-radius:4px"
-                >
-                  {{ char }}
-                </div>
-              </template>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(12, 1fr);
+              gap: 2px;
+              max-width: 360px;
+              margin: 0.5rem auto;
+              background: var(--border-color);
+              padding: 4px;
+              border-radius: 8px;
+            "
+          >
+            <template v-for="(row, r) in wordSearchGrids[block.id] || []" :key="r">
+              <div
+                v-for="(char, c) in row"
+                :key="c"
+                style="
+                  background: var(--bg-card);
+                  aspect-ratio: 1;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-weight: bold;
+                  font-size: 0.9rem;
+                  border-radius: 4px;
+                "
+              >
+                {{ char }}
+              </div>
+            </template>
           </div>
           <!-- Entry form -->
-          <div v-if="!readonly" style="display:flex;gap:0.5rem;margin-top:0.75rem">
+          <div v-if="!readonly" style="display: flex; gap: 0.5rem; margin-top: 0.75rem">
             <input
               v-model="wordSearchInputs[block.id]"
               placeholder="Type a word you found..."
               @keyup.enter="addFoundWord(block.id)"
-              style="flex:1"
+              style="flex: 1"
             />
             <button class="btn-primary" @click="addFoundWord(block.id)">Add Word</button>
           </div>
           <!-- Found words list -->
-          <div style="margin-top:0.5rem">
-            <label style="font-size:0.8rem;color:var(--text-muted);display:block">Words Found:</label>
-            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.25rem">
+          <div style="margin-top: 0.5rem">
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block"
+              >Words Found:</label
+            >
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.25rem">
               <span
-                v-for="(w, wi) in (answers[block.id] || [])"
+                v-for="(w, wi) in answers[block.id] || []"
                 :key="wi"
-                style="padding:0.2rem 0.5rem;background:var(--primary-light);border:1px solid var(--primary-soft);color:var(--primary);border-radius:12px;font-size:0.8rem;font-weight:600"
+                style="
+                  padding: 0.2rem 0.5rem;
+                  background: var(--primary-light);
+                  border: 1px solid var(--primary-soft);
+                  color: var(--primary);
+                  border-radius: 12px;
+                  font-size: 0.8rem;
+                  font-weight: 600;
+                "
               >
                 {{ w }}
-                <span v-if="!readonly" @click="removeFoundWord(block.id, wi)" style="color:red;cursor:pointer;margin-left:4px;font-weight:bold">×</span>
+                <span
+                  v-if="!readonly"
+                  @click="removeFoundWord(block.id, wi)"
+                  style="color: red; cursor: pointer; margin-left: 4px; font-weight: bold"
+                  >×</span
+                >
               </span>
-              <span v-if="!(answers[block.id] || []).length" style="font-size:0.8rem;color:var(--text-muted);font-style:italic">
+              <span
+                v-if="!(answers[block.id] || []).length"
+                style="font-size: 0.8rem; color: var(--text-muted); font-style: italic"
+              >
                 No words added yet.
               </span>
             </div>
@@ -888,30 +1316,66 @@
 
       <!-- Sentence Builder -->
       <template v-if="block.type === 'sentence_builder'">
-        <div style="margin-top:0.5rem">
+        <div style="margin-top: 0.5rem">
           {{ initSentenceBuilder(block) }}
           <!-- Built sentence display -->
-          <div style="min-height:45px;background:var(--bg-main);border:1px dashed var(--border-color);border-radius:8px;padding:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;margin-bottom:0.75rem">
-              <span
-                v-for="(w, wi) in (answers[block.id] || [])"
-                :key="wi"
-                @click="readonly ? null : removeSentenceWord(block.id, wi)"
-                style="padding:0.25rem 0.5rem;background:var(--primary-light);border:1px solid var(--primary-soft);color:var(--primary);border-radius:6px;font-size:0.9rem;font-weight:600;cursor:pointer"
-              >
-                {{ w }}
-              </span>
-              <span v-if="!(answers[block.id] || []).length" style="font-size:0.8rem;color:var(--text-muted);font-style:italic">
-                Click words below to build the sentence.
-              </span>
+          <div
+            style="
+              min-height: 45px;
+              background: var(--bg-main);
+              border: 1px dashed var(--border-color);
+              border-radius: 8px;
+              padding: 0.5rem;
+              display: flex;
+              gap: 0.4rem;
+              flex-wrap: wrap;
+              align-items: center;
+              margin-bottom: 0.75rem;
+            "
+          >
+            <span
+              v-for="(w, wi) in answers[block.id] || []"
+              :key="wi"
+              @click="readonly ? null : removeSentenceWord(block.id, wi)"
+              style="
+                padding: 0.25rem 0.5rem;
+                background: var(--primary-light);
+                border: 1px solid var(--primary-soft);
+                color: var(--primary);
+                border-radius: 6px;
+                font-size: 0.9rem;
+                font-weight: 600;
+                cursor: pointer;
+              "
+            >
+              {{ w }}
+            </span>
+            <span
+              v-if="!(answers[block.id] || []).length"
+              style="font-size: 0.8rem; color: var(--text-muted); font-style: italic"
+            >
+              Click words below to build the sentence.
+            </span>
           </div>
           <!-- Scrambled source words list -->
-          <div v-if="!readonly" style="display:flex;gap:0.4rem;flex-wrap:wrap;background:var(--bg-card);padding:0.5rem;border-radius:8px;border:1px solid var(--border-color)">
+          <div
+            v-if="!readonly"
+            style="
+              display: flex;
+              gap: 0.4rem;
+              flex-wrap: wrap;
+              background: var(--bg-card);
+              padding: 0.5rem;
+              border-radius: 8px;
+              border: 1px solid var(--border-color);
+            "
+          >
             <button
               v-for="(word, wIndex) in getSentenceBuilderOptions(block.id)"
               :key="wIndex"
               @click="addSentenceWord(block.id, word, wIndex)"
               class="btn-sm"
-              style="font-weight:600;border-radius:6px"
+              style="font-weight: 600; border-radius: 6px"
             >
               {{ word }}
             </button>
@@ -921,35 +1385,48 @@
 
       <!-- Odd One Out -->
       <template v-if="block.type === 'odd_one_out'">
-        <div style="margin-top:0.5rem">
-          <label style="font-size:0.85rem;color:var(--text-muted);display:block;margin-bottom:0.4rem">Select the odd item:</label>
-          <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <div style="margin-top: 0.5rem">
+          <label
+            style="
+              font-size: 0.85rem;
+              color: var(--text-muted);
+              display: block;
+              margin-bottom: 0.4rem;
+            "
+            >Select the odd item:</label
+          >
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
             <button
               v-for="(item, idx) in block.items || []"
               :key="idx"
               @click="readonly ? null : setOddOneOutSelected(block.id, Number(idx))"
               class="btn-sm"
               :style="{
-                background: getOddOneOutSelected(block.id) === Number(idx) ? 'var(--primary)' : 'var(--bg-main)',
+                background:
+                  getOddOneOutSelected(block.id) === Number(idx)
+                    ? 'var(--primary)'
+                    : 'var(--bg-main)',
                 color: getOddOneOutSelected(block.id) === idx ? '#fff' : 'var(--text-main)',
                 border: '1px solid var(--border-color)',
                 fontWeight: '600',
                 borderRadius: '8px',
-                padding: '0.4rem 0.8rem'
+                padding: '0.4rem 0.8rem',
               }"
             >
               {{ item }}
             </button>
           </div>
-          <div class="form-group" style="margin-top:0.75rem">
-            <label style="font-size:0.8rem;color:var(--text-muted)">Explain why this item is the odd one:</label>
+          <div class="form-group" style="margin-top: 0.75rem">
+            <label style="font-size: 0.8rem; color: var(--text-muted)"
+              >Explain why this item is the odd one:</label
+            >
             <textarea
               :value="getOddOneOutReason(block.id)"
               @input="setOddOneOutReason(block.id, ($event.target as HTMLInputElement).value)"
               :disabled="readonly"
               rows="2"
               placeholder="e.g. Carrot is a vegetable, while the others are fruits..."
-              style="width:100%"
+              style="width: 100%"
             ></textarea>
           </div>
         </div>
@@ -1158,14 +1635,17 @@ function getCrosswordChar(blockId: string, wordIdx: number, charPos: number): st
 
 // Write a single character to a word's stored answer string
 function setCrosswordWordChar(blockId: string, wordIdx: number, charPos: number, ch: string): void {
-  const words = (blocks.value.find((b: Record<string, unknown>) => b.id === blockId)?.words || []) as Array<Record<string, unknown>>
+  const words = (blocks.value.find((b: Record<string, unknown>) => b.id === blockId)?.words ||
+    []) as Array<Record<string, unknown>>
   const expectedWord = String(words[wordIdx]?.word || '')
   const wordLen = expectedWord.length
   if (!blockId || wordLen === 0) return
   if (!answers[blockId] || typeof answers[blockId] !== 'object') {
     answers[blockId] = {}
   }
-  const existing = String((answers[blockId] as Record<string, string>)[String(wordIdx)] || '').padEnd(wordLen, ' ')
+  const existing = String(
+    (answers[blockId] as Record<string, string>)[String(wordIdx)] || '',
+  ).padEnd(wordLen, ' ')
   const arr = existing.split('')
   arr[Number(charPos)] = ch.toUpperCase()
   ;(answers[blockId] as Record<string, string>)[String(wordIdx)] = arr.join('')
@@ -1174,7 +1654,9 @@ function setCrosswordWordChar(blockId: string, wordIdx: number, charPos: number,
 // Handle input into a grid cell
 function onCrosswordInput(blockId: string, cell: GridCell, value: string, event: Event): void {
   if (!cell.isActive || cell.wordIndices.length === 0 || readonly.value) return
-  const ch = String(value || '').slice(0, 1).toUpperCase()
+  const ch = String(value || '')
+    .slice(0, 1)
+    .toUpperCase()
 
   for (const wi of cell.wordIndices) {
     const charPos = cell.charPositions[wi]
@@ -1186,12 +1668,14 @@ function onCrosswordInput(blockId: string, cell: GridCell, value: string, event:
   // Auto-advance to next cell in the same word
   if (ch) {
     const wi = cell.wordIndices[0]
-    const placedWord = crosswordLayout.value.placedWords.find(pw => pw.wordIdx === wi)
+    const placedWord = crosswordLayout.value.placedWords.find((pw) => pw.wordIdx === wi)
     if (placedWord) {
       const nextPos = cell.charPositions[wi] + 1
       if (nextPos < placedWord.word.length) {
-        const nextRow = placedWord.direction === 'across' ? placedWord.row : placedWord.row + nextPos
-        const nextCol = placedWord.direction === 'across' ? placedWord.col + nextPos : placedWord.col
+        const nextRow =
+          placedWord.direction === 'across' ? placedWord.row : placedWord.row + nextPos
+        const nextCol =
+          placedWord.direction === 'across' ? placedWord.col + nextPos : placedWord.col
         const refKey = `${nextRow}_${nextCol}`
         setTimeout(() => crosswordCellRefs[refKey]?.focus(), 10)
       }
@@ -1203,7 +1687,7 @@ function onCrosswordInput(blockId: string, cell: GridCell, value: string, event:
 function onCrosswordKeydown(blockId: string, cell: GridCell, event: KeyboardEvent): void {
   if (!cell.isActive || cell.wordIndices.length === 0 || readonly.value) return
   const wi = cell.wordIndices[0]
-  const placedWord = crosswordLayout.value.placedWords.find(pw => pw.wordIdx === wi)
+  const placedWord = crosswordLayout.value.placedWords.find((pw) => pw.wordIdx === wi)
   if (!placedWord) return
 
   const charPos = cell.charPositions[wi]
@@ -1221,22 +1705,34 @@ function onCrosswordKeydown(blockId: string, cell: GridCell, event: KeyboardEven
     }
     // Move back
     if (charPos > 0) {
-      const prevRow = placedWord.direction === 'across' ? placedWord.row : placedWord.row + charPos - 1
-      const prevCol = placedWord.direction === 'across' ? placedWord.col + charPos - 1 : placedWord.col
+      const prevRow =
+        placedWord.direction === 'across' ? placedWord.row : placedWord.row + charPos - 1
+      const prevCol =
+        placedWord.direction === 'across' ? placedWord.col + charPos - 1 : placedWord.col
       setTimeout(() => crosswordCellRefs[`${prevRow}_${prevCol}`]?.focus(), 10)
     }
-  } else if (event.key === 'ArrowRight' || (event.key === 'ArrowDown' && placedWord.direction === 'down')) {
+  } else if (
+    event.key === 'ArrowRight' ||
+    (event.key === 'ArrowDown' && placedWord.direction === 'down')
+  ) {
     event.preventDefault()
     if (charPos + 1 < placedWord.word.length) {
-      const nextRow = placedWord.direction === 'across' ? placedWord.row : placedWord.row + charPos + 1
-      const nextCol = placedWord.direction === 'across' ? placedWord.col + charPos + 1 : placedWord.col
+      const nextRow =
+        placedWord.direction === 'across' ? placedWord.row : placedWord.row + charPos + 1
+      const nextCol =
+        placedWord.direction === 'across' ? placedWord.col + charPos + 1 : placedWord.col
       crosswordCellRefs[`${nextRow}_${nextCol}`]?.focus()
     }
-  } else if (event.key === 'ArrowLeft' || (event.key === 'ArrowUp' && placedWord.direction === 'down')) {
+  } else if (
+    event.key === 'ArrowLeft' ||
+    (event.key === 'ArrowUp' && placedWord.direction === 'down')
+  ) {
     event.preventDefault()
     if (charPos > 0) {
-      const prevRow = placedWord.direction === 'across' ? placedWord.row : placedWord.row + charPos - 1
-      const prevCol = placedWord.direction === 'across' ? placedWord.col + charPos - 1 : placedWord.col
+      const prevRow =
+        placedWord.direction === 'across' ? placedWord.row : placedWord.row + charPos - 1
+      const prevCol =
+        placedWord.direction === 'across' ? placedWord.col + charPos - 1 : placedWord.col
       crosswordCellRefs[`${prevRow}_${prevCol}`]?.focus()
     }
   }
@@ -1322,7 +1818,10 @@ function onSelectDragWord(blockId: string, word: string) {
 
 const activeCorrectWordsInput = ref<{ blockId: string; index: number } | null>(null)
 function toggleCorrectWordsInput(blockId: string, index: number) {
-  if (activeCorrectWordsInput.value?.blockId === blockId && activeCorrectWordsInput.value?.index === index) {
+  if (
+    activeCorrectWordsInput.value?.blockId === blockId &&
+    activeCorrectWordsInput.value?.index === index
+  ) {
     activeCorrectWordsInput.value = null
   } else {
     activeCorrectWordsInput.value = { blockId, index }
@@ -1330,7 +1829,9 @@ function toggleCorrectWordsInput(blockId: string, index: number) {
 }
 
 function getCorrectWordsSegments(template: string) {
-  const segments: Array<{ type: 'text'; text: string } | { type: 'word'; index: number; wrong: string; correct: string }> = []
+  const segments: Array<
+    { type: 'text'; text: string } | { type: 'word'; index: number; wrong: string; correct: string }
+  > = []
   if (!template) return segments
   let lastIndex = 0
   let wordIndex = 0
@@ -1390,7 +1891,7 @@ function setQuestionTableValue(blockId: string, rowIndex: number | string, value
 function playAudioUrl(url: string) {
   if (!url) return
   const audio = new Audio(url)
-  audio.play().catch(e => console.warn('Audio play failed:', e))
+  audio.play().catch((e) => console.warn('Audio play failed:', e))
 }
 
 const wordSearchGrids = reactive<Record<string, string[][]>>({})
@@ -1398,8 +1899,16 @@ const wordSearchInputs = reactive<Record<string, string>>({})
 function initWordSearch(block: any) {
   if (wordSearchGrids[block.id]) return
   const size = 12
-  const grid = Array(size).fill(null).map(() => Array(size).fill(''))
-  const words = (block.words || []).map((w: any) => String(w).toUpperCase().replace(/[^A-Z]/g, '')).filter(Boolean)
+  const grid = Array(size)
+    .fill(null)
+    .map(() => Array(size).fill(''))
+  const words = (block.words || [])
+    .map((w: any) =>
+      String(w)
+        .toUpperCase()
+        .replace(/[^A-Z]/g, ''),
+    )
+    .filter(Boolean)
   for (const word of words) {
     let placed = false
     let attempts = 0
@@ -1548,7 +2057,12 @@ onMounted(async () => {
           else if (b.type === 'vocabulary') answers[b.id] = {}
           else if (b.type === 'contextual_dialogue') answers[b.id] = {}
           else if (b.type === 'drag_drop') answers[b.id] = {}
-          else if (b.type === 'flashcards' || b.type === 'memory_match' || b.type === 'semantic_sorter') answers[b.id] = ''
+          else if (
+            b.type === 'flashcards' ||
+            b.type === 'memory_match' ||
+            b.type === 'semantic_sorter'
+          )
+            answers[b.id] = ''
           else answers[b.id] = ''
         }
       }
@@ -1593,13 +2107,13 @@ onUnmounted(() => {
   if (saveDebounceTimer) clearTimeout(saveDebounceTimer)
 })
 
-function parseGapTemplate(template: string): Array<
-  | { type: 'text'; text: string; key: string }
-  | { type: 'gap'; index: number; key: string }
+function parseGapTemplate(
+  template: string,
+): Array<
+  { type: 'text'; text: string; key: string } | { type: 'gap'; index: number; key: string }
 > {
   const segments: Array<
-    | { type: 'text'; text: string; key: string }
-    | { type: 'gap'; index: number; key: string }
+    { type: 'text'; text: string; key: string } | { type: 'gap'; index: number; key: string }
   > = []
   if (!template) return segments
   let lastIndex = 0
@@ -1720,9 +2234,13 @@ function scheduleSave() {
   }, 5000)
 }
 
-watch([answers, wagers, blockConfidence], () => {
-  scheduleSave()
-}, { deep: true })
+watch(
+  [answers, wagers, blockConfidence],
+  () => {
+    scheduleSave()
+  },
+  { deep: true },
+)
 
 async function submit() {
   submitting.value = true
@@ -1953,7 +2471,10 @@ async function submitRoundResponses(round: Record<string, unknown>) {
       Math.round((Date.now() - Number(remediationRoundStartedAt[roundId] || Date.now())) / 1000),
     )
     const responses = normalizeRoundResponses(round)
-    const result = await store.submitRemediationResponses(roundId, { responses, time_spent_seconds })
+    const result = await store.submitRemediationResponses(roundId, {
+      responses,
+      time_spent_seconds,
+    })
     remediationRoundResults[roundId] = result
     remediationRoundStartedAt[roundId] = Date.now()
     uiStore.showToast('Remediation responses submitted', 'success')
@@ -1986,7 +2507,12 @@ async function submitRoundSelfAssessment(round: Record<string, unknown>) {
   }
 }
 
-function getRemediationScrambled(roundId: string, exId: string, wi: number | string, word: string): string {
+function getRemediationScrambled(
+  roundId: string,
+  exId: string,
+  wi: number | string,
+  word: string,
+): string {
   const key = `${roundId}_${exId}_${wi}`
   if (!remediationScrambleCache[key]) {
     remediationScrambleCache[key] = scrambleWord(String(word || ''))
@@ -1996,12 +2522,19 @@ function getRemediationScrambled(roundId: string, exId: string, wi: number | str
 
 const currentAssignmentRemediationHistory = computed(() => {
   const assignmentId = String(route.params.id)
-  return remediationHistory.value.find((entry: Record<string, unknown>) => String(entry.assignment_id) === assignmentId) || null
+  return (
+    remediationHistory.value.find(
+      (entry: Record<string, unknown>) => String(entry.assignment_id) === assignmentId,
+    ) || null
+  )
 })
 
 function getRoundHistoryMetrics(roundNumber: number): Record<string, unknown> | null {
   const rounds = currentAssignmentRemediationHistory.value?.rounds || []
-  return rounds.find((r: Record<string, unknown>) => Number(r.round_number) === Number(roundNumber)) || null
+  return (
+    rounds.find((r: Record<string, unknown>) => Number(r.round_number) === Number(roundNumber)) ||
+    null
+  )
 }
 
 async function generateRemediationRound() {
@@ -2088,7 +2621,9 @@ function playerFractionViewBox(block) {
 function playerFractionSlicePath(index, block) {
   const n = Math.max(1, Math.min(block.denominator || 1, 20))
   if (n === 0) return ''
-  const cx = 100, cy = 100, r = 95
+  const cx = 100,
+    cy = 100,
+    r = 95
   const angle = (2 * Math.PI) / n
   const startAngle = angle * index - Math.PI / 2
   const endAngle = startAngle + angle

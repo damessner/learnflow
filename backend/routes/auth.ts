@@ -232,13 +232,11 @@ router.post('/change-password', requireAuth, async (req, res, next) => {
     }
 
     const { hash: password_hash, salt: password_salt } = hashNewPassword(newPassword)
-    await knex('users')
-      .where({ id: req.user!.userId })
-      .update({
-        password_hash,
-        password_salt,
-        updated_at: knex.fn.now(),
-      })
+    await knex('users').where({ id: req.user!.userId }).update({
+      password_hash,
+      password_salt,
+      updated_at: knex.fn.now(),
+    })
 
     res.json({ message: 'Password changed' })
   } catch (err) {

@@ -42,7 +42,10 @@ export interface CrosswordLayout {
 }
 
 function normalizeWord(w: string): string {
-  return w.trim().toUpperCase().replace(/[^A-Z]/g, '')
+  return w
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '')
 }
 
 /**
@@ -76,15 +79,17 @@ function layoutWords(words: CrosswordWord[]): PlacedWord[] {
   })
 
   // Bounding box tracking for centering
-  let minRow = 0, maxRow = 0, minCol = 0, maxCol = first.word.length - 1
+  let minRow = 0,
+    maxRow = 0,
+    minCol = 0,
+    maxCol = first.word.length - 1
 
   for (let wi = 1; wi < sorted.length; wi++) {
     const current = sorted[wi]
     let bestScore = -1
-    let bestRow = 0, bestCol = 0
+    let bestRow = 0,
+      bestCol = 0
     let bestDir: 'across' | 'down' = 'down'
-    let bestIntersectWord: PlacedWord | null = null
-    let bestIntersectIdx = -1
 
     // Try to find intersection with each placed word
     for (const pw of placed) {
@@ -128,7 +133,20 @@ function layoutWords(words: CrosswordWord[]): PlacedWord[] {
           }
 
           // Validate the placement
-          if (!isValidPlacement(current.word, newRow, newCol, newDir, placed, minRow, maxRow, minCol, maxCol)) continue
+          if (
+            !isValidPlacement(
+              current.word,
+              newRow,
+              newCol,
+              newDir,
+              placed,
+              minRow,
+              maxRow,
+              minCol,
+              maxCol,
+            )
+          )
+            continue
 
           // Score: prefer closer to center, prefer intersections near middle of word
           const centerRow = (minRow + maxRow) / 2
@@ -142,8 +160,6 @@ function layoutWords(words: CrosswordWord[]): PlacedWord[] {
             bestRow = newRow
             bestCol = newCol
             bestDir = newDir
-            bestIntersectWord = pw
-            bestIntersectIdx = ci
           }
         }
       }
@@ -280,7 +296,8 @@ function isValidPlacement(
 function buildGrid(placed: PlacedWord[]): { grid: GridCell[][]; rows: number; cols: number } {
   if (placed.length === 0) return { grid: [], rows: 0, cols: 0 }
 
-  let maxRow = 0, maxCol = 0
+  let maxRow = 0,
+    maxCol = 0
   for (const pw of placed) {
     if (pw.direction === 'across') {
       maxRow = Math.max(maxRow, pw.row)
@@ -337,7 +354,10 @@ function numberCells(grid: GridCell[][], placed: PlacedWord[]): void {
   }
 }
 
-function separateClues(placed: PlacedWord[], grid: GridCell[][]): {
+function separateClues(
+  placed: PlacedWord[],
+  grid: GridCell[][],
+): {
   acrossClues: { number: number; clue: string; wordIdx: number }[]
   downClues: { number: number; clue: string; wordIdx: number }[]
 } {
@@ -369,7 +389,7 @@ export function useCrosswordGrid(words: CrosswordWord[]): CrosswordLayout {
   const { grid, rows, cols } = buildGrid(placed)
   numberCells(grid, placed)
   const { acrossClues, downClues } = separateClues(placed, grid)
-  const placedWords: PlacedWordInfo[] = placed.map(pw => ({
+  const placedWords: PlacedWordInfo[] = placed.map((pw) => ({
     wordIdx: pw.wordIdx,
     word: pw.word,
     description: pw.description,

@@ -13,7 +13,8 @@
       <div>
         <h2 class="page-title">Student Dashboard</h2>
         <p class="page-subtitle">
-          Welcome back, <strong>{{ authStore.user?.name || 'Student' }}</strong>!
+          Welcome back, <strong>{{ authStore.user?.name || 'Student' }}</strong
+          >!
         </p>
       </div>
 
@@ -238,8 +239,22 @@
           <router-link :to="`/student/assignment/${s.assignment_id}`" style="font-weight: 600">
             {{ s.worksheet_title }}
           </router-link>
-          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:flex-end">
-            <span v-if="s.due_date" :class="['badge', new Date(s.due_date) < new Date() && s.score == null ? 'badge-danger' : '']">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+              flex-wrap: wrap;
+              justify-content: flex-end;
+            "
+          >
+            <span
+              v-if="s.due_date"
+              :class="[
+                'badge',
+                new Date(s.due_date) < new Date() && s.score == null ? 'badge-danger' : '',
+              ]"
+            >
               {{ new Date(s.due_date).toLocaleDateString() }}
             </span>
             <span v-if="s.score != null" class="badge">{{ s.score }}/{{ s.max_score }}</span>
@@ -260,16 +275,32 @@
           :key="entry.assignment_id"
           style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color)"
         >
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap">
-            <router-link :to="`/student/assignment/${entry.assignment_id}`" style="font-weight:600">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              gap: 0.5rem;
+              flex-wrap: wrap;
+            "
+          >
+            <router-link
+              :to="`/student/assignment/${entry.assignment_id}`"
+              style="font-weight: 600"
+            >
               {{ entry.worksheet_title }}
             </router-link>
-            <div style="display:flex;gap:0.35rem;flex-wrap:wrap;justify-content:flex-end">
+            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end">
               <span class="badge">Rounds: {{ entry.round_count || 0 }}</span>
-              <span class="badge">Correct: {{ entry.correct || 0 }}/{{ entry.attempted || 0 }}</span>
+              <span class="badge"
+                >Correct: {{ entry.correct || 0 }}/{{ entry.attempted || 0 }}</span
+              >
             </div>
           </div>
-          <div v-if="entry.rounds?.length" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem">
+          <div
+            v-if="entry.rounds?.length"
+            style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem"
+          >
             Last: {{ entry.rounds[entry.rounds.length - 1]?.summary || 'No summary' }}
           </div>
         </div>

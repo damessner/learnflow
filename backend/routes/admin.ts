@@ -176,19 +176,28 @@ router.get('/settings', requireAuth, requireRole('admin'), async (_req, res, nex
     const knex = getKnex()
     const rows = await knex('settings').select('key', 'value')
     const settings: Record<string, string> = {}
-    rows.forEach((r) => { settings[r.key] = r.value })
+    rows.forEach((r) => {
+      settings[r.key] = r.value
+    })
     res.json({ settings })
-  } catch (err) { next(err) }
+  } catch (err) {
+    next(err)
+  }
 })
 
 router.put('/settings', requireAuth, requireRole('admin'), async (req, res, next) => {
   try {
     const knex = getKnex()
     for (const [key, value] of Object.entries(req.body)) {
-      await knex('settings').insert({ key, value: String(value) }).onConflict('key').merge()
+      await knex('settings')
+        .insert({ key, value: String(value) })
+        .onConflict('key')
+        .merge()
     }
     res.json({ message: 'Settings saved' })
-  } catch (err) { next(err) }
+  } catch (err) {
+    next(err)
+  }
 })
 
 export default router

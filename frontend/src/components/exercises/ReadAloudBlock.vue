@@ -14,14 +14,17 @@
         <span
           v-for="(part, pi) in glossedWords"
           :key="pi"
-          :style="part.isUnknown ? 'border-bottom:2px dashed var(--primary);cursor:pointer;position:relative' : ''"
+          :style="
+            part.isUnknown
+              ? 'border-bottom:2px dashed var(--primary);cursor:pointer;position:relative'
+              : ''
+          "
           @click="part.isUnknown && toggleGloss(pi)"
         >
           {{ part.text }}{{ part.space }}
-          <span
-            v-if="part.isUnknown && activeGloss === pi"
-            class="gloss-tooltip"
-          >{{ part.translation }}</span>
+          <span v-if="part.isUnknown && activeGloss === pi" class="gloss-tooltip">{{
+            part.translation
+          }}</span>
         </span>
       </template>
       <template v-else>
@@ -57,8 +60,12 @@
         style="height: 32px; max-width: 300px"
       ></audio>
     </div>
-    <div v-if="unknownWords.length && glossesLoaded" style="margin-top:0.5rem;font-size:0.8rem">
-      <div v-for="(w, wi) in unknownWords" :key="wi" style="display:inline-block;margin:0.15rem 0.35rem 0.15rem 0">
+    <div v-if="unknownWords.length && glossesLoaded" style="margin-top: 0.5rem; font-size: 0.8rem">
+      <div
+        v-for="(w, wi) in unknownWords"
+        :key="wi"
+        style="display: inline-block; margin: 0.15rem 0.35rem 0.15rem 0"
+      >
         <span class="badge">{{ w.word }}</span> → {{ w.translation }}
       </div>
     </div>
@@ -80,7 +87,9 @@ let chunks: Blob[] = []
 const glossesLoading = ref(false)
 const glossesLoaded = ref(false)
 const addingToVocab = ref(false)
-const unknownWords = ref<{ word: string; translation: string; base_form: string; add_to_study: boolean }[]>([])
+const unknownWords = ref<
+  { word: string; translation: string; base_form: string; add_to_study: boolean }[]
+>([])
 const activeGloss = ref<number | null>(null)
 
 interface GlossPart {
@@ -93,7 +102,7 @@ interface GlossPart {
 const glossedWords = computed<GlossPart[]>(() => {
   if (!unknownWords.value.length) return []
   const text = props.block.text || ''
-  const knownSet = new Set(unknownWords.value.map(w => w.word.toLowerCase()))
+  const knownSet = new Set(unknownWords.value.map((w) => w.word.toLowerCase()))
   const words = text.split(/(\s+)/)
   const result: GlossPart[] = []
   for (let i = 0; i < words.length; i++) {
@@ -101,7 +110,7 @@ const glossedWords = computed<GlossPart[]>(() => {
     if (!w.trim()) continue
     const clean = w.replace(/[.,!?;:()"']/g, '').toLowerCase()
     const next = words[i + 1]?.match(/^\s+$/) ? words[i + 1] : ''
-    const match = unknownWords.value.find(u => u.word.toLowerCase() === clean)
+    const match = unknownWords.value.find((u) => u.word.toLowerCase() === clean)
     result.push({
       text: w,
       space: next,
@@ -127,7 +136,9 @@ function speak() {
   if (!('speechSynthesis' in window)) return
   speaking.value = true
   const utterance = new SpeechSynthesisUtterance(props.block.text)
-  utterance.onend = () => { speaking.value = false }
+  utterance.onend = () => {
+    speaking.value = false
+  }
   speechSynthesis.speak(utterance)
 }
 
@@ -136,7 +147,9 @@ async function startRecord() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     mediaRecorder = new MediaRecorder(stream)
     chunks = []
-    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data) }
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data)
+    }
     mediaRecorder.onstop = () => {
       const blob = new Blob(chunks, { type: 'audio/webm' })
       audioUrl.value = URL.createObjectURL(blob)
@@ -144,7 +157,9 @@ async function startRecord() {
     }
     mediaRecorder.start()
     recording.value = true
-  } catch { /* mic denied */ }
+  } catch {
+    /* mic denied */
+  }
 }
 
 function stopRecord() {
@@ -185,7 +200,9 @@ async function addAllToVocab() {
         base_form: w.base_form || undefined,
       })
       added++
-    } catch { /* skip duplicates */ }
+    } catch {
+      /* skip duplicates */
+    }
   }
   if (added) {
     emit('update:modelValue', { vocabularyAdded: true, addedCount: added })

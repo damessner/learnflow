@@ -1,9 +1,11 @@
 <template>
   <div class="page">
     <div style="display: flex; justify-content: space-between; align-items: center">
-    <h2 class="page-title">Teacher Dashboard</h2>
+      <h2 class="page-title">Teacher Dashboard</h2>
       <div class="flex gap-sm">
-        <router-link to="/teacher/workspace" class="btn-primary btn-lg">Subject Workspace</router-link>
+        <router-link to="/teacher/workspace" class="btn-primary btn-lg"
+          >Subject Workspace</router-link
+        >
         <router-link to="/teacher/bank" class="btn-primary btn-lg">LearnFlowBank</router-link>
         <router-link to="/teacher/builder" class="btn-primary btn-lg">Create Worksheet</router-link>
         <router-link to="/teacher/stories" class="btn-primary btn-lg">Stories</router-link>
@@ -24,7 +26,14 @@
     <template v-if="tab === 'worksheets'">
       <div class="card" style="margin-bottom: 1rem; padding: 0.75rem 1.25rem">
         <div class="flex items-center gap-sm">
-          <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted); white-space: nowrap; margin: 0"
+          <label
+            style="
+              font-weight: 600;
+              font-size: 0.9rem;
+              color: var(--text-muted);
+              white-space: nowrap;
+              margin: 0;
+            "
             >Search:</label
           >
           <input
@@ -35,10 +44,7 @@
         </div>
       </div>
 
-      <div
-        v-if="filteredWorksheets.length === 0"
-        class="empty-state"
-      >
+      <div v-if="filteredWorksheets.length === 0" class="empty-state">
         <div class="empty-state-icon">📝</div>
         <div class="empty-state-title">No worksheets found</div>
         <div class="empty-state-text">Create your first worksheet or adjust your search.</div>
@@ -63,17 +69,40 @@
           v-if="assignTarget && assignTarget.id === ws.id"
           style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color)"
         >
-          <div v-if="assignmentLoading[ws.id]" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem">Loading assignments…</div>
-          <div v-else-if="assignmentMap[ws.id]?.length" style="margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem">
+          <div
+            v-if="assignmentLoading[ws.id]"
+            style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem"
+          >
+            Loading assignments…
+          </div>
+          <div
+            v-else-if="assignmentMap[ws.id]?.length"
+            style="margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem"
+          >
             <div
               v-for="assignment in assignmentMap[ws.id]"
               :key="assignment.id"
-              style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.5rem;border:1px solid var(--border-color);border-radius:6px"
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.5rem;
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+              "
             >
-              <div style="font-size:0.82rem">
-                <div style="font-weight:600">{{ assignment.class_name || 'Class assignment' }}</div>
-                <div style="color:var(--text-muted)">
-                  Due: {{ assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : 'No deadline' }}
+              <div style="font-size: 0.82rem">
+                <div style="font-weight: 600">
+                  {{ assignment.class_name || 'Class assignment' }}
+                </div>
+                <div style="color: var(--text-muted)">
+                  Due:
+                  {{
+                    assignment.due_date
+                      ? new Date(assignment.due_date).toLocaleDateString()
+                      : 'No deadline'
+                  }}
                   · {{ assignment.retry_policy || 'single' }}
                 </div>
               </div>
@@ -92,11 +121,17 @@
               <option value="best">Best</option>
               <option value="latest">Latest</option>
             </select>
-            <button class="btn-primary btn-sm" @click="doAssign(ws.id)">{{ assignForm.assignment_id ? 'Update' : 'Assign' }}</button>
+            <button class="btn-primary btn-sm" @click="doAssign(ws.id)">
+              {{ assignForm.assignment_id ? 'Update' : 'Assign' }}
+            </button>
             <button class="btn-sm" @click="clearAssignForm()">Cancel</button>
           </div>
-          <div style="margin-top:0.4rem;font-size:0.75rem;color:var(--text-muted)">
-            {{ assignForm.assignment_id ? 'Editing existing schedule' : 'Create a new scheduled assignment' }}
+          <div style="margin-top: 0.4rem; font-size: 0.75rem; color: var(--text-muted)">
+            {{
+              assignForm.assignment_id
+                ? 'Editing existing schedule'
+                : 'Create a new scheduled assignment'
+            }}
           </div>
         </div>
       </div>
@@ -111,12 +146,16 @@
     </template>
 
     <template v-if="tab === 'classes'">
-      <div class="card" style="margin-bottom: 1rem; padding: 1rem; border: 1px dashed var(--primary-soft)">
+      <div
+        class="card"
+        style="margin-bottom: 1rem; padding: 1rem; border: 1px dashed var(--primary-soft)"
+      >
         <div class="flex items-center gap-md" style="flex-wrap: wrap">
           <div style="flex: 1; min-width: 200px">
             <strong style="font-size: 0.95rem">📄 PDF Student Importer</strong>
             <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.2rem">
-              Upload a class roster PDF (Namensliste format). Creates student accounts and classes automatically.
+              Upload a class roster PDF (Namensliste format). Creates student accounts and classes
+              automatically.
             </p>
           </div>
           <input
@@ -126,26 +165,42 @@
             style="display: none"
             @change="onPdfSelected"
           />
-          <button class="btn-primary" :disabled="importingPdf" @click="($refs.pdfInput as HTMLInputElement)?.click()">
+          <button
+            class="btn-primary"
+            :disabled="importingPdf"
+            @click="($refs.pdfInput as HTMLInputElement)?.click()"
+          >
             {{ importingPdf ? 'Importing...' : 'Upload PDF & Import' }}
           </button>
         </div>
         <div v-if="importResult" class="divider" style="margin: 0.75rem 0"></div>
         <div v-if="importResult" style="font-size: 0.85rem">
           <div class="flex gap-md" style="flex-wrap: wrap">
-            <span class="badge-success badge">{{ importResult.studentsCreated }} students created</span>
+            <span class="badge-success badge"
+              >{{ importResult.studentsCreated }} students created</span
+            >
             <span class="badge-warning badge">{{ importResult.studentsSkipped }} skipped</span>
             <span class="badge badge">{{ importResult.classesCreated }} classes created</span>
-            <span v-if="importResult.errorCount > 0" class="badge-danger badge">{{ importResult.errorCount }} errors</span>
+            <span v-if="importResult.errorCount > 0" class="badge-danger badge"
+              >{{ importResult.errorCount }} errors</span
+            >
           </div>
-          <div v-if="importResult.classNames.length > 0" style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.8rem">
+          <div
+            v-if="importResult.classNames.length > 0"
+            style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.8rem"
+          >
             Classes: {{ importResult.classNames.join(', ') }}
           </div>
           <div v-if="credentialsList.length > 0" style="margin-top: 0.75rem">
             <button class="btn-sm" @click="showCredentials = !showCredentials">
-              {{ showCredentials ? 'Hide' : 'Show' }} Student Passwords ({{ credentialsList.length }})
+              {{ showCredentials ? 'Hide' : 'Show' }} Student Passwords ({{
+                credentialsList.length
+              }})
             </button>
-            <div v-if="showCredentials" style="margin-top: 0.5rem; max-height: 400px; overflow-y: auto">
+            <div
+              v-if="showCredentials"
+              style="margin-top: 0.5rem; max-height: 400px; overflow-y: auto"
+            >
               <table style="font-size: 0.75rem">
                 <thead>
                   <tr>
@@ -158,15 +213,22 @@
                 <tbody>
                   <tr v-for="c in credentialsList" :key="c.username">
                     <td>{{ c.name }}</td>
-                    <td><code>{{ c.username }}</code></td>
-                    <td><code>{{ c.password }}</code></td>
+                    <td>
+                      <code>{{ c.username }}</code>
+                    </td>
+                    <td>
+                      <code>{{ c.password }}</code>
+                    </td>
                     <td>{{ c.class }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
-          <div v-if="importErrors.length > 0" style="margin-top: 0.5rem; color: var(--danger); font-size: 0.8rem">
+          <div
+            v-if="importErrors.length > 0"
+            style="margin-top: 0.5rem; color: var(--danger); font-size: 0.8rem"
+          >
             <p v-for="(err, i) in importErrors" :key="i">{{ err }}</p>
           </div>
         </div>
@@ -308,17 +370,26 @@
       <div class="card">
         <h3>🤖 AI Answer Grader</h3>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem">
-          Paste a student answer and get an AI-assisted grading suggestion. You can accept, edit, or reject it before saving.
+          Paste a student answer and get an AI-assisted grading suggestion. You can accept, edit, or
+          reject it before saving.
         </p>
         <div style="display: flex; gap: 1rem; flex-wrap: wrap">
           <div style="flex: 1; min-width: 280px">
             <div class="form-group">
               <label>Question / Prompt</label>
-              <textarea v-model="graderForm.question" rows="4" placeholder="Paste the question or task the student had to answer..."></textarea>
+              <textarea
+                v-model="graderForm.question"
+                rows="4"
+                placeholder="Paste the question or task the student had to answer..."
+              ></textarea>
             </div>
             <div class="form-group">
               <label>Student Answer</label>
-              <textarea v-model="graderForm.answer" rows="4" placeholder="Paste the student's written answer..."></textarea>
+              <textarea
+                v-model="graderForm.answer"
+                rows="4"
+                placeholder="Paste the student's written answer..."
+              ></textarea>
             </div>
           </div>
           <div style="flex: 1; min-width: 240px">
@@ -332,9 +403,10 @@
             <div class="form-group">
               <label>Grade Level</label>
               <select v-model="graderForm.grade_level">
-
                 <option value="">-- Any Grade --</option>
-                <option v-for="g in ['1','2','3','4']" :key="g" :value="g">{{ GRADE_LABELS[g] }}</option>
+                <option v-for="g in ['1', '2', '3', '4']" :key="g" :value="g">
+                  {{ GRADE_LABELS[g] }}
+                </option>
               </select>
             </div>
             <div class="form-group">
@@ -347,9 +419,18 @@
             </div>
             <div class="form-group">
               <label>Sample Correct Answer (optional)</label>
-              <textarea v-model="graderForm.sampleAnswer" rows="2" placeholder="What a correct answer looks like..."></textarea>
+              <textarea
+                v-model="graderForm.sampleAnswer"
+                rows="2"
+                placeholder="What a correct answer looks like..."
+              ></textarea>
             </div>
-            <button class="btn-primary" :disabled="graderLoading || !graderForm.question || !graderForm.answer" @click="runAiGrader" style="width:100%;margin-top:0.5rem">
+            <button
+              class="btn-primary"
+              :disabled="graderLoading || !graderForm.question || !graderForm.answer"
+              @click="runAiGrader"
+              style="width: 100%; margin-top: 0.5rem"
+            >
               {{ graderLoading ? 'Checking...' : 'Check with AI' }}
             </button>
           </div>
@@ -360,7 +441,9 @@
         <h4>Grading Suggestion</h4>
         <div style="display: flex; gap: 2rem; align-items: center; margin: 1rem 0">
           <div style="text-align: center">
-            <div style="font-size: 2.5rem; font-weight: 700">{{ graderResult.suggestedScore }}/{{ graderForm.maxPoints }}</div>
+            <div style="font-size: 2.5rem; font-weight: 700">
+              {{ graderResult.suggestedScore }}/{{ graderForm.maxPoints }}
+            </div>
             <div style="font-size: 0.8rem; color: var(--text-muted)">Suggested Score</div>
           </div>
           <div>
@@ -371,7 +454,9 @@
         </div>
         <div style="margin: 0.75rem 0">
           <strong>Explanation:</strong>
-          <p style="margin-top: 0.25rem; color: var(--text-muted); font-size: 0.9rem">{{ graderResult.explanation }}</p>
+          <p style="margin-top: 0.25rem; color: var(--text-muted); font-size: 0.9rem">
+            {{ graderResult.explanation }}
+          </p>
         </div>
         <div v-if="graderResult.strengths.length" style="margin: 0.5rem 0">
           <strong style="color: var(--success)">✓ Strengths:</strong>
@@ -387,7 +472,7 @@
         </div>
         <div class="form-group" style="margin-top: 0.75rem">
           <label>Suggested Feedback for Student</label>
-          <textarea v-model="graderFeedbackText" rows="2" style="font-size:0.9rem"></textarea>
+          <textarea v-model="graderFeedbackText" rows="2" style="font-size: 0.9rem"></textarea>
         </div>
         <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem">
           <button class="btn-sm btn-primary" @click="copyFeedback">📋 Copy Feedback</button>
@@ -422,18 +507,20 @@
             <strong>{{ m.blockType }}</strong> · {{ m.count }} students · {{ m.blockText }}
           </div>
         </div>
-        <div
-          v-if="remediationAbMetrics"
-          class="card"
-          style="margin: 0.6rem 0; padding: 0.6rem"
-        >
+        <div v-if="remediationAbMetrics" class="card" style="margin: 0.6rem 0; padding: 0.6rem">
           <h4 style="margin: 0 0 0.4rem">Remediation A/B Metrics</h4>
-          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;font-size:0.82rem">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.82rem">
             <span class="badge">A rounds: {{ remediationAbMetrics.A?.rounds ?? 0 }}</span>
             <span class="badge">B rounds: {{ remediationAbMetrics.B?.rounds ?? 0 }}</span>
-            <span class="badge">Round2 rate: {{ Math.round((remediationAbMetrics.round2_rate || 0) * 100) }}%</span>
-            <span class="badge">A avg correct: {{ remediationAbMetrics.A?.avg_exercises_correct ?? 0 }}</span>
-            <span class="badge">B avg correct: {{ remediationAbMetrics.B?.avg_exercises_correct ?? 0 }}</span>
+            <span class="badge"
+              >Round2 rate: {{ Math.round((remediationAbMetrics.round2_rate || 0) * 100) }}%</span
+            >
+            <span class="badge"
+              >A avg correct: {{ remediationAbMetrics.A?.avg_exercises_correct ?? 0 }}</span
+            >
+            <span class="badge"
+              >B avg correct: {{ remediationAbMetrics.B?.avg_exercises_correct ?? 0 }}</span
+            >
           </div>
         </div>
         <table v-if="results.length">
@@ -458,10 +545,13 @@
                   <span class="badge" v-if="r.remediation">
                     {{ r.remediation.rounds_used }}/2 rounds
                   </span>
-                  <span style="font-size:0.75rem;color:var(--text-muted)" v-if="r.remediation?.latest_summary">
+                  <span
+                    style="font-size: 0.75rem; color: var(--text-muted)"
+                    v-if="r.remediation?.latest_summary"
+                  >
                     {{ r.remediation.latest_summary }}
                   </span>
-                  <div v-if="r.remediation?.rounds?.length" style="margin-top:0.35rem">
+                  <div v-if="r.remediation?.rounds?.length" style="margin-top: 0.35rem">
                     <button class="btn-sm" @click="toggleRemediationDetails(r.id)">
                       {{ remediationDetailsExpanded[r.id] ? 'Hide details' : 'Show details' }}
                     </button>
@@ -472,56 +562,98 @@
                 </td>
               </tr>
               <tr v-show="remediationDetailsExpanded[r.id]">
-                <td colspan="6" style="background:var(--bg-main)">
-                  <div v-if="!r.remediation?.rounds?.length" style="color:var(--text-muted);font-size:0.82rem">
+                <td colspan="6" style="background: var(--bg-main)">
+                  <div
+                    v-if="!r.remediation?.rounds?.length"
+                    style="color: var(--text-muted); font-size: 0.82rem"
+                  >
                     No remediation rounds available.
                   </div>
                   <div
                     v-for="round in r.remediation?.rounds || []"
                     :key="round.id"
                     class="card"
-                    style="margin:0.45rem 0;padding:0.55rem;border:1px solid var(--border-color)"
+                    style="
+                      margin: 0.45rem 0;
+                      padding: 0.55rem;
+                      border: 1px solid var(--border-color);
+                    "
                   >
-                    <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap">
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        gap: 0.5rem;
+                        flex-wrap: wrap;
+                      "
+                    >
                       <strong>Round {{ round.round_number }}</strong>
-                      <div style="display:flex;gap:0.35rem;flex-wrap:wrap">
+                      <div style="display: flex; gap: 0.35rem; flex-wrap: wrap">
                         <span class="badge">Attempted: {{ round.exercises_attempted || 0 }}</span>
                         <span class="badge">Correct: {{ round.exercises_correct || 0 }}</span>
                         <span class="badge">Time: {{ round.time_spent_seconds || 0 }}s</span>
                       </div>
                     </div>
-                    <p v-if="round.analysis?.summary" style="margin:0.35rem 0;color:var(--text-muted)">
+                    <p
+                      v-if="round.analysis?.summary"
+                      style="margin: 0.35rem 0; color: var(--text-muted)"
+                    >
                       {{ round.analysis.summary }}
                     </p>
                     <div
                       v-if="round.self_assessment"
-                      style="font-size:0.82rem;margin:0.35rem 0;padding:0.45rem;border-left:3px solid var(--primary);background:var(--bg-card)"
+                      style="
+                        font-size: 0.82rem;
+                        margin: 0.35rem 0;
+                        padding: 0.45rem;
+                        border-left: 3px solid var(--primary);
+                        background: var(--bg-card);
+                      "
                     >
                       <strong>Student reflection:</strong> {{ round.self_assessment }}
                     </div>
-                    <div v-if="round.exercises?.length" style="margin-top:0.35rem">
+                    <div v-if="round.exercises?.length" style="margin-top: 0.35rem">
                       <div
                         v-for="(ex, exIdx) in round.exercises"
                         :key="`${round.id}_${exIdx}`"
-                        style="padding:0.45rem 0;border-top:1px dashed var(--border-color)"
+                        style="padding: 0.45rem 0; border-top: 1px dashed var(--border-color)"
                       >
-                        <div style="display:flex;justify-content:space-between;gap:0.5rem;flex-wrap:wrap">
-                          <strong style="font-size:0.85rem">{{ ex.title }}</strong>
-                          <span style="font-size:0.75rem;color:var(--text-muted)">{{ ex.type }} · {{ ex.points ?? 0 }} pts</span>
+                        <div
+                          style="
+                            display: flex;
+                            justify-content: space-between;
+                            gap: 0.5rem;
+                            flex-wrap: wrap;
+                          "
+                        >
+                          <strong style="font-size: 0.85rem">{{ ex.title }}</strong>
+                          <span style="font-size: 0.75rem; color: var(--text-muted)"
+                            >{{ ex.type }} · {{ ex.points ?? 0 }} pts</span
+                          >
                         </div>
-                        <div v-if="ex.prompt || ex.problem_text || ex.template" style="font-size:0.8rem;color:var(--text-muted);white-space:pre-wrap">
+                        <div
+                          v-if="ex.prompt || ex.problem_text || ex.template"
+                          style="font-size: 0.8rem; color: var(--text-muted); white-space: pre-wrap"
+                        >
                           {{ ex.prompt || ex.problem_text || ex.template }}
                         </div>
                         <div
                           v-if="getRoundExerciseResponse(round, ex, exIdx)"
-                          style="font-size:0.8rem;margin-top:0.2rem"
+                          style="font-size: 0.8rem; margin-top: 0.2rem"
                         >
                           <div>
                             <strong>Response:</strong>
-                            {{ formatExerciseResponse(getRoundExerciseResponse(round, ex, exIdx)?.response) }}
+                            {{
+                              formatExerciseResponse(
+                                getRoundExerciseResponse(round, ex, exIdx)?.response,
+                              )
+                            }}
                           </div>
-                          <div style="color:var(--text-muted)">
-                            Score: {{ getRoundExerciseResponse(round, ex, exIdx)?.score ?? 0 }}/{{ getRoundExerciseResponse(round, ex, exIdx)?.maxScore ?? 0 }}
+                          <div style="color: var(--text-muted)">
+                            Score: {{ getRoundExerciseResponse(round, ex, exIdx)?.score ?? 0 }}/{{
+                              getRoundExerciseResponse(round, ex, exIdx)?.maxScore ?? 0
+                            }}
                           </div>
                         </div>
                       </div>
@@ -1604,7 +1736,6 @@
       </div>
     </div>
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -1639,7 +1770,13 @@ const tabs = [
 const classesList = ref([])
 const newClassName = ref('')
 const assignTarget = ref(null)
-const assignForm = ref({ assignment_id: '', class_id: '', class_name: '', due_date: '', retry_policy: 'single' })
+const assignForm = ref({
+  assignment_id: '',
+  class_id: '',
+  class_name: '',
+  due_date: '',
+  retry_policy: 'single',
+})
 const assignmentMap = ref({})
 const assignmentLoading = ref({})
 const selectedClass = ref(null)
@@ -1688,10 +1825,21 @@ const graderForm = ref({
 const graderResult = ref(null)
 const graderFeedbackText = ref('')
 const graderLoading = ref(false)
-const graderSubjects = ['Mathematics', 'German', 'English', 'Science', 'History', 'Geography', 'Art', 'Music']
+const graderSubjects = [
+  'Mathematics',
+  'German',
+  'English',
+  'Science',
+  'History',
+  'Geography',
+  'Art',
+  'Music',
+]
 
 function confidenceClass(confidence) {
-  return { high: 'badge-success', medium: 'badge-warning', low: 'badge-danger' }[confidence] || 'badge'
+  return (
+    { high: 'badge-success', medium: 'badge-warning', low: 'badge-danger' }[confidence] || 'badge'
+  )
 }
 
 async function runAiGrader() {
@@ -1901,7 +2049,13 @@ function assignWs(ws) {
 }
 
 function clearAssignForm(clearTarget = true) {
-  assignForm.value = { assignment_id: '', class_id: '', class_name: '', due_date: '', retry_policy: 'single' }
+  assignForm.value = {
+    assignment_id: '',
+    class_id: '',
+    class_name: '',
+    due_date: '',
+    retry_policy: 'single',
+  }
   if (clearTarget) assignTarget.value = null
 }
 

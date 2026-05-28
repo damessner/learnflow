@@ -35,7 +35,9 @@ export const useSubmissionsStore = defineStore('submissions', () => {
   }
 
   async function submitRemediationSelfAssessment(roundId, self_assessment) {
-    return api.post(`/submissions/remediation/round/${roundId}/self-assessment`, { self_assessment })
+    return api.post(`/submissions/remediation/round/${roundId}/self-assessment`, {
+      self_assessment,
+    })
   }
 
   async function fetchStudentRemediationHistory() {

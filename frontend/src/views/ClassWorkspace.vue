@@ -4,21 +4,29 @@
       <div>
         <button class="btn-sm" @click="router.push('/teacher')">← Back</button>
         <h2 style="margin: 0.75rem 0 0.25rem">Class Subject Workspace</h2>
-        <p style="margin: 0; color: var(--text-muted)">Choose one class and manage one personal subject group.</p>
+        <p style="margin: 0; color: var(--text-muted)">
+          Choose one class and manage one personal subject group.
+        </p>
       </div>
       <div class="workspace-controls">
         <select v-model="selectedClassId" @change="onClassChange">
           <option value="">Select class...</option>
-          <option v-for="cls in classesStore.classes" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
+          <option v-for="cls in classesStore.classes" :key="cls.id" :value="cls.id">
+            {{ cls.name }}
+          </option>
         </select>
-        <button class="btn-primary" :disabled="!selectedClassId" @click="createWorkspacePrompt">New Subject Group</button>
+        <button class="btn-primary" :disabled="!selectedClassId" @click="createWorkspacePrompt">
+          New Subject Group
+        </button>
       </div>
     </div>
 
     <div v-if="selectedClass" class="workspace-header card workspace-class-bar">
       <div>
         <h3 style="margin: 0">{{ selectedClass.name }}</h3>
-        <div style="color: var(--text-muted); font-size: 0.9rem">Only your subject groups for this class are shown.</div>
+        <div style="color: var(--text-muted); font-size: 0.9rem">
+          Only your subject groups for this class are shown.
+        </div>
       </div>
       <span class="badge">Code: {{ selectedClass.class_code }}</span>
     </div>
@@ -26,16 +34,24 @@
     <div v-if="selectedClassId && workspaceStore.workspaces.length === 0" class="card empty-state">
       <div class="empty-state-icon">📚</div>
       <div class="empty-state-title">No subject group yet</div>
-      <div class="empty-state-text">Create one subject group for this class, then drag courses and worksheets into it.</div>
+      <div class="empty-state-text">
+        Create one subject group for this class, then drag courses and worksheets into it.
+      </div>
     </div>
 
-    <div v-for="workspace in workspaceStore.workspaces" :key="workspace.id" class="card workspace-card">
+    <div
+      v-for="workspace in workspaceStore.workspaces"
+      :key="workspace.id"
+      class="card workspace-card"
+    >
       <div class="workspace-card-head">
         <div>
           <h3 style="margin: 0">{{ workspace.name }}</h3>
-          <div style="color: var(--text-muted); font-size: 0.9rem">{{ workspace.subject }} · {{ workspace.class_name }}</div>
+          <div style="color: var(--text-muted); font-size: 0.9rem">
+            {{ workspace.subject }} · {{ workspace.class_name }}
+          </div>
         </div>
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
           <button class="btn-sm" @click="openWorkspace(workspace.id)">Open</button>
           <button class="btn-sm btn-danger" @click="deleteWorkspace(workspace.id)">Delete</button>
         </div>
@@ -46,19 +62,25 @@
       <div class="card">
         <div class="section-head">
           <h3>Subject Group</h3>
-          <div style="display:flex; gap:0.5rem">
+          <div style="display: flex; gap: 0.5rem">
             <input v-model="workspaceForm.name" placeholder="Group name" />
             <input v-model="workspaceForm.subject" placeholder="Subject" />
             <button class="btn-sm" @click="saveWorkspaceMeta">Save</button>
           </div>
         </div>
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem">
           <select v-model="newCourseId">
             <option value="">Add course...</option>
-            <option v-for="course in availableCourses" :key="course.id" :value="course.id">{{ course.name }}</option>
+            <option v-for="course in availableCourses" :key="course.id" :value="course.id">
+              {{ course.name }}
+            </option>
           </select>
-          <button class="btn-sm" :disabled="!newCourseId" @click="addItem('course')">Add Course</button>
-          <button class="btn-sm" @click="router.push('/teacher')">Create Course in Dashboard</button>
+          <button class="btn-sm" :disabled="!newCourseId" @click="addItem('course')">
+            Add Course
+          </button>
+          <button class="btn-sm" @click="router.push('/teacher')">
+            Create Course in Dashboard
+          </button>
         </div>
         <div class="drag-list">
           <div
@@ -72,11 +94,21 @@
           >
             <div>
               <strong>📚 {{ item.course_name }}</strong>
-              <div style="color:var(--text-muted);font-size:0.82rem">{{ item.course_description || 'No description' }}</div>
+              <div style="color: var(--text-muted); font-size: 0.82rem">
+                {{ item.course_description || 'No description' }}
+              </div>
             </div>
-            <div style="display:flex; gap:0.25rem">
-              <button class="btn-sm" :disabled="index===0" @click="moveItem(item.id, -1)">↑</button>
-              <button class="btn-sm" :disabled="index===courseItems.length-1" @click="moveItem(item.id, 1)">↓</button>
+            <div style="display: flex; gap: 0.25rem">
+              <button class="btn-sm" :disabled="index === 0" @click="moveItem(item.id, -1)">
+                ↑
+              </button>
+              <button
+                class="btn-sm"
+                :disabled="index === courseItems.length - 1"
+                @click="moveItem(item.id, 1)"
+              >
+                ↓
+              </button>
               <button class="btn-sm btn-danger" @click="removeItem(item.id)">×</button>
             </div>
           </div>
@@ -86,13 +118,23 @@
       <div class="card">
         <div class="section-head">
           <h3>Standalone Worksheets</h3>
-          <div style="display:flex; gap:0.5rem">
+          <div style="display: flex; gap: 0.5rem">
             <select v-model="newWorksheetId">
               <option value="">Add worksheet...</option>
-              <option v-for="worksheet in availableWorksheets" :key="worksheet.id" :value="worksheet.id">{{ worksheet.title }}</option>
+              <option
+                v-for="worksheet in availableWorksheets"
+                :key="worksheet.id"
+                :value="worksheet.id"
+              >
+                {{ worksheet.title }}
+              </option>
             </select>
-            <button class="btn-sm" :disabled="!newWorksheetId" @click="addItem('worksheet')">Add Worksheet</button>
-            <button class="btn-sm" @click="router.push('/teacher/builder')">Create Worksheet</button>
+            <button class="btn-sm" :disabled="!newWorksheetId" @click="addItem('worksheet')">
+              Add Worksheet
+            </button>
+            <button class="btn-sm" @click="router.push('/teacher/builder')">
+              Create Worksheet
+            </button>
           </div>
         </div>
         <div class="drag-list">
@@ -107,30 +149,49 @@
           >
             <div>
               <strong>📝 {{ item.worksheet_title }}</strong>
-              <div style="color:var(--text-muted);font-size:0.82rem">{{ item.worksheet_subject || 'General' }} · {{ item.worksheet_total_points || 0 }} pts</div>
+              <div style="color: var(--text-muted); font-size: 0.82rem">
+                {{ item.worksheet_subject || 'General' }} ·
+                {{ item.worksheet_total_points || 0 }} pts
+              </div>
             </div>
-            <div style="display:flex; gap:0.25rem">
-              <button class="btn-sm" :disabled="index===0" @click="moveItem(item.id, -1)">↑</button>
-              <button class="btn-sm" :disabled="index===worksheetItems.length-1" @click="moveItem(item.id, 1)">↓</button>
-              <button class="btn-sm" @click="router.push(`/teacher/builder/${item.worksheet_id}`)">Edit</button>
+            <div style="display: flex; gap: 0.25rem">
+              <button class="btn-sm" :disabled="index === 0" @click="moveItem(item.id, -1)">
+                ↑
+              </button>
+              <button
+                class="btn-sm"
+                :disabled="index === worksheetItems.length - 1"
+                @click="moveItem(item.id, 1)"
+              >
+                ↓
+              </button>
+              <button class="btn-sm" @click="router.push(`/teacher/builder/${item.worksheet_id}`)">
+                Edit
+              </button>
               <button class="btn-sm btn-danger" @click="removeItem(item.id)">×</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="card" style="grid-column:1 / -1">
+      <div class="card" style="grid-column: 1 / -1">
         <div class="section-head">
           <h3>Students in This Class</h3>
           <span class="badge">{{ workspaceData.students.length }} students</span>
         </div>
         <div class="student-grid">
-          <div v-for="student in workspaceData.students" :key="student.id" class="student-progress-card">
-            <div style="display:flex;align-items:center;gap:0.75rem">
+          <div
+            v-for="student in workspaceData.students"
+            :key="student.id"
+            class="student-progress-card"
+          >
+            <div style="display: flex; align-items: center; gap: 0.75rem">
               <span class="student-emoji">{{ student.character_emoji || '👤' }}</span>
               <div>
-                <div style="font-weight:700">{{ student.name }}</div>
-                <div style="font-size:0.8rem;color:var(--text-muted)">@{{ student.username }}</div>
+                <div style="font-weight: 700">{{ student.name }}</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted)">
+                  @{{ student.username }}
+                </div>
               </div>
             </div>
           </div>
@@ -163,9 +224,15 @@ const newCourseId = ref('')
 const newWorksheetId = ref('')
 const draggedItemId = ref('')
 
-const selectedClass = computed(() => classesStore.classes.find((cls: any) => cls.id === selectedClassId.value) || null)
-const courseItems = computed(() => (workspaceData.value?.items || []).filter((item: any) => item.item_type === 'course'))
-const worksheetItems = computed(() => (workspaceData.value?.items || []).filter((item: any) => item.item_type === 'worksheet'))
+const selectedClass = computed(
+  () => classesStore.classes.find((cls: any) => cls.id === selectedClassId.value) || null,
+)
+const courseItems = computed(() =>
+  (workspaceData.value?.items || []).filter((item: any) => item.item_type === 'course'),
+)
+const worksheetItems = computed(() =>
+  (workspaceData.value?.items || []).filter((item: any) => item.item_type === 'worksheet'),
+)
 
 const availableCourses = computed(() => {
   const used = new Set(courseItems.value.map((item: any) => item.course_id))
@@ -297,7 +364,10 @@ async function moveItem(itemId: string, delta: number) {
 async function persistOrder(items: any[]) {
   if (!workspaceData.value) return
   try {
-    await workspaceStore.reorderItems(workspaceData.value.workspace.id, items.map((item) => item.id))
+    await workspaceStore.reorderItems(
+      workspaceData.value.workspace.id,
+      items.map((item) => item.id),
+    )
     workspaceData.value.items = items
   } catch (e: any) {
     uiStore.showToast(e.message || 'Failed to save order', 'error')

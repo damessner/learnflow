@@ -8,7 +8,14 @@
           type="text"
           :value="segment.value"
           @input="onGapInput(segment.index, $event)"
-          style="display:inline;width:auto;min-width:80px;padding:0.2rem 0.5rem;border:1px dashed var(--primary);border-radius:4px"
+          style="
+            display: inline;
+            width: auto;
+            min-width: 80px;
+            padding: 0.2rem 0.5rem;
+            border: 1px dashed var(--primary);
+            border-radius: 4px;
+          "
         />
       </template>
     </div>

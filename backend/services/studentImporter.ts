@@ -1,10 +1,11 @@
 import crypto from 'crypto'
 import { v4 as uuidv4 } from 'uuid'
 import { getKnex } from '../db/knex'
-import logger from '../lib/logger'
 
 let teacherIdOverride: string | null = null
-export function setImportTeacherId(id: string | null): void { teacherIdOverride = id }
+export function setImportTeacherId(id: string | null): void {
+  teacherIdOverride = id
+}
 
 export interface StudentCredentials {
   username: string
@@ -47,7 +48,12 @@ function generateClassCode(): string {
 }
 
 function slugify(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'x'
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .slice(0, 20) || 'x'
+  )
 }
 
 function parseStudentName(fullName: string): { surname: string; givenName: string } {
@@ -70,7 +76,7 @@ export async function importStudentsFromPdf(pdfBuffer: Buffer): Promise<ImportSu
   }
 
   // Parse PDF text
-  let { PDFParse } = require('pdf-parse')
+  const { PDFParse } = require('pdf-parse')
   let text: string
   try {
     const parser = new PDFParse({ data: pdfBuffer, verbosity: 0 })
@@ -88,13 +94,16 @@ export async function importStudentsFromPdf(pdfBuffer: Buffer): Promise<ImportSu
   }
 
   // Split pages — each page is separated by "-- N of M --" lines
-  const pages = text.split(/\n--\s*\d+\s+of\s+\d+\s*--\n/).filter(p => p.trim())
+  const pages = text.split(/\n--\s*\d+\s+of\s+\d+\s*--\n/).filter((p) => p.trim())
 
   // Parse each page
   const parsedClasses: { className: string; students: { name: string }[] }[] = []
 
   for (const pageData of pages) {
-    const lines = pageData.split('\n').map(l => l.trim()).filter(l => l)
+    const lines = pageData
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l)
     if (lines.length < 3) continue
 
     // First line: "Namensliste der <className>"
@@ -138,10 +147,11 @@ export async function importStudentsFromPdf(pdfBuffer: Buffer): Promise<ImportSu
   try {
     const rows = await knex('users').select('username')
     for (const r of rows) existingUsernames.add(r.username)
-  } catch { /* */ }
+  } catch {
+    /* */
+  }
 
   // Get default teacher if no override
-  let defaultTeacherId: string | null = null
 
   for (const cls of parsedClasses) {
     try {
@@ -173,7 +183,7 @@ export async function importStudentsFromPdf(pdfBuffer: Buffer): Promise<ImportSu
           let counter = 1
           while (existingUsernames.has(username)) {
             const suffix = String(counter)
-            username = (base.slice(0, 20 - suffix.length) + suffix) || `s${suffix}`
+            username = base.slice(0, 20 - suffix.length) + suffix || `s${suffix}`
             counter++
           }
           existingUsernames.add(username)
@@ -183,15 +193,22 @@ export async function importStudentsFromPdf(pdfBuffer: Buffer): Promise<ImportSu
           const email = `${username}@schueler.learnflow`
 
           // Check if student exists
-          const existingUser = await knex('users').where({ email }).orWhere(function () {
-            this.where({ name: student.name }).andWhere({ role: 'student' })
-          }).first()
+          const existingUser = await knex('users')
+            .where({ email })
+            .orWhere(function () {
+              this.where({ name: student.name }).andWhere({ role: 'student' })
+            })
+            .first()
 
           if (existingUser) {
             const enrolled = await knex('class_students')
-              .where({ class_id: classRow.id, student_id: existingUser.id }).first()
+              .where({ class_id: classRow.id, student_id: existingUser.id })
+              .first()
             if (!enrolled) {
-              await knex('class_students').insert({ class_id: classRow.id, student_id: existingUser.id })
+              await knex('class_students').insert({
+                class_id: classRow.id,
+                student_id: existingUser.id,
+              })
             }
             summary.studentsSkipped++
             continue
@@ -210,7 +227,13 @@ export async function importStudentsFromPdf(pdfBuffer: Buffer): Promise<ImportSu
           await knex('class_students').insert({ class_id: classRow.id, student_id: userId })
 
           summary.studentsCreated++
-          summary.credentials.push({ username, password, name: student.name, email, className: cls.className })
+          summary.credentials.push({
+            username,
+            password,
+            name: student.name,
+            email,
+            className: cls.className,
+          })
         } catch (err) {
           summary.errors.push(`Student "${student.name}": ${err}`)
         }
@@ -234,6 +257,12 @@ async function getDefaultTeacherId(): Promise<string> {
   const teacher = await knex('users').where({ role: 'teacher' }).first()
   if (teacher) return teacher.id
   const id = uuidv4()
-  await knex('users').insert({ id, username: 'admin-teacher', email: 'admin-teacher@learnflow.local', name: 'Admin Teacher', role: 'teacher' })
+  await knex('users').insert({
+    id,
+    username: 'admin-teacher',
+    email: 'admin-teacher@learnflow.local',
+    name: 'Admin Teacher',
+    role: 'teacher',
+  })
   return id
 }

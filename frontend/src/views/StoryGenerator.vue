@@ -16,7 +16,9 @@
           <label>Grade Level</label>
           <select v-model="form.gradeLevel">
             <option value="">-- Select --</option>
-            <option v-for="g in gradeLevels" :key="g.value || g" :value="g.value || g">{{ g.label || ('Klasse ' + g) }}</option>
+            <option v-for="g in gradeLevels" :key="g.value || g" :value="g.value || g">
+              {{ g.label || 'Klasse ' + g }}
+            </option>
           </select>
         </div>
         <div class="form-group" style="flex: 1">
@@ -50,7 +52,11 @@
       </div>
       <div class="form-group">
         <label>Lernziele (optional)</label>
-        <textarea v-model="form.lernziele" rows="2" placeholder="e.g. Students will be able to understand the main idea and identify key vocabulary..."></textarea>
+        <textarea
+          v-model="form.lernziele"
+          rows="2"
+          placeholder="e.g. Students will be able to understand the main idea and identify key vocabulary..."
+        ></textarea>
       </div>
       <div style="display: flex; gap: 0.5rem">
         <div class="form-group" style="flex: 1">

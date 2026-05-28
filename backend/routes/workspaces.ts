@@ -9,7 +9,12 @@ function paramValue(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] : value || ''
 }
 
-async function getOwnedWorkspace(knex: ReturnType<typeof getKnex>, workspaceId: string, userId: string, role: string) {
+async function getOwnedWorkspace(
+  knex: ReturnType<typeof getKnex>,
+  workspaceId: string,
+  userId: string,
+  role: string,
+) {
   const workspace = await knex('workspaces').where({ id: workspaceId }).first()
   if (!workspace) return null
   if (role !== 'admin' && workspace.teacher_id !== userId) return 'forbidden'
@@ -135,11 +140,13 @@ router.put('/:id', requireAuth, requireRole('teacher', 'admin'), async (req, res
       return
     }
 
-    await knex('workspaces').where({ id: workspaceId }).update({
-      name: req.body.name ?? owned.name,
-      subject: req.body.subject ?? owned.subject,
-      updated_at: knex.fn.now(),
-    })
+    await knex('workspaces')
+      .where({ id: workspaceId })
+      .update({
+        name: req.body.name ?? owned.name,
+        subject: req.body.subject ?? owned.subject,
+        updated_at: knex.fn.now(),
+      })
 
     const workspace = await knex('workspaces').where({ id: workspaceId }).first()
     res.json({ workspace })
@@ -217,57 +224,71 @@ router.post('/:id/items', requireAuth, requireRole('teacher', 'admin'), async (r
   }
 })
 
-router.delete('/:id/items/:itemId', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    const workspaceId = paramValue(req.params.id)
-    const owned = await getOwnedWorkspace(knex, workspaceId, req.user!.userId, req.user!.role)
-    if (!owned) {
-      res.status(404).json({ error: 'Workspace not found' })
-      return
-    }
-    if (owned === 'forbidden') {
-      res.status(403).json({ error: 'Forbidden' })
-      return
-    }
+router.delete(
+  '/:id/items/:itemId',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const workspaceId = paramValue(req.params.id)
+      const owned = await getOwnedWorkspace(knex, workspaceId, req.user!.userId, req.user!.role)
+      if (!owned) {
+        res.status(404).json({ error: 'Workspace not found' })
+        return
+      }
+      if (owned === 'forbidden') {
+        res.status(403).json({ error: 'Forbidden' })
+        return
+      }
 
-    await knex('workspace_items').where({ workspace_id: workspaceId, id: paramValue(req.params.itemId) }).del()
-    await knex('workspaces').where({ id: workspaceId }).update({ updated_at: knex.fn.now() })
-    res.json({ message: 'Item removed' })
-  } catch (err) {
-    next(err)
-  }
-})
-
-router.put('/:id/items/reorder', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    const workspaceId = paramValue(req.params.id)
-    const owned = await getOwnedWorkspace(knex, workspaceId, req.user!.userId, req.user!.role)
-    if (!owned) {
-      res.status(404).json({ error: 'Workspace not found' })
-      return
+      await knex('workspace_items')
+        .where({ workspace_id: workspaceId, id: paramValue(req.params.itemId) })
+        .del()
+      await knex('workspaces').where({ id: workspaceId }).update({ updated_at: knex.fn.now() })
+      res.json({ message: 'Item removed' })
+    } catch (err) {
+      next(err)
     }
-    if (owned === 'forbidden') {
-      res.status(403).json({ error: 'Forbidden' })
-      return
-    }
+  },
+)
 
-    const itemIds = Array.isArray(req.body.itemIds) ? req.body.itemIds.slice(0, 500) : null
-    if (!itemIds) {
-      res.status(400).json({ error: 'itemIds must be an array' })
-      return
-    }
+router.put(
+  '/:id/items/reorder',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const workspaceId = paramValue(req.params.id)
+      const owned = await getOwnedWorkspace(knex, workspaceId, req.user!.userId, req.user!.role)
+      if (!owned) {
+        res.status(404).json({ error: 'Workspace not found' })
+        return
+      }
+      if (owned === 'forbidden') {
+        res.status(403).json({ error: 'Forbidden' })
+        return
+      }
 
-    for (let i = 0; i < itemIds.length; i++) {
-      await knex('workspace_items').where({ workspace_id: workspaceId, id: itemIds[i] }).update({ order_index: i })
-    }
+      const itemIds = Array.isArray(req.body.itemIds) ? req.body.itemIds.slice(0, 500) : null
+      if (!itemIds) {
+        res.status(400).json({ error: 'itemIds must be an array' })
+        return
+      }
 
-    await knex('workspaces').where({ id: workspaceId }).update({ updated_at: knex.fn.now() })
-    res.json({ message: 'Workspace items reordered' })
-  } catch (err) {
-    next(err)
-  }
-})
+      for (let i = 0; i < itemIds.length; i++) {
+        await knex('workspace_items')
+          .where({ workspace_id: workspaceId, id: itemIds[i] })
+          .update({ order_index: i })
+      }
+
+      await knex('workspaces').where({ id: workspaceId }).update({ updated_at: knex.fn.now() })
+      res.json({ message: 'Workspace items reordered' })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
 export default router

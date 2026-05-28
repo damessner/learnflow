@@ -41,12 +41,7 @@ function trackedWorksheetSnapshot(worksheet: Record<string, unknown>) {
 
 function remediationBlockText(block: Record<string, unknown>): string {
   return String(
-    block.text ||
-      block.problem_text ||
-      block.template ||
-      block.title ||
-      block.type ||
-      '',
+    block.text || block.problem_text || block.template || block.title || block.type || '',
   )
 }
 
@@ -416,28 +411,33 @@ router.get('/:id/assignments', requireAuth, async (req, res, next) => {
   }
 })
 
-router.get('/:id/versions', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
-  try {
-    const knex = getKnex()
-    const worksheet = await knex('worksheets').where({ id: req.params.id }).first()
-    if (!worksheet) {
-      res.status(404).json({ error: 'Worksheet not found' })
-      return
-    }
-    if (req.user!.role !== 'admin' && worksheet.created_by !== req.user!.userId) {
-      res.status(403).json({ error: 'Forbidden' })
-      return
-    }
+router.get(
+  '/:id/versions',
+  requireAuth,
+  requireRole('teacher', 'admin'),
+  async (req, res, next) => {
+    try {
+      const knex = getKnex()
+      const worksheet = await knex('worksheets').where({ id: req.params.id }).first()
+      if (!worksheet) {
+        res.status(404).json({ error: 'Worksheet not found' })
+        return
+      }
+      if (req.user!.role !== 'admin' && worksheet.created_by !== req.user!.userId) {
+        res.status(403).json({ error: 'Forbidden' })
+        return
+      }
 
-    const versions = await knex('worksheet_versions')
-      .where({ worksheet_id: req.params.id })
-      .orderBy('version_number', 'desc')
+      const versions = await knex('worksheet_versions')
+        .where({ worksheet_id: req.params.id })
+        .orderBy('version_number', 'desc')
 
-    res.json({ versions })
-  } catch (err) {
-    next(err)
-  }
-})
+      res.json({ versions })
+    } catch (err) {
+      next(err)
+    }
+  },
+)
 
 router.post(
   '/:id/versions/:versionId/restore',
@@ -478,7 +478,12 @@ router.post(
       })
 
       const restored = await knex('worksheets').where({ id: req.params.id }).first()
-      await createWorksheetVersion(knex, restored, req.user!.userId, `Restored version ${version.version_number}`)
+      await createWorksheetVersion(
+        knex,
+        restored,
+        req.user!.userId,
+        `Restored version ${version.version_number}`,
+      )
 
       res.json({ worksheet: restored })
     } catch (err) {
@@ -539,11 +544,14 @@ router.put(
       }
 
       const updateData: Record<string, unknown> = {}
-      if (req.body.due_date !== undefined) updateData.due_date = normalizeDueDateInput(req.body.due_date)
+      if (req.body.due_date !== undefined)
+        updateData.due_date = normalizeDueDateInput(req.body.due_date)
       if (req.body.retry_policy !== undefined) updateData.retry_policy = req.body.retry_policy
       if (req.body.max_attempts !== undefined) updateData.max_attempts = req.body.max_attempts
-      if (req.body.peer_review_enabled !== undefined) updateData.peer_review_enabled = req.body.peer_review_enabled ? 1 : 0
-      if (req.body.adaptive_difficulty !== undefined) updateData.adaptive_difficulty = req.body.adaptive_difficulty || null
+      if (req.body.peer_review_enabled !== undefined)
+        updateData.peer_review_enabled = req.body.peer_review_enabled ? 1 : 0
+      if (req.body.adaptive_difficulty !== undefined)
+        updateData.adaptive_difficulty = req.body.adaptive_difficulty || null
 
       await knex('assignments').where({ id: req.params.assignmentId }).update(updateData)
       const updated = await knex('assignments').where({ id: req.params.assignmentId }).first()
@@ -649,7 +657,10 @@ router.get(
         roundsBySubmission.get(sid)!.push(round)
       }
 
-      const missMap = new Map<string, { blockId: string; blockType: string; blockText: string; count: number }>()
+      const missMap = new Map<
+        string,
+        { blockId: string; blockType: string; blockText: string; count: number }
+      >()
 
       const students = (submissions as Record<string, unknown>[]).map((s) => {
         const submissionId = String(s.id)
@@ -660,11 +671,17 @@ router.get(
           answers = {}
         }
 
-        const scoring = scoreAnswers(blocks as Array<{ id: string; type: string; points: number }>, answers)
+        const scoring = scoreAnswers(
+          blocks as Array<{ id: string; type: string; points: number }>,
+          answers,
+        )
         const wrong = scoring.blockScores.filter((b) => b.maxScore > 0 && b.score < b.maxScore)
 
         for (const w of wrong) {
-          const b = blocks.find((x) => String(x.id) === w.blockId) || { id: w.blockId, type: 'unknown' }
+          const b = blocks.find((x) => String(x.id) === w.blockId) || {
+            id: w.blockId,
+            type: 'unknown',
+          }
           const key = String(w.blockId)
           const current = missMap.get(key)
           if (current) current.count += 1
@@ -696,7 +713,10 @@ router.get(
           submitted_at: s.submitted_at,
           wrong_count: wrong.length,
           wrong_blocks: wrong.map((w) => {
-            const b = blocks.find((x) => String(x.id) === w.blockId) || { id: w.blockId, type: 'unknown' }
+            const b = blocks.find((x) => String(x.id) === w.blockId) || {
+              id: w.blockId,
+              type: 'unknown',
+            }
             return {
               blockId: w.blockId,
               blockType: String((b as Record<string, unknown>).type || 'unknown'),
@@ -801,7 +821,7 @@ router.post(
   requireRole('teacher', 'admin'),
   async (req, res, next) => {
     try {
-      const { rawList, source_lang, target_lang, cefr_level } = req.body
+      const { rawList, target_lang, cefr_level } = req.body
       const words = (rawList || '')
         .split(/[\n,]+/)
         .filter(Boolean)
@@ -814,7 +834,7 @@ router.post(
 
       // Try AI translation if target_lang is specified
       let translations: { l: string; r: string }[] = []
-      
+
       if (target_lang) {
         try {
           // TODO: refactor callZenChat from routes/ai.ts into a shared service
@@ -844,7 +864,7 @@ Return ONLY valid JSON array.`
               }),
               signal: AbortSignal.timeout(60000),
             })
-            const data = await zenRes.json() as { choices?: { message?: { content?: string } }[] }
+            const data = (await zenRes.json()) as { choices?: { message?: { content?: string } }[] }
             const raw = JSON.parse(data.choices?.[0]?.message?.content || '[]')
             translations = Array.isArray(raw) ? raw : []
           }

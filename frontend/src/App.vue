@@ -32,11 +32,7 @@
             <router-link v-if="authStore.role === 'admin'" to="/admin" class="nav-link">
               Admin
             </router-link>
-            <router-link
-              v-slot="{ isActive }"
-              to="/writing-coach"
-              class="nav-link"
-            >
+            <router-link to="/writing-coach" class="nav-link">
               Writing Coach
             </router-link>
           </template>
@@ -52,7 +48,9 @@
               <button @click="showChangePassword = true" class="btn-icon" title="Change password">
                 🔑
               </button>
-              <button @click="authStore.logout()" class="btn-sm btn-danger logout-btn">Logout</button>
+              <button @click="authStore.logout()" class="btn-sm btn-danger logout-btn">
+                Logout
+              </button>
             </template>
           </div>
         </nav>
@@ -87,11 +85,19 @@
         </div>
         <div class="form-group">
           <label>Current Password</label>
-          <input v-model="passwordForm.current" type="password" placeholder="Enter current password" />
+          <input
+            v-model="passwordForm.current"
+            type="password"
+            placeholder="Enter current password"
+          />
         </div>
         <div class="form-group">
           <label>New Password</label>
-          <input v-model="passwordForm.newPassword" type="password" placeholder="Enter new password" />
+          <input
+            v-model="passwordForm.newPassword"
+            type="password"
+            placeholder="Enter new password"
+          />
         </div>
         <div class="modal-actions">
           <button @click="showChangePassword = false" class="btn-secondary">Cancel</button>
@@ -194,7 +200,9 @@ async function changePassword() {
   color: var(--text-secondary);
   text-decoration: none;
   border-radius: var(--radius-sm);
-  transition: color var(--transition-fast), background var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
 }
 .nav-link:hover {
   color: var(--primary);

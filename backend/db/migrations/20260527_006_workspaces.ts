@@ -18,7 +18,11 @@ export async function up(knex: Knex): Promise<void> {
   if (!hasItems) {
     await knex.schema.createTable('workspace_items', (t) => {
       t.text('id').primary()
-      t.text('workspace_id').notNullable().references('id').inTable('workspaces').onDelete('CASCADE')
+      t.text('workspace_id')
+        .notNullable()
+        .references('id')
+        .inTable('workspaces')
+        .onDelete('CASCADE')
       t.text('item_type').notNullable()
       t.text('course_id').references('id').inTable('courses').onDelete('SET NULL')
       t.text('worksheet_id').references('id').inTable('worksheets').onDelete('SET NULL')

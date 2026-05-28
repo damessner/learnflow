@@ -8,10 +8,7 @@ export async function up(knex: Knex): Promise<void> {
     })
   }
 
-  const hasLastActivity = await knex.schema.hasColumn(
-    'learning_gamification',
-    'last_activity_date',
-  )
+  const hasLastActivity = await knex.schema.hasColumn('learning_gamification', 'last_activity_date')
   if (!hasLastActivity) {
     await knex.schema.alterTable('learning_gamification', (t) => {
       t.text('last_activity_date').nullable()

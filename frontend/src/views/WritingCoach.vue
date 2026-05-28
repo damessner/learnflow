@@ -21,6 +21,89 @@
       </div>
     </div>
 
+    <!-- PRE-WRITING EXERCISE (EXEMPLAR STUDY) -->
+    <div v-if="state === 'prewriting'" class="prewriting-layout fade-in card">
+      <div class="prewriting-header">
+        <div class="header-title-wrap">
+          <span class="badge badge-primary">Schritt 1: Entwurf verstehen 📚</span>
+          <h2>Vorbereitungsübung: "{{ activeTask?.title }}"</h2>
+          <p class="prewriting-subtitle">Lies dir den beispielhaften Entwurf (Exemplar) durch und beantworte die 4 Fragen unten, um den Editor freizuschalten.</p>
+        </div>
+        <button @click="state = 'workspace'" class="btn-secondary btn-sm" v-if="devBypassCooldown">
+          🛠️ Überspringen (Dev-Mode) ➔
+        </button>
+      </div>
+
+      <div class="prewriting-content-grid">
+        <!-- Left: Exemplar Text -->
+        <div class="exemplar-card card">
+          <div class="exemplar-card-header">
+            <span>📄 Musteraufsatz (Exemplar Draft)</span>
+            <span class="subject-indicator" :class="filters.subject">{{ filters.subject.toUpperCase() }}</span>
+          </div>
+          <div class="exemplar-text-body">
+            <p v-for="(para, pIdx) in activeTask?.exemplarText.split('\n\n')" :key="pIdx" class="serif-exemplar-text">
+              {{ para }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Right: Interactive Quiz -->
+        <div class="prewriting-quiz-panel flex flex-col gap-4">
+          <h4 class="quiz-panel-title">💡 Textverständnis-Check:</h4>
+          <div 
+            v-for="(q, qIdx) in activeTask?.preWritingQuestions" 
+            :key="qIdx" 
+            class="question-card card"
+            :class="{ 
+              'correct-card': preWritingAnswers[qIdx] === q.correctIndex,
+              'incorrect-card': preWritingAnswers[qIdx] !== undefined && preWritingAnswers[qIdx] !== q.correctIndex
+            }"
+          >
+            <h5 class="question-text">
+              <span class="q-badge">Frage {{ qIdx + 1 }}</span>
+              {{ q.question }}
+            </h5>
+            
+            <div class="options-grid">
+              <button 
+                v-for="(opt, oIdx) in q.options" 
+                :key="oIdx"
+                class="option-btn"
+                :class="{
+                  'selected': preWritingAnswers[qIdx] === oIdx,
+                  'correct-btn': preWritingAnswers[qIdx] !== undefined && oIdx === q.correctIndex,
+                  'incorrect-btn': preWritingAnswers[qIdx] === oIdx && oIdx !== q.correctIndex
+                }"
+                @click="preWritingAnswers[qIdx] = oIdx; showPreWritingFeedback[qIdx] = true; saveEssayState()"
+              >
+                {{ opt }}
+              </button>
+            </div>
+
+            <!-- Feedback Box -->
+            <transition name="fade">
+              <div v-if="showPreWritingFeedback[qIdx]" class="feedback-explanation">
+                <span v-if="preWritingAnswers[qIdx] === q.correctIndex" class="feedback-icon correct">✅ Richtig!</span>
+                <span v-else class="feedback-icon wrong">❌ Falsch! Versuche es noch einmal.</span>
+                <p class="explanation-text">{{ q.explanation }}</p>
+              </div>
+            </transition>
+          </div>
+
+          <!-- Start Button -->
+          <button 
+            @click="state = 'workspace'; saveEssayState()" 
+            class="btn-primary btn-lg start-writing-btn" 
+            :disabled="!preWritingUnlocked"
+          >
+            <span v-if="preWritingUnlocked">✍️ Starten & Aufsatz schreiben ➔</span>
+            <span v-else>🔒 Beantworte alle 4 Fragen richtig zum Freischalten</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 1. SELECTION DASHBOARD -->
     <div v-if="state === 'selection'" class="selection-dashboard fade-in">
       <div class="selection-sidebar card">
@@ -141,7 +224,14 @@
               <p class="task-desc">{{ activeTask?.description }}</p>
             </div>
           </div>
-          <div class="draft-badge-container">
+          <div class="draft-badge-container flex items-center gap-3">
+            <button 
+              @click="showHighlights = !showHighlights" 
+              class="btn-secondary btn-sm highlight-toggle-btn"
+              :class="{ 'active': showHighlights }"
+            >
+              {{ showHighlights ? '✍️ Text bearbeiten' : '✨ Highlights anzeigen' }}
+            </button>
             <span :class="['draft-badge', draftStage === 1 ? 'draft-1' : 'draft-2']">
               Draft {{ draftStage }} (Entwurf {{ draftStage }})
             </span>
@@ -308,6 +398,114 @@
                   <transition name="fade">
                     <p class="hint-text" v-if="expandedHints[cIndex]">{{ card.hint }}</p>
                   </transition>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: Gamification & Word Bank -->
+          <div v-else-if="rightActiveTab === 'wordbank'" class="gamification-sidebar-container fade-in flex flex-col gap-4">
+            <!-- Colorful Progress Bar & Grade -->
+            <div class="score-progress-card card">
+              <div class="score-progress-header flex justify-between items-center">
+                <span class="score-title">🏆 Dein Score (Revision)</span>
+                <span class="grade-badge-large" :class="gamifiedScoreDetails.grade">
+                  Note: {{ gamifiedScoreDetails.grade }}
+                </span>
+              </div>
+              <div class="points-row flex justify-between items-end mt-2">
+                <span class="points-val"><strong>{{ gamifiedScoreDetails.total }}</strong> / 110 Pkt</span>
+                <span class="draft-limit-info" v-if="draftStage === 1">Draft 1 Limit: max 75 Pkt</span>
+                <span class="draft-limit-info" v-else>Draft 2: Revise to get A/B</span>
+              </div>
+              <div class="progress-bar-wrap mt-2">
+                <div class="progress-bar-bg-full">
+                  <div 
+                    class="progress-bar-fill-full" 
+                    :class="gamifiedScoreDetails.grade"
+                    :style="{ width: (gamifiedScoreDetails.total / 110) * 100 + '%' }"
+                  ></div>
+                </div>
+              </div>
+              <div class="score-breakdown flex justify-between text-xs mt-3 text-muted">
+                <span>Textteile: {{ gamifiedScoreDetails.sectionPoints }}/45p</span>
+                <span>Wortschatz: {{ gamifiedScoreDetails.wordBankPoints }}/30p</span>
+                <span v-if="draftStage === 2">Revisions: {{ gamifiedScoreDetails.draft2Points }}/25p</span>
+                <span v-if="quizWords.length > 0">Quiz: {{ gamifiedScoreDetails.quizPoints }}/10p</span>
+              </div>
+            </div>
+
+            <!-- Suggestion Points Checklist -->
+            <div class="points-suggestions-card card">
+              <h5>🎯 Wie bekomme ich Punkte?</h5>
+              <div class="suggestions-todo-list mt-2">
+                <div 
+                  v-for="(sug, sIdx) in gamifiedScoreDetails.suggestions" 
+                  :key="sIdx"
+                  class="todo-item flex items-start gap-2 py-1 text-sm"
+                  :class="{ 'completed': sug.completed }"
+                >
+                  <span class="todo-check">{{ sug.completed ? '✅' : '⬜' }}</span>
+                  <div class="todo-content flex-1">
+                    <span class="todo-text">{{ sug.text }}</span>
+                    <span class="todo-points-badge font-semibold" :class="sug.completed ? 'text-green' : 'text-primary'">
+                      +{{ sug.points }} Pkt
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Word Bank List with Emojis -->
+            <div class="wordbank-list-card card flex flex-col gap-3">
+              <h5>List of Words (Pflichtwörter)</h5>
+              <p class="text-xs text-muted">Sobald du diese Ausdrücke in deinem Text eintippst, werden sie grün abgehakt!</p>
+              
+              <!-- Starters -->
+              <div class="wordbank-group">
+                <h6 class="group-title text-green">💡 Satzanfänge (Starters):</h6>
+                <div class="chips-list flex flex-wrap gap-1.5 mt-1">
+                  <span 
+                    v-for="word in activeTask?.wordBank?.starters" 
+                    :key="word"
+                    class="word-chip starter"
+                    :class="{ 'used': isWordUsed(word) }"
+                  >
+                    <span class="chip-emoji">{{ isWordUsed(word) ? '✅' : '📌' }}</span>
+                    {{ word }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Vocabulary -->
+              <div class="wordbank-group">
+                <h6 class="group-title text-blue">📚 Wortschatz (Vocabulary):</h6>
+                <div class="chips-list flex flex-wrap gap-1.5 mt-1">
+                  <span 
+                    v-for="word in activeTask?.wordBank?.vocabulary" 
+                    :key="word"
+                    class="word-chip vocabulary"
+                    :class="{ 'used': isWordUsed(word) }"
+                  >
+                    <span class="chip-emoji">{{ isWordUsed(word) ? '✅' : '📖' }}</span>
+                    {{ word }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Connectors -->
+              <div class="wordbank-group">
+                <h6 class="group-title text-purple">🔗 Verbindungswörter (Connectors):</h6>
+                <div class="chips-list flex flex-wrap gap-1.5 mt-1">
+                  <span 
+                    v-for="word in activeTask?.wordBank?.connectors" 
+                    :key="word"
+                    class="word-chip connector"
+                    :class="{ 'used': isWordUsed(word) }"
+                  >
+                    <span class="chip-emoji">{{ isWordUsed(word) ? '✅' : '🔗' }}</span>
+                    {{ word }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -517,6 +715,12 @@
           <span class="stat-value">{{ progressReport.spellingResolved }} Fehler</span>
           <span class="stat-sub">im finalen Text korrigiert</span>
         </div>
+        <div class="stat-card score-card">
+          <span class="stat-icon">🏆</span>
+          <span class="stat-label">Gamified Score & Note</span>
+          <span class="stat-value">{{ gamifiedScoreDetails.total }} / 110</span>
+          <span class="stat-sub">Abschlussnote: <strong class="grade-report-badge">{{ gamifiedScoreDetails.grade }}</strong></span>
+        </div>
       </div>
 
       <!-- Side by side comparison -->
@@ -584,28 +788,240 @@ import { useUiStore } from '../stores/ui'
 const authStore = useAuthStore()
 const uiStore = useUiStore()
 
-type Section = {
-  key: string
-  label: string
-  placeholder: string
-  minWords: number
+import { CURRICULUM_TASKS } from '../data/writingTasks'
+import type { Task, Section, PreWritingQuestion, WordBank } from '../data/writingTasks'
+
+const state = ref<'selection' | 'prewriting' | 'workspace' | 'report'>('selection')
+
+// New Gamification & Pre-Writing States
+const spellingErrorCountInDraft1 = ref(0)
+const showHighlights = ref(false)
+const preWritingAnswers = ref<Record<number, number>>({})
+const showPreWritingFeedback = ref<Record<number, boolean>>({})
+
+const preWritingUnlocked = computed(() => {
+  if (!activeTask.value) return false
+  const questions = activeTask.value.preWritingQuestions || []
+  if (questions.length === 0) return true
+  return questions.every((q, idx) => {
+    return preWritingAnswers.value[idx] === q.correctIndex
+  })
+})
+
+function isWordUsed(word: string): boolean {
+  if (!editorContent.value) return false
+  const fullText = Object.values(editorContent.value).join(' ').toLowerCase()
+  const escapedWord = word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+  if (/\s/.test(word)) {
+    return fullText.includes(word.toLowerCase())
+  } else {
+    const regex = new RegExp('\\b' + escapedWord.toLowerCase() + '\\b')
+    return regex.test(fullText)
+  }
 }
 
-type Task = {
-  id: string
-  title: string
-  description: string
-  grade: number
-  subject: string
-  typeLabel: string
-  sections: Section[]
-  starters: Record<string, string[]>
-  draft1Socratic: Array<{ section: string; question: string; hint: string }>
-  draft2Socratic: Array<{ section: string; question: string; hint: string }>
-  commonSpellingErrors: { wrong: string[]; correct: string[] }
+function getHighlightedText(sectionKey: string): string {
+  const text = editorContent.value[sectionKey] || ''
+  if (!text.trim()) return '<i>(Noch kein Text eingegeben. Klicke hier zum Bearbeiten.)</i>'
+  const task = activeTask.value
+  if (!task || !task.wordBank) return text
+
+  const matches: Array<{ word: string; type: 'starter' | 'vocabulary' | 'connector' }> = []
+  if (task.wordBank.starters) {
+    task.wordBank.starters.forEach((w) => matches.push({ word: w, type: 'starter' }))
+  }
+  if (task.wordBank.vocabulary) {
+    task.wordBank.vocabulary.forEach((w) => matches.push({ word: w, type: 'vocabulary' }))
+  }
+  if (task.wordBank.connectors) {
+    task.wordBank.connectors.forEach((w) => matches.push({ word: w, type: 'connector' }))
+  }
+
+  matches.sort((a, b) => b.word.length - a.word.length)
+
+  let tempText = text
+  const replacements: Record<string, string> = {}
+
+  matches.forEach((item, index) => {
+    const word = item.word
+    const escapedWord = word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+    let regex: RegExp
+    if (/\s/.test(word)) {
+      regex = new RegExp('(' + escapedWord + ')', 'gi')
+    } else {
+      regex = new RegExp('\\b(' + escapedWord + ')\\b', 'gi')
+    }
+
+    const token = `__TOKEN_${index}__`
+    if (regex.test(tempText)) {
+      tempText = tempText.replace(regex, token)
+      replacements[token] = `<span class="highlighted-word type-${item.type}">${word}</span>`
+    }
+  })
+
+  Object.keys(replacements).forEach((token) => {
+    tempText = tempText.replaceAll(token, replacements[token])
+  })
+
+  return tempText
 }
 
-const state = ref<'selection' | 'workspace' | 'report'>('selection')
+const gamifiedScoreDetails = computed(() => {
+  if (!activeTask.value) {
+    return {
+      total: 0,
+      sectionPoints: 0,
+      wordBankPoints: 0,
+      draft2Points: 0,
+      quizPoints: 0,
+      grade: 'F',
+      usedCount: 0,
+      allWordsCount: 0,
+      suggestions: [],
+      usedWordsList: []
+    }
+  }
+
+  const task = activeTask.value
+  const totalSecs = task.sections.length
+  
+  let completedSecs = 0
+  task.sections.forEach((s) => {
+    if (getNodeStatus(s.key) === 'complete') {
+      completedSecs++
+    }
+  })
+  const sectionPoints = totalSecs > 0 ? Math.round((completedSecs / totalSecs) * 45) : 0
+
+  let usedCount = 0
+  const startersList = task.wordBank?.starters || []
+  const vocabList = task.wordBank?.vocabulary || []
+  const connectorsList = task.wordBank?.connectors || []
+  const allWordBankWords = [...startersList, ...vocabList, ...connectorsList]
+  
+  const usedWordsList: string[] = []
+  allWordBankWords.forEach((w) => {
+    if (isWordUsed(w)) {
+      usedCount++
+      usedWordsList.push(w)
+    }
+  })
+  const wordBankPoints = Math.min(30, usedCount * 5)
+
+  let draft2Points = 0
+  if (draftStage.value === 2) {
+    const d1Errors = spellingErrorCountInDraft1.value
+    const currentErrors = spellingErrorCount.value
+    if (currentErrors === 0) {
+      draft2Points += 10
+    } else if (d1Errors > 0 && currentErrors < d1Errors) {
+      draft2Points += Math.round(10 * (1 - currentErrors / d1Errors))
+    }
+    
+    const styleScore = criteriaScores.value.style || 0
+    if (styleScore >= 80) {
+      draft2Points += 15
+    } else if (styleScore >= 60) {
+      draft2Points += 10
+    } else if (styleScore > 0) {
+      draft2Points += 5
+    }
+  }
+
+  let quizPoints = 0
+  if (quizWords.value.length > 0) {
+    let correct = 0
+    quizWords.value.forEach(w => {
+      if (w.isCorrect) correct++
+    })
+    quizPoints = Math.round(10 * (correct / quizWords.value.length))
+  } else if (spellingQuizPhase.value === 'result' || state.value === 'report') {
+    quizPoints = Math.round(10 * (quizCorrectCount.value / Math.max(1, quizWords.value.length)))
+  }
+
+  const total = sectionPoints + wordBankPoints + draft2Points + quizPoints
+
+  let grade = 'F'
+  if (total >= 90) grade = 'A'
+  else if (total >= 80) grade = 'B'
+  else if (total >= 60) grade = 'C'
+  else if (total >= 50) grade = 'D'
+
+  const suggestions: Array<{ text: string; points: number; completed: boolean }> = []
+  
+  task.sections.forEach((s) => {
+    suggestions.push({
+      text: `Schreibe min. ${s.minWords} Wörter im Abschnitt "${s.label}"`,
+      points: 15,
+      completed: getNodeStatus(s.key) === 'complete'
+    })
+  })
+
+  startersList.forEach(w => {
+    suggestions.push({
+      text: `Verwende den Satzanfang "${w}"`,
+      points: 5,
+      completed: isWordUsed(w)
+    })
+  })
+  
+  vocabList.forEach(w => {
+    suggestions.push({
+      text: `Verwende das Wort "${w}"`,
+      points: 5,
+      completed: isWordUsed(w)
+    })
+  })
+
+  connectorsList.forEach(w => {
+    suggestions.push({
+      text: `Verwende das Verbindungswort "${w}"`,
+      points: 5,
+      completed: isWordUsed(w)
+    })
+  })
+
+  if (draftStage.value === 1) {
+    suggestions.push({
+      text: `Reiche Draft 1 ein, um Draft 2 (Revision, +25 Pkt) freizuschalten`,
+      points: 25,
+      completed: false
+    })
+  } else {
+    suggestions.push({
+      text: `Korrigiere Rechtschreibfehler aus Draft 1 (+10 Pkt)`,
+      points: 10,
+      completed: spellingErrorCount.value === 0
+    })
+    suggestions.push({
+      text: `Erreiche einen Stil-Score von >= 80% (+15 Pkt)`,
+      points: 15,
+      completed: criteriaScores.value.style >= 80
+    })
+  }
+
+  if (quizWords.value.length > 0) {
+    suggestions.push({
+      text: `Löse das Rechtschreib-Quiz fehlerfrei vor der Abgabe (+10 Pkt)`,
+      points: 10,
+      completed: quizCorrectCount.value === quizWords.value.length
+    })
+  }
+
+  return {
+    total,
+    sectionPoints,
+    wordBankPoints,
+    draft2Points,
+    quizPoints,
+    grade,
+    usedCount,
+    allWordsCount: allWordBankWords.length,
+    suggestions,
+    usedWordsList
+  }
+})
+
 const filters = ref({
   grade: 1,
   subject: 'de'
@@ -662,246 +1078,6 @@ const progressReport = ref({
 })
 
 // Static curriculum database
-const CURRICULUM_TASKS: Task[] = [
-  // --- GERMAN ---
-  {
-    id: 'de-1-brief',
-    title: 'Persönlicher Brief: Postkarte aus den Ferien',
-    description: 'Schreibe einen Brief an einen Freund/eine Freundin über deinen Urlaub. Berichte von deinen spannendsten Ferienerlebnissen!',
-    grade: 1,
-    subject: 'de',
-    typeLabel: 'Brief',
-    sections: [
-      { key: 'intro', label: 'Anrede, Ort & Einleitung', placeholder: 'z.B.: Telfs, am 28. Mai. Lieber Lukas, ich hoffe, es geht dir gut...', minWords: 15 },
-      { key: 'body', label: 'Hauptteil (Ferienerlebnisse)', placeholder: 'Berichte, was du unternommen hast, wie das Wetter war und was dir am besten gefällt...', minWords: 40 },
-      { key: 'conclusion', label: 'Schluss & Abschiedsgruß', placeholder: 'z.B.: Ich freue mich schon, dich bald wiederzusehen. Viele Grüße, dein/eine...', minWords: 15 }
-    ],
-    starters: {
-      intro: ['Liebe / Lieber...', 'Ich hoffe, es geht dir gut.', 'Ich schreibe dir heute aus...', 'Viele Grüße aus meinem Urlaub in...'],
-      body: ['Am ersten Tag haben wir...', 'Das Wetter ist wirklich...', 'Ein besonderes Highlight war...', 'Es gibt hier so viel zu tun, zum Beispiel...'],
-      conclusion: ['Ich wünsche dir noch schöne Ferientage.', 'Schreib mir bald zurück!', 'Herzliche Grüße', 'Bis bald, dein/deine...']
-    },
-    draft1Socratic: [
-      { section: 'intro', question: 'Hast du den Brief mit einer passenden Anrede und dem Ausstellungsort begonnen?', hint: 'Bei einem Brief gehört rechts oben der Ort und das Datum hin (z.B. "Telfs, am 28. Mai"). Dann folgt die persönliche Anrede.' },
-      { section: 'body', question: 'Könntest du deine Erlebnisse noch lebendiger beschreiben? Welche Geräusche oder Gerüche gab es?', hint: 'Benutze anschauliche Adjektive wie "sonnig", "aufregend", "wunderschön" oder "stürmisch", um deine Ferien lebendig darzustellen.' },
-      { section: 'conclusion', question: 'Gibt es eine abschließende Frage an deinen Freund und einen netten Abschiedsgruß?', hint: 'Du könntest fragen: "Wie verbringst du deine Ferien?" und danach "Viele Grüße" schreiben.' }
-    ],
-    draft2Socratic: [
-      { section: 'body', question: 'Hast du Sätze, die immer mit "Und dann..." oder "Ich..." beginnen? Versuche, diese Satzanfänge abzuwechseln.', hint: 'Satzanfänge wie "Später", "Danach", "Am Nachmittag" oder "Glücklicherweise" machen deinen Brief viel spannender.' }
-    ],
-    commonSpellingErrors: {
-      wrong: ['urlaub', 'nämlich', 'bisschen', 'daß', 'vollkommen'],
-      correct: ['Urlaub', 'nämlich', 'bisschen', 'dass', 'vollkommen']
-    }
-  },
-  {
-    id: 'de-1-erzaehlung',
-    title: 'Erlebniserzählung: Ein stürmisches Abenteuer',
-    description: 'Erzähle von einem Ausflug, bei dem du überraschend in ein schweres Gewitter geraten bist. Baue einen spannenden Höhepunkt auf!',
-    grade: 1,
-    subject: 'de',
-    typeLabel: 'Erlebniserzählung',
-    sections: [
-      { key: 'intro', label: 'Einleitung (Wer, Wann, Wo)', placeholder: 'Wer war dabei? Wann ging es los? Wohin habt ihr euren Ausflug gemacht?', minWords: 20 },
-      { key: 'body', label: 'Hauptteil (Spannungsaufbau & Höhepunkt)', placeholder: 'Wie veränderte sich der Himmel? Welches Geräusch hat dich erschreckt? Wo habt ihr Schutz gesucht?', minWords: 50 },
-      { key: 'conclusion', label: 'Schluss (Rettung & Heimkehr)', placeholder: 'Wie ging das Abenteuer aus? Wie hast du dich gefühlt, als du wieder im Warmen warst?', minWords: 20 }
-    ],
-    starters: {
-      intro: ['An einem sonnigen Samstagvormittag...', 'Wir packten unsere Rucksäcke für eine Wanderung nach...', 'Zusammen mit meiner Familie brach ich auf, um...'],
-      body: ['Plötzlich verdunkelte sich der Himmel...', 'Ein heftiger Windstoß fegte über...', 'Der erste Donner grollte laut in den Bergen...', 'Vor Angst fing mein Herz an zu klopfen...'],
-      conclusion: ['Zum Glück sahen wir eine kleine Hütte...', 'Als wir endlich müde, aber sicher zu Hause anamen...', 'Dieses Erlebnis werde ich so schnell nicht vergessen.']
-    },
-    draft1Socratic: [
-      { section: 'intro', question: 'Ist die Einleitung spannend genug, um den Ausflug lebendig zu starten?', hint: 'Nenne die Beteiligten und das Ausflugsziel klar, um die Ausgangslage zu klären.' },
-      { section: 'body', question: 'Gibt es einen klaren Höhepunkt im Hauptteil, bei dem die Gefahr am größten war?', hint: 'Nutze kurze Sätze, um die Hektik beim Aufziehen des Sturms darzustellen.' },
-      { section: 'conclusion', question: 'Wird am Ende beschrieben, wie sich deine Gefühle nach dem Sturm beruhigt haben?', hint: 'Schreibe über das Gefühl der Erleichterung, als du wieder in Sicherheit warst.' }
-    ],
-    draft2Socratic: [
-      { section: 'body', question: 'Hast du Verben der Bewegung treffend eingesetzt? (z.B. rennen, stürmen, flüchten)', hint: 'Statt "Wir gingen schnell" schreibe lieber "Wir stürmten los" oder "Wir flüchteten unter ein Vordach".' }
-    ],
-    commonSpellingErrors: {
-      wrong: ['gewitter', 'plötzlich', 'angst', 'wieder', 'flüchten'],
-      correct: ['Gewitter', 'plötzlich', 'Angst', 'wieder', 'flüchten']
-    }
-  },
-  {
-    id: 'de-2-beschreibung',
-    title: 'Gegenstandsbeschreibung: Ein verlorener Gegenstand',
-    description: 'Beschreibe ein Fundstück oder einen Gegenstand so präzise, dass jemand ihn allein anhand deines Textes sofort zeichnen oder erkennen könnte.',
-    grade: 2,
-    subject: 'de',
-    typeLabel: 'Beschreibung',
-    sections: [
-      { key: 'intro', label: 'Einleitung (Name & Gesamteindruck)', placeholder: 'Um welchen Gegenstand handelt es sich? Welche Größe und Gesamtform hat er?', minWords: 15 },
-      { key: 'body', label: 'Hauptteil (Farbe, Material & Details)', placeholder: 'Beschreibe das Material, farbliche Besonderheiten, Muster und Abnutzungsspuren von oben nach unten...', minWords: 45 },
-      { key: 'conclusion', label: 'Schluss (Verwendungszweck & Wert)', placeholder: 'Wofür wird der Gegenstand benutzt? Welchen Nutzen oder Wert hat er für dich?', minWords: 15 }
-    ],
-    starters: {
-      intro: ['Bei dem zu beschreibenden Gegenstand handelt es sich um...', 'Der Gegenstand ist ungefähr so groß wie...', 'Auf den ersten Blick wirkt das Objekt...'],
-      body: ['Die Oberfläche fühlt sich... an.', 'Hergestellt ist das Gehäuse aus...', 'An der linken Seite befindet sich ein kleiner...', 'Bei genauerem Hinsehen bemerkt man leichte Kratzer auf...'],
-      conclusion: ['Dieser Gegenstand dient hauptsächlich dazu,...', 'Für den Besitzer hat dieses Fundstück einen hohen...', 'Zusammenfassend lässt sich sagen, dass...']
-    },
-    draft1Socratic: [
-      { section: 'body', question: 'Gehst du bei deiner Beschreibung systematisch vor (z.B. von oben nach unten oder außen nach innen)?', hint: 'Ein ungeordnetes Beschreiben verwirrt den Leser. Wähle eine logische Reihenfolge für die Details.' },
-      { section: 'body', question: 'Hast du auch auf Abnutzungsspuren oder Beschädigungen hingewiesen?', hint: 'Dinge wie Kratzer, Dellen oder Verfärbungen machen die Beschreibung einzigartig und präzise.' }
-    ],
-    draft2Socratic: [
-      { section: 'body', question: 'Benutzt du präzise Materialbegriffe? (Holz, Kunststoff, Aluminium)', hint: 'Statt "Es ist aus festem Stoff" schreibe genauer "Es besteht aus reißfestem Nylon" oder "marmoriertem Kunststoff".' }
-    ],
-    commonSpellingErrors: {
-      wrong: ['große', 'plastik', 'oberfläche', 'kratzer', 'metallisch'],
-      correct: ['Größe', 'Plastik', 'Oberfläche', 'Kratzer', 'metallisch']
-    }
-  },
-  {
-    id: 'de-3-bericht',
-    title: 'Bericht: Verkehrsunfall auf der Schulstraße',
-    description: 'Verfasse einen sachlichen Zeitungsbericht über einen Fahrradunfall vor der Schule. Verwende keine Gefühlsäußerungen!',
-    grade: 3,
-    subject: 'de',
-    typeLabel: 'Bericht',
-    sections: [
-      { key: 'intro', label: 'Einleitung (Die W-Fragen)', placeholder: 'Schlagzeile. Wann, Wo, Wer, Was ist passiert? Fasse den Kern des Geschehens kurz zusammen.', minWords: 25 },
-      { key: 'body', label: 'Hauptteil (Genauer Unfallhergang & Folgen)', placeholder: 'Wie kam es zum Zusammenstoß? Wer hat die Rettung gerufen? Welche Verletzungen gab es?', minWords: 50 },
-      { key: 'conclusion', label: 'Schluss (Aktueller Zustand & Zeugenaufruf)', placeholder: 'Wie ist der aktuelle Zustand der Beteiligten? Sucht die Polizei noch nach Zeugen?', minWords: 20 }
-    ],
-    starters: {
-      intro: ['Schulstraße: Schüler kollidiert mit PKW...', 'Am gestrigen Mittwochmorgen ereignete sich gegen 07:45 Uhr...', 'Vor der Mittelschule Telfs kam es zu einem folgenschweren Zusammenstoß...'],
-      body: ['Laut Zeugenaussagen übersah der 12-jährige Fahrradfahrer...', 'Der PKW-Lenker versuchte noch, durch ein Ausweichmanöver...', 'Ersthelfer kümmerten sich umgehend um...', 'Die verständigte Rettung transportierte den Verletzten in...'],
-      conclusion: ['Wie das Krankenhaus am Nachmittag mitteilte,...', 'Die Polizeiinspektion bittet Zeugen, sich unter der Nummer... zu melden.', 'Es entstand ein Sachschaden in Höhe von circa...']
-    },
-    draft1Socratic: [
-      { section: 'intro', question: 'Sind alle W-Fragen (Wer, Was, Wann, Wo) im ersten Absatz direkt beantwortet?', hint: 'Der Leser muss nach der Einleitung sofort wissen, wer beteiligt war und wo es passierte.' },
-      { section: 'body', question: 'Schreibst du streng sachlich? Hast du Vermutungen oder Emotionen weggelassen?', hint: 'Im Bericht haben Wörter wie "schrecklich", "leider" oder "der böse Autofahrer" nichts verloren. Bleibe objektiv.' }
-    ],
-    draft2Socratic: [
-      { section: 'body', question: 'Steht der Bericht durchgehend in der Vergangenheitsform (Präteritum)?', hint: 'Berichte werden im Präteritum geschrieben (z.B. "kollidierte", "wich aus", "traf ein").' }
-    ],
-    commonSpellingErrors: {
-      wrong: ['unfal', 'polizey', 'gestern', 'fahrrad', 'verletztung'],
-      correct: ['Unfall', 'Polizei', 'gestern', 'Fahrrad', 'Verletzung']
-    }
-  },
-  {
-    id: 'de-4-erorterung',
-    title: 'Argumentative Erörterung: Handys im Unterricht?',
-    description: 'Sollen Smartphones im Unterricht erlaubt sein? Erörtere das Thema mit logischen Pro- und Contra-Argumenten.',
-    grade: 4,
-    subject: 'de',
-    typeLabel: 'Erörterung',
-    sections: [
-      { key: 'intro', label: 'Einleitung (Hinführung zum Thema)', placeholder: 'Warum ist das Thema heutzutage wichtig? Stelle die Streitfrage klar dar.', minWords: 25 },
-      { key: 'body', label: 'Hauptteil (Pro- & Contra-Argumente)', placeholder: 'Nenne Argumente für Handys (z.B. Recherche) und Gegenargumente (z.B. Ablenkung) mit Beispielen.', minWords: 65 },
-      { key: 'conclusion', label: 'Schluss (Synthese & Eigene Meinung)', placeholder: 'Fasse die Argumente zusammen und ziehe ein persönliches, begründetes Fazit.', minWords: 25 }
-    ],
-    starters: {
-      intro: ['Heutzutage besitzt fast jeder Jugendliche...', 'In den Medien wird heftig darüber debattiert, ob...', 'Die Frage, ob Handys im Unterricht nützlich sind, beschäftigt viele...'],
-      body: ['Ein wichtiges Argument für die Nutzung ist...', 'Gegner weisen jedoch darauf hin, dass...', 'Ein anschauliches Beispiel hierfür ist...', 'Darüber hinaus darf man nicht vergessen, dass...'],
-      conclusion: ['Abwägend lässt sich sagen, dass...', 'Meiner persönlichen Meinung nach...', 'Zusammenfassend komme ich zu dem Schluss, dass...']
-    },
-    draft1Socratic: [
-      { section: 'body', question: 'Hast du deine Argumente nach der 3B-Regel aufgebaut (Behauptung, Begründung, Beispiel)?', hint: 'Eine bloße Behauptung reicht nicht. Du musst sie begründen und mit einem konkreten Beispiel (z.B. "Recherche im Geographie-Unterricht") belegen.' },
-      { section: 'body', question: 'Sind Pro- und Contra-Argumente ausgewogen gewichtet?', hint: 'Stelle sicher, dass du beide Seiten der Medaille beleuchtest, bevor du ein Urteil fällst.' }
-    ],
-    draft2Socratic: [
-      { section: 'body', question: 'Verwendest du Überleitungswörter, um Argumente logisch zu verknüpfen?', hint: 'Nutze Konjunktionen wie "Einerseits / Andererseits", "Demgegenüber steht", "Folglich" oder "Zusätzlich ist zu erwähnen".' }
-    ],
-    commonSpellingErrors: {
-      wrong: ['kucken', 'argumentiren', 'internet', 'vorteil', 'deswegen'],
-      correct: ['gucken', 'argumentieren', 'Internet', 'Vorteil', 'deswegen']
-    }
-  },
-
-  // --- ENGLISH ---
-  {
-    id: 'en-1-hobby',
-    title: 'My Favourite Hobby',
-    description: 'Write a paragraph about your favourite hobby. Describe what it is, when you do it, and why you like it.',
-    grade: 1,
-    subject: 'en',
-    typeLabel: 'Paragraph',
-    sections: [
-      { key: 'intro', label: 'Topic Sentence (Introduction)', placeholder: 'My absolute favourite hobby is... because...', minWords: 12 },
-      { key: 'body', label: 'Supporting Details (When, Where, How)', placeholder: 'How often do you practice this hobby? Where do you do it? Who do you do it with?', minWords: 35 },
-      { key: 'conclusion', label: 'Concluding Sentence (Summary)', placeholder: 'All in all, this hobby makes me feel... and I recommend it to...', minWords: 12 }
-    ],
-    starters: {
-      intro: ['My favourite hobby is...', 'In my free time, I love to...', 'The activity I enjoy the most is...'],
-      body: ['I usually do this on weekends at...', 'I play/practice with my friends from...', 'To do this, I need a...', 'It is very exciting because...'],
-      conclusion: ['In conclusion, I think...', 'I can say that my hobby is...', 'If you want to try it, you should...']
-    },
-    draft1Socratic: [
-      { section: 'intro', question: 'Did you introduce your hobby clearly in the first sentence?', hint: 'Start with a strong topic sentence like: "My favourite hobby is playing football because it keeps me active."' },
-      { section: 'body', question: 'Did you explain who you practice with and what gear you need?', hint: 'Describe the equipment (e.g. racket, console, shoes) and the people you share the hobby with.' }
-    ],
-    draft2Socratic: [
-      { section: 'body', question: 'Are you using action verbs to describe what you do?', hint: 'Instead of saying "I do football", say "I kick the ball", "I run fast", or "I score goals".' }
-    ],
-    commonSpellingErrors: {
-      wrong: ['hoby', 'favourit', 'becuase', 'freind', 'playin'],
-      correct: ['hobby', 'favourite', 'because', 'friend', 'playing']
-    }
-  },
-  {
-    id: 'en-2-story',
-    title: 'Short Story: The Magic Key',
-    description: 'Write a short creative story about finding a small key in the forest that opens a mysterious hidden door.',
-    grade: 2,
-    subject: 'en',
-    typeLabel: 'Creative Story',
-    sections: [
-      { key: 'intro', label: 'Introduction (Setting the scene)', placeholder: 'Describe the weather, the forest, and how you found the key...', minWords: 20 },
-      { key: 'body', label: 'Climax (The mysterious door)', placeholder: 'Where did the key lead you? What did the door look like? What happened when you opened it?', minWords: 45 },
-      { key: 'conclusion', label: 'Resolution (How it ends)', placeholder: 'Did you go inside? What was the secret? How did you return home?', minWords: 20 }
-    ],
-    starters: {
-      intro: ['One sunny autumn afternoon, I was walking in the...', 'Suddenly, I saw something glowing under a pile of leaves...', 'It was a tiny, golden key with strange patterns on it...'],
-      body: ['Following a narrow path, I discovered an old oak tree...', 'In the middle of the trunk, there was a tiny iron door...', 'My hand was shaking as I put the key into the lock...'],
-      conclusion: ['Inside, I found a box full of...', 'It was an adventure I will never forget...', 'From that day on, I always carry the key with me.']
-    },
-    draft1Socratic: [
-      { section: 'intro', question: 'Do you set a clear mood in the forest scene?', hint: 'Use sensory details: what did the leaves sound like? Was it cold or warm?' },
-      { section: 'body', question: 'Do you build tension before the door is opened?', hint: 'Describe how your character felt. Were they scared, excited, or nervous?' }
-    ],
-    draft2Socratic: [
-      { section: 'body', question: 'Did you write your story in the past tense?', hint: 'Stories are usually written in simple past. Check verbs like "go -> went", "find -> found", "open -> opened".' }
-    ],
-    commonSpellingErrors: {
-      wrong: ['forrest', 'sudently', 'mysterious', 'opended', 'golden'],
-      correct: ['forest', 'suddenly', 'mysterious', 'opened', 'golden']
-    }
-  },
-  {
-    id: 'en-4-opinion',
-    title: 'Opinion Essay: Mobile Phones in School',
-    description: 'Should mobile phones be banned in schools? Write an essay expressing your opinion with supporting reasons.',
-    grade: 4,
-    subject: 'en',
-    typeLabel: 'Opinion Essay',
-    sections: [
-      { key: 'intro', label: 'Introduction (Hook & Thesis)', placeholder: 'Introduce the debate and state your opinion clearly...', minWords: 25 },
-      { key: 'body', label: 'Body Paragraphs (Reasons & Examples)', placeholder: 'Give at least two reasons to support your opinion. Provide examples...', minWords: 60 },
-      { key: 'conclusion', label: 'Conclusion (Summary of main points)', placeholder: 'Restate your opinion in a new way and wrap up your arguments...', minWords: 20 }
-    ],
-    starters: {
-      intro: ['Nowadays, almost every student carries a smartphone to school...', 'The question of whether phones should be allowed in class is highly debated...', 'In my opinion, school phone bans are... because...'],
-      body: ['First of all, smartphones can be a major distraction during...', 'On the other hand, they can also be used as a helpful tool for...', 'For example, students can quickly look up dictionary words or...'],
-      conclusion: ['To sum up, I believe that...', 'Taking everything into consideration, school boards should...', 'In conclusion, it is clear that...']
-    },
-    draft1Socratic: [
-      { section: 'body', question: 'Did you support your opinion with real-life examples?', hint: 'Instead of just saying "phones distract", give an example like: "Students might secretly text or play games under their desks during math class."' },
-      { section: 'intro', question: 'Is your stance (thesis) clear in the introduction?', hint: 'Make a clear statement: "I strongly believe that phones should be allowed for educational use only."' }
-    ],
-    draft2Socratic: [
-      { section: 'body', question: 'Are you using formal transition words to link your points?', hint: 'Use linking words: "Furthermore", "In addition", "However", "Consequently", or "Therefore".' }
-    ],
-    commonSpellingErrors: {
-      wrong: ['goverment', 'distractin', 'classroom', 'opinion', 'alowed'],
-      correct: ['government', 'distraction', 'classroom', 'opinion', 'allowed']
-    }
-  }
-]
-
 // Filters
 const filteredTasks = computed(() => {
   return CURRICULUM_TASKS.filter(
@@ -917,16 +1093,22 @@ function selectTask(task: Task) {
   remainingChecks.value = 5
   cooldownRemaining.value = 0
   spellingErrorCount.value = 0
-  
+
+  // Reset gamification states
+  spellingErrorCountInDraft1.value = 0
+  showHighlights.value = false
+  preWritingAnswers.value = {}
+  showPreWritingFeedback.value = {}
+
   // Initialize editor content based on sections
   const contentObj: Record<string, string> = {}
-  task.sections.forEach(s => {
+  task.sections.forEach((s) => {
     contentObj[s.key] = ''
   })
   editorContent.value = contentObj
   submittedDraft1Content.value = {}
   submittedDraft2Content.value = {}
-  
+
   // Try to load state from localStorage if exists
   const saved = localStorage.getItem(`learnflow_wc_essay_${task.id}`)
   if (saved) {
@@ -937,8 +1119,7 @@ function selectTask(task: Task) {
       submittedDraft2Content.value = parsed.submittedDraft2Content || {}
       draftStage.value = parsed.draftStage || 1
       remainingChecks.value = parsed.remainingChecks !== undefined ? parsed.remainingChecks : 5
-      
-      // Calculate remaining cooldown if any
+
       if (parsed.cooldownEndTime) {
         const diff = Math.ceil((parsed.cooldownEndTime - Date.now()) / 1000)
         if (diff > 0) {
@@ -946,22 +1127,43 @@ function selectTask(task: Task) {
           startCooldownTimer()
         }
       }
-      
+
       analyzed.value = parsed.analyzed || false
       criteriaScores.value = parsed.criteriaScores || { structure: 0, content: 0, style: 0 }
       spellingErrorCount.value = parsed.spellingErrorCount || 0
+      
+      // Load new states
+      spellingErrorCountInDraft1.value = parsed.spellingErrorCountInDraft1 || 0
+      preWritingAnswers.value = parsed.preWritingAnswers || {}
+      showPreWritingFeedback.value = parsed.showPreWritingFeedback || {}
+      showHighlights.value = parsed.showHighlights || false
     } catch (e) {
       console.error('Failed to load saved essay state', e)
     }
   }
-  
-  state.value = 'workspace'
+
+  // Determine transition: custom task goes straight, curriculum tasks go to prewriting first
+  if (task.id.startsWith('custom')) {
+    state.value = 'workspace'
+  } else {
+    const questions = task.preWritingQuestions || []
+    const isCompleted = questions.length > 0 && questions.every((q, idx) => {
+      return preWritingAnswers.value[idx] === q.correctIndex
+    })
+    
+    if (isCompleted || devBypassCooldown.value) {
+      state.value = 'workspace'
+    } else {
+      state.value = 'prewriting'
+    }
+  }
+
   activeHighlightSection.value = task.sections[0]?.key || null
   expandedHints.value = {}
   rightActiveTab.value = 'coach'
 }
 
-// Custom task builder triggers
+
 function startCustomTask() {
   if (!customTask.value.title) return
   
@@ -1010,21 +1212,27 @@ function startCustomTask() {
 
 function saveEssayState() {
   if (!activeTask.value) return
-  
+
   const stateData = {
     editorContent: editorContent.value,
     submittedDraft1Content: submittedDraft1Content.value,
     submittedDraft2Content: submittedDraft2Content.value,
     draftStage: draftStage.value,
     remainingChecks: remainingChecks.value,
-    cooldownEndTime: cooldownRemaining.value > 0 ? Date.now() + (cooldownRemaining.value * 1000) : null,
+    cooldownEndTime:
+      cooldownRemaining.value > 0 ? Date.now() + cooldownRemaining.value * 1000 : null,
     analyzed: analyzed.value,
     criteriaScores: criteriaScores.value,
-    spellingErrorCount: spellingErrorCount.value
+    spellingErrorCount: spellingErrorCount.value,
+    spellingErrorCountInDraft1: spellingErrorCountInDraft1.value,
+    preWritingAnswers: preWritingAnswers.value,
+    showPreWritingFeedback: showPreWritingFeedback.value,
+    showHighlights: showHighlights.value,
   }
-  
+
   localStorage.setItem(`learnflow_wc_essay_${activeTask.value.id}`, JSON.stringify(stateData))
 }
+
 
 // Text input tracking
 function handleTextInput(sectionKey: string, event: Event) {
@@ -1217,16 +1425,13 @@ function generateSocraticFeedback() {
   let errors = 0
   const wrongWords = activeTask.value.commonSpellingErrors.wrong
   
-  // Look for actual spelling mistakes in editor
-  const fullText = Object.values(editorContent.value).join(' ').toLowerCase()
-  wrongWords.forEach(w => {
+  wrongWords.forEach((w) => {
     if (fullText.includes(w.toLowerCase())) {
       errors++
     }
   })
-  
-  // If no error is naturally found, but user has written text, inject 2 to 3 forced spelling errors so they learn!
-  if (errors === 0 && totalW > 10) {
+
+  if (draftStage.value === 1 && errors === 0 && totalW > 10) {
     errors = Math.min(4, Math.floor(totalW / 25) + 1)
   }
   spellingErrorCount.value = errors
@@ -1364,10 +1569,11 @@ function checkQuizAnswers() {
 
 function finalizeSubmission() {
   spellingQuizModalOpen.value = false
-  
+
   if (draftStage.value === 1) {
     // Submit Draft 1 and move to Draft 2
     submittedDraft1Content.value = { ...editorContent.value }
+    spellingErrorCountInDraft1.value = spellingErrorCount.value // Store Draft 1 errors
     draftStage.value = 2
     analyzed.value = false
     remainingChecks.value = 5 // reset check counts for draft 2
@@ -1384,11 +1590,11 @@ function finalizeSubmission() {
   } else {
     // Submit Draft 2 (Final)
     submittedDraft2Content.value = { ...editorContent.value }
-    
+
     // Calculate final metrics for the report
     calculateReportStats()
     state.value = 'report'
-    
+
     // Remove temporary state
     localStorage.removeItem(`learnflow_wc_essay_${activeTask.value?.id}`)
     uiStore.showToast('Aufsatz erfolgreich abgeschlossen! 🏆', 'success')
@@ -2593,6 +2799,361 @@ onUnmounted(() => {
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     transform: translateY(0);
     transition: transform 0.3s ease;
+  }
+}
+
+/* Pre-writing layout styling */
+.prewriting-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+  background: var(--bg-card);
+}
+.prewriting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+.prewriting-subtitle {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-top: 0.25rem;
+}
+.prewriting-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+.exemplar-card {
+  padding: 1.5rem;
+  border-color: var(--primary-soft);
+  box-shadow: var(--shadow-sm);
+}
+.exemplar-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+}
+.exemplar-text-body {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+.serif-exemplar-text {
+  font-family: 'Georgia', serif;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--text-main);
+  white-space: pre-wrap;
+  margin-bottom: 1.25rem;
+}
+.prewriting-quiz-panel {
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+.quiz-panel-title {
+  font-weight: 700;
+  color: var(--text-main);
+}
+.question-card {
+  padding: 1.25rem;
+  border-left: 4px solid var(--border-color);
+  transition: all var(--transition);
+}
+.question-card.correct-card {
+  border-left-color: var(--success);
+  background: var(--success-light);
+}
+.question-card.incorrect-card {
+  border-left-color: var(--danger);
+  background: var(--danger-light);
+}
+.question-text {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.q-badge {
+  font-size: 0.7rem;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  padding: 0.15rem 0.40rem;
+  border-radius: var(--radius-xs);
+}
+.options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.option-btn {
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.option-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-muted);
+}
+.option-btn.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+.option-btn.correct-btn {
+  background: var(--success) !important;
+  border-color: var(--success) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+.option-btn.incorrect-btn {
+  background: var(--danger) !important;
+  border-color: var(--danger) !important;
+  color: #fff !important;
+}
+.feedback-explanation {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border-color);
+}
+.feedback-icon {
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+.feedback-icon.correct {
+  color: var(--success);
+}
+.feedback-icon.wrong {
+  color: var(--danger);
+}
+.explanation-text {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+.start-writing-btn {
+  width: 100%;
+  justify-content: center;
+  font-weight: 700;
+  margin-top: 1rem;
+  box-shadow: 0 4px 12px var(--primary-light);
+}
+
+/* Highlights styling */
+.highlight-toggle-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.essay-serif-preview {
+  width: 100%;
+  min-height: 110px;
+  padding: 1rem;
+  font-family: 'Georgia', serif;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--text-main);
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: pre-wrap;
+}
+.essay-serif-preview:hover {
+  background: var(--border-color);
+}
+.highlighted-word {
+  display: inline-block;
+  padding: 0.05rem 0.25rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.highlighted-word.type-starter {
+  background: rgba(16, 185, 129, 0.15);
+  color: #047857;
+  border-bottom: 2px solid #10b981;
+}
+.highlighted-word.type-vocabulary {
+  background: rgba(59, 130, 246, 0.15);
+  color: #1d4ed8;
+  border-bottom: 2px solid #3b82f6;
+}
+.highlighted-word.type-connector {
+  background: rgba(139, 92, 246, 0.15);
+  color: #6d28d9;
+  border-bottom: 2px solid #8b5cf6;
+}
+
+/* Gamification sidebar styles */
+.gamification-sidebar-container {
+  padding: 0.5rem;
+}
+.score-progress-card {
+  padding: 1.25rem;
+  border-color: var(--primary-soft);
+  background: var(--bg-card);
+}
+.score-title {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.grade-badge-large {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-sm);
+}
+.grade-badge-large.A {
+  background: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+.grade-badge-large.B {
+  background: var(--info-light);
+  color: var(--info);
+  border: 1px solid var(--info);
+}
+.grade-badge-large.C {
+  background: var(--warning-light);
+  color: #b45309;
+  border: 1px solid var(--warning);
+}
+.grade-badge-large.D {
+  background: rgba(249, 115, 22, 0.1);
+  color: #ea580c;
+  border: 1px solid #f97316;
+}
+.grade-badge-large.F {
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+.points-row {
+  margin-top: 0.5rem;
+}
+.points-val {
+  font-size: var(--font-size-lg);
+}
+.draft-limit-info {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.progress-bar-wrap {
+  width: 100%;
+}
+.progress-bar-bg-full {
+  height: 10px;
+  background: var(--border-color);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.progress-bar-fill-full {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.progress-bar-fill-full.A { background: var(--success); }
+.progress-bar-fill-full.B { background: var(--info); }
+.progress-bar-fill-full.C { background: var(--warning); }
+.progress-bar-fill-full.D { background: #f97316; }
+.progress-bar-fill-full.F { background: var(--danger); }
+
+.points-suggestions-card {
+  padding: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.points-suggestions-card h5 {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin: 0;
+}
+.todo-item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+}
+.todo-item.completed {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+.todo-points-badge {
+  font-size: 0.75rem;
+  margin-left: 0.25rem;
+}
+.text-green { color: var(--success); }
+.text-primary { color: var(--primary); }
+
+.wordbank-list-card {
+  padding: 1rem;
+}
+.wordbank-list-card h5 {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin: 0;
+}
+.group-title {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.word-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: var(--font-size-xs);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+.word-chip.used {
+  background: var(--success-light);
+  border-color: var(--success);
+  color: var(--success);
+  text-decoration: line-through;
+  font-weight: 600;
+}
+.chip-emoji {
+  font-size: 0.75rem;
+}
+
+/* Report badge */
+.grade-report-badge {
+  color: var(--success);
+  background: var(--success-light);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-xs);
+}
+.score-card {
+  border-color: var(--success-light);
+}
+
+@media (max-width: 1024px) {
+  .prewriting-content-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

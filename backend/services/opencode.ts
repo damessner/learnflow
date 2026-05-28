@@ -5,13 +5,25 @@ import { getKnex } from '../db/knex'
 // which may not be available in CommonJS environments.
 // Minimal client interface — avoids type dependency on @opencode-ai/sdk package.
 // The actual SDK types are richer, but we only access these fields at runtime.
+interface OpenCodeResult {
+  error?: unknown
+  data?: {
+    id?: string
+    parts?: Array<{ type: string; text?: string }>
+    info?: {
+      structured_output?: unknown
+    }
+    healthy?: boolean
+  }
+}
+
 interface OpenCodeClient {
   session: {
-    create: (opts: { body: Record<string, unknown> }) => Promise<any>
-    prompt: (opts: { path: { id: string }; body: Record<string, unknown> }) => Promise<any>
+    create: (opts: { body: Record<string, unknown> }) => Promise<OpenCodeResult>
+    prompt: (opts: { path: { id: string }; body: Record<string, unknown> }) => Promise<OpenCodeResult>
   }
   global: {
-    health: () => Promise<any>
+    health: () => Promise<OpenCodeResult>
   }
 }
 
@@ -26,7 +38,9 @@ async function getDbSettings(): Promise<Record<string, string>> {
     cachedDbSettings = {}
     for (const r of rows) cachedDbSettings[r.key] = r.value
     // Refresh cache every 60 seconds
-    setTimeout(() => { cachedDbSettings = null }, 60000)
+    setTimeout(() => {
+      cachedDbSettings = null
+    }, 60000)
     return cachedDbSettings
   } catch {
     return {}
@@ -64,10 +78,14 @@ async function getClient(): Promise<OpenCodeClient> {
     logger.info({ url }, 'OpenCode client initialized')
     clientPromise = Promise.resolve(c)
     return c as OpenCodeClient
-  } catch (err: any) {
-    const message = err?.message || String(err)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
     // Detect common SDK installation / compatibility issues
-    if (message.includes('ERR_PACKAGE_PATH_NOT_EXPORTED') || message.includes('Cannot find module') || message.includes('@opencode-ai/sdk')) {
+    if (
+      message.includes('ERR_PACKAGE_PATH_NOT_EXPORTED') ||
+      message.includes('Cannot find module') ||
+      message.includes('@opencode-ai/sdk')
+    ) {
       logger.error(
         { err },
         'OpenCode SDK is not installed or incompatible. Use OPENCODE_ZEN_API_KEY instead (no SDK needed), or run: npm install @opencode-ai/sdk',
@@ -85,7 +103,8 @@ export async function createSession(title?: string): Promise<string> {
   const result = await c.session.create({
     body: { title: title || 'LearnFlow AI Session' },
   })
-  if (result.error) throw new Error(`OpenCode session create failed: ${JSON.stringify(result.error)}`)
+  if (result.error)
+    throw new Error(`OpenCode session create failed: ${JSON.stringify(result.error)}`)
   return result.data!.id
 }
 
@@ -133,7 +152,8 @@ export async function sendPromptStructured(
       ...(options?.model ? { model: options.model } : {}),
     },
   })
-  if (result.error) throw new Error(`OpenCode structured prompt failed: ${JSON.stringify(result.error)}`)
+  if (result.error)
+    throw new Error(`OpenCode structured prompt failed: ${JSON.stringify(result.error)}`)
 
   const data = result.data!
   const info = data.info as Record<string, unknown> | undefined
@@ -145,7 +165,9 @@ export async function sendPromptStructured(
   return JSON.parse(text)
 }
 
-export async function getModelConfig(): Promise<{ providerID: string; modelID: string } | undefined> {
+export async function getModelConfig(): Promise<
+  { providerID: string; modelID: string } | undefined
+> {
   const provider = await getOpenCodeProvider()
   const model = await getOpenCodeModel()
   if (provider && model) return { providerID: provider, modelID: model }

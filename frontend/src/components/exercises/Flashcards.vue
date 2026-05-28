@@ -15,33 +15,73 @@
       @click="flipCard(Number(ci))"
     >
       <div v-if="flipped[ci]">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem">
-          <div style="flex:1">
-            <strong style="color:var(--text-muted);font-size:0.75rem">Back:</strong>
-            <div style="font-size:1.1rem;font-weight:600;margin-top:0.15rem">{{ card.back }}</div>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.5rem;
+          "
+        >
+          <div style="flex: 1">
+            <strong style="color: var(--text-muted); font-size: 0.75rem">Back:</strong>
+            <div style="font-size: 1.1rem; font-weight: 600; margin-top: 0.15rem">
+              {{ card.back }}
+            </div>
           </div>
-          <div v-if="card.audio_url" style="flex-shrink:0">
-            <audio :src="card.audio_url" controls style="height:32px;width:180px"></audio>
+          <div v-if="card.audio_url" style="flex-shrink: 0">
+            <audio :src="card.audio_url" controls style="height: 32px; width: 180px"></audio>
           </div>
         </div>
-        <div v-if="!readonly" style="margin-top:0.5rem">
-          <button class="btn-sm" style="background:var(--success);color:#fff" @click.stop="markCardCorrect(Number(ci))">✓ Got it</button>
-          <button class="btn-sm" style="background:var(--danger);color:#fff;margin-left:0.25rem" @click.stop="markCardWrong(Number(ci))">✗ Again</button>
+        <div v-if="!readonly" style="margin-top: 0.5rem">
+          <button
+            class="btn-sm"
+            style="background: var(--success); color: #fff"
+            @click.stop="markCardCorrect(Number(ci))"
+          >
+            ✓ Got it
+          </button>
+          <button
+            class="btn-sm"
+            style="background: var(--danger); color: #fff; margin-left: 0.25rem"
+            @click.stop="markCardWrong(Number(ci))"
+          >
+            ✗ Again
+          </button>
         </div>
       </div>
-      <div v-else style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem">
-        <div style="flex:1">
-          <strong style="color:var(--text-muted);font-size:0.75rem">Front:</strong>
-          <div style="font-size:1.1rem;font-weight:600;margin-top:0.15rem">{{ card.front }}</div>
+      <div
+        v-else
+        style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem"
+      >
+        <div style="flex: 1">
+          <strong style="color: var(--text-muted); font-size: 0.75rem">Front:</strong>
+          <div style="font-size: 1.1rem; font-weight: 600; margin-top: 0.15rem">
+            {{ card.front }}
+          </div>
         </div>
-        <div v-if="card.image_url" style="flex-shrink:0">
-          <img :src="card.image_url" alt="card image" style="max-width:80px;max-height:60px;border-radius:4px" />
+        <div v-if="card.image_url" style="flex-shrink: 0">
+          <img
+            :src="card.image_url"
+            alt="card image"
+            style="max-width: 80px; max-height: 60px; border-radius: 4px"
+          />
         </div>
       </div>
     </div>
-    <div v-if="completionCount > 0 && !readonly" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.35rem">
+    <div
+      v-if="completionCount > 0 && !readonly"
+      style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem"
+    >
       {{ completionCount }}/{{ (block.cards || []).length }} reviewed
-      <button v-if="completionCount === (block.cards || []).length" class="btn-sm" @click="markCompleted" style="margin-left:0.5rem">Complete Set</button>
+      <button
+        v-if="completionCount === (block.cards || []).length"
+        class="btn-sm"
+        @click="markCompleted"
+        style="margin-left: 0.5rem"
+      >
+        Complete Set
+      </button>
     </div>
   </div>
 </template>

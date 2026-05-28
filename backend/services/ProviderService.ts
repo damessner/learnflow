@@ -8,10 +8,18 @@ export interface AIProvider {
   displayName: string
   model: string
   isAvailable(): Promise<boolean>
-  generate(prompt: string, system?: string, extraBody?: Record<string, unknown>): Promise<{ ok: boolean; data?: unknown; error?: string }>
+  generate(
+    prompt: string,
+    system?: string,
+    extraBody?: Record<string, unknown>,
+  ): Promise<{ ok: boolean; data?: unknown; error?: string }>
 }
 
-async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS): Promise<Response> {
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs = DEFAULT_FETCH_TIMEOUT_MS,
+): Promise<Response> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -36,7 +44,11 @@ class GeminiProvider implements AIProvider {
     return !!this.getApiKey()
   }
 
-  async generate(prompt: string, system?: string, extraBody?: Record<string, unknown>): Promise<{ ok: boolean; data?: unknown; error?: string }> {
+  async generate(
+    prompt: string,
+    system?: string,
+    extraBody?: Record<string, unknown>,
+  ): Promise<{ ok: boolean; data?: unknown; error?: string }> {
     const key = this.getApiKey()
     if (!key) return { ok: false, error: 'Gemini API key not configured' }
 
@@ -61,9 +73,13 @@ class GeminiProvider implements AIProvider {
         const parsed = JSON.parse(text)
         return { ok: true, data: parsed }
       }
-      return { ok: false, error: `Gemini API error (${response.status}): ${data.error?.message || 'unknown error'}` }
-    } catch (err: any) {
-      return { ok: false, error: `Gemini fetch failed: ${err.message || err}` }
+      return {
+        ok: false,
+        error: `Gemini API error (${response.status}): ${data.error?.message || 'unknown error'}`,
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      return { ok: false, error: `Gemini fetch failed: ${msg}` }
     }
   }
 }
@@ -87,7 +103,11 @@ class ZenProvider implements AIProvider {
     return !!this.getApiKey()
   }
 
-  async generate(prompt: string, system?: string, extraBody?: Record<string, unknown>): Promise<{ ok: boolean; data?: unknown; error?: string }> {
+  async generate(
+    prompt: string,
+    system?: string,
+    extraBody?: Record<string, unknown>,
+  ): Promise<{ ok: boolean; data?: unknown; error?: string }> {
     const key = this.getApiKey()
     if (!key) return { ok: false, error: 'OpenCode Zen API key not configured' }
 
@@ -96,31 +116,32 @@ class ZenProvider implements AIProvider {
     messages.push({ role: 'user', content: prompt })
 
     try {
-      const response = await fetchWithTimeout(
-        ZEN_API_URL,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${key}`,
-          },
-          body: JSON.stringify({
-            model: this.getModel(),
-            messages,
-            stream: false,
-            ...extraBody,
-          }),
+      const response = await fetchWithTimeout(ZEN_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${key}`,
         },
-      )
+        body: JSON.stringify({
+          model: this.getModel(),
+          messages,
+          stream: false,
+          ...extraBody,
+        }),
+      })
       const data = await response.json()
       if (response.ok) {
         const text = data.choices?.[0]?.message?.content || '{}'
         const parsed = JSON.parse(text)
         return { ok: true, data: parsed }
       }
-      return { ok: false, error: `OpenCode Zen API error (${response.status}): ${data.error?.message || 'unknown error'}` }
-    } catch (err: any) {
-      return { ok: false, error: `OpenCode Zen fetch failed: ${err.message || err}` }
+      return {
+        ok: false,
+        error: `OpenCode Zen API error (${response.status}): ${data.error?.message || 'unknown error'}`,
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      return { ok: false, error: `OpenCode Zen fetch failed: ${msg}` }
     }
   }
 }
@@ -150,31 +171,36 @@ class OllamaProvider implements AIProvider {
     }
   }
 
-  async generate(prompt: string, system?: string, _extraBody?: Record<string, unknown>): Promise<{ ok: boolean; data?: unknown; error?: string }> {
+  async generate(
+    prompt: string,
+    system?: string,
+    _extraBody?: Record<string, unknown>,
+  ): Promise<{ ok: boolean; data?: unknown; error?: string }> {
     if (!process.env.OLLAMA_URL) return { ok: false, error: 'Ollama URL not configured' }
 
     try {
-      const response = await fetchWithTimeout(
-        `${process.env.OLLAMA_URL}/api/generate`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: this.getModelName(),
-            prompt: system ? `${system}\n\n${prompt}` : prompt,
-            stream: false,
-            format: 'json',
-          }),
-        },
-      )
+      const response = await fetchWithTimeout(`${process.env.OLLAMA_URL}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.getModelName(),
+          prompt: system ? `${system}\n\n${prompt}` : prompt,
+          stream: false,
+          format: 'json',
+        }),
+      })
       const data = await response.json()
       if (response.ok) {
         const parsed = JSON.parse(data.response || '{}')
         return { ok: true, data: parsed }
       }
-      return { ok: false, error: `Ollama error (${response.status}): ${data.error || 'unknown error'}` }
-    } catch (err: any) {
-      return { ok: false, error: `Ollama fetch failed: ${err.message || err}` }
+      return {
+        ok: false,
+        error: `Ollama error (${response.status}): ${data.error || 'unknown error'}`,
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      return { ok: false, error: `Ollama fetch failed: ${msg}` }
     }
   }
 }
@@ -210,7 +236,7 @@ export class ProviderService {
 
   /** Get a specific provider by name */
   getProvider(name: string): AIProvider | undefined {
-    return this.providers.find(p => p.name === name)
+    return this.providers.find((p) => p.name === name)
   }
 
   /**
@@ -221,8 +247,18 @@ export class ProviderService {
   async generateWithFallback(
     prompt: string,
     preferredProvider?: string,
-    options?: { system?: string; extraBody?: Record<string, unknown>; onFallback?: (from: string, to: string, error: string) => void },
-  ): Promise<{ success: boolean; data?: unknown; error?: string; providerUsed?: string; attempts: Array<{ provider: string; error?: string }> }> {
+    options?: {
+      system?: string
+      extraBody?: Record<string, unknown>
+      onFallback?: (from: string, to: string, error: string) => void
+    },
+  ): Promise<{
+    success: boolean
+    data?: unknown
+    error?: string
+    providerUsed?: string
+    attempts: Array<{ provider: string; error?: string }>
+  }> {
     const attempts: Array<{ provider: string; error?: string }> = []
     const tried = new Set<string>()
 
@@ -260,7 +296,7 @@ export class ProviderService {
 
       attempts.push({ provider: provider.name, error: result.error })
       if (options?.onFallback && tried.size < order.length) {
-        const nextProvider = order.find(p => !tried.has(p.name))
+        const nextProvider = order.find((p) => !tried.has(p.name))
         if (nextProvider) {
           options.onFallback(provider.name, nextProvider.name, result.error || 'unknown error')
         }
@@ -269,7 +305,7 @@ export class ProviderService {
 
     return {
       success: false,
-      error: `All AI providers failed. Attempts: ${attempts.map(a => `${a.provider} (${a.error})`).join('; ')}`,
+      error: `All AI providers failed. Attempts: ${attempts.map((a) => `${a.provider} (${a.error})`).join('; ')}`,
       attempts,
     }
   }

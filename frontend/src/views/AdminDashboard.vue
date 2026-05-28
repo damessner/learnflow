@@ -71,7 +71,10 @@
     </template>
 
     <template v-if="tab === 'classes'">
-      <div class="card" style="margin-bottom: 1rem; padding: 1rem; border: 1px dashed var(--primary-soft)">
+      <div
+        class="card"
+        style="margin-bottom: 1rem; padding: 1rem; border: 1px dashed var(--primary-soft)"
+      >
         <div class="flex items-center gap-md" style="flex-wrap: wrap">
           <div style="flex: 1; min-width: 200px">
             <strong>📄 PDF Student Importer</strong>
@@ -79,31 +82,59 @@
               Upload a class roster PDF to create student accounts and classes automatically.
             </p>
           </div>
-          <input ref="pdfInput" type="file" accept=".pdf" style="display:none" @change="onAdminPdfSelected" />
-          <button class="btn-primary" :disabled="adminImporting" @click="($refs.pdfInput as HTMLInputElement)?.click()">
+          <input
+            ref="pdfInput"
+            type="file"
+            accept=".pdf"
+            style="display: none"
+            @change="onAdminPdfSelected"
+          />
+          <button
+            class="btn-primary"
+            :disabled="adminImporting"
+            @click="($refs.pdfInput as HTMLInputElement)?.click()"
+          >
             {{ adminImporting ? 'Importing...' : 'Upload PDF' }}
           </button>
         </div>
-        <div v-if="adminImportResult" class="divider" style="margin:0.75rem 0"></div>
-        <div v-if="adminImportResult" style="font-size:0.85rem">
-          <div class="flex gap-md" style="flex-wrap:wrap">
-            <span class="badge-success badge">{{ adminImportResult.studentsCreated }} students</span>
+        <div v-if="adminImportResult" class="divider" style="margin: 0.75rem 0"></div>
+        <div v-if="adminImportResult" style="font-size: 0.85rem">
+          <div class="flex gap-md" style="flex-wrap: wrap">
+            <span class="badge-success badge"
+              >{{ adminImportResult.studentsCreated }} students</span
+            >
             <span class="badge-warning badge">{{ adminImportResult.studentsSkipped }} skipped</span>
             <span class="badge badge">{{ adminImportResult.classesCreated }} classes</span>
-            <span v-if="adminImportResult.errorCount > 0" class="badge-danger badge">{{ adminImportResult.errorCount }} errors</span>
+            <span v-if="adminImportResult.errorCount > 0" class="badge-danger badge"
+              >{{ adminImportResult.errorCount }} errors</span
+            >
           </div>
-          <div v-if="adminCredentials.length > 0" style="margin-top:0.75rem">
+          <div v-if="adminCredentials.length > 0" style="margin-top: 0.75rem">
             <button class="btn-sm" @click="adminShowCreds = !adminShowCreds">
               {{ adminShowCreds ? 'Hide' : 'Show' }} Passwords ({{ adminCredentials.length }})
             </button>
-            <div v-if="adminShowCreds" style="margin-top:0.5rem; max-height:400px; overflow-y:auto">
-              <table style="font-size:0.75rem">
-                <thead><tr><th>Name</th><th>Username</th><th>Password</th><th>Class</th></tr></thead>
+            <div
+              v-if="adminShowCreds"
+              style="margin-top: 0.5rem; max-height: 400px; overflow-y: auto"
+            >
+              <table style="font-size: 0.75rem">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Class</th>
+                  </tr>
+                </thead>
                 <tbody>
                   <tr v-for="c in adminCredentials" :key="c.username">
                     <td>{{ c.name }}</td>
-                    <td><code>{{ c.username }}</code></td>
-                    <td><code>{{ c.password }}</code></td>
+                    <td>
+                      <code>{{ c.username }}</code>
+                    </td>
+                    <td>
+                      <code>{{ c.password }}</code>
+                    </td>
                     <td>{{ c.class }}</td>
                   </tr>
                 </tbody>
@@ -323,8 +354,9 @@
         <div style="margin: 0.75rem 0; border-top: 1px dashed var(--border-color)"></div>
         <h4 style="margin-bottom: 0.5rem">OpenCode Zen (Cloud — no server needed)</h4>
         <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.75rem">
-          Get a free API key at <a href="https://opencode.ai/auth" target="_blank">opencode.ai/auth</a>.
-          DeepSeek V4 Flash Free is available at no cost. Select "OpenCode" in the Worksheet Builder.
+          Get a free API key at
+          <a href="https://opencode.ai/auth" target="_blank">opencode.ai/auth</a>. DeepSeek V4 Flash
+          Free is available at no cost. Select "OpenCode" in the Worksheet Builder.
         </p>
         <div class="form-group">
           <label>OpenCode Zen API Key</label>

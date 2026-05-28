@@ -65,7 +65,11 @@ export function createApp(): express.Application {
           styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
           imgSrc: ["'self'", 'data:', 'blob:'],
           mediaSrc: ["'self'", 'https://www.youtube.com'],
-          connectSrc: ["'self'", 'https://login.microsoftonline.com', 'https://graph.microsoft.com'],
+          connectSrc: [
+            "'self'",
+            'https://login.microsoftonline.com',
+            'https://graph.microsoft.com',
+          ],
           fontSrc: ["'self'", 'https://cdn.jsdelivr.net'],
         },
       },

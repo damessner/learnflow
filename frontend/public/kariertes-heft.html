@@ -1,1508 +1,1650 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kariertes Heft — Zeichenblatt für die Mittelschule</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-/* ============================================================
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kariertes Heft — Zeichenblatt für die Mittelschule</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ============================================================
    CSS RESET & BASE
    ============================================================ */
-*, *::before, *::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-:root {
-  --sidebar-w: 280px;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-light: #eff6ff;
-  --paper: #fafaf8;
-  --sidebar-bg: #ffffff;
-  --text: #1e293b;
-  --text-secondary: #64748b;
-  --text-light: #94a3b8;
-  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-lg: 2px 0 12px rgba(0,0,0,0.07);
-  --radius: 10px;
-  --radius-sm: 6px;
-  --font: 'Space Grotesk', system-ui, -apple-system, sans-serif;
-  --grid-size: 25px;
-  --major-grid-mult: 5;
-  --grid-color: #d0d8e8;
-  --grid-major-color: #b0c0d8;
-  --red: #dc2626;
-  --blue: #2563eb;
-  --green: #16a34a;
-  --black: #1a1a1a;
-}
+      :root {
+        --sidebar-w: 280px;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --accent-light: #eff6ff;
+        --paper: #fafaf8;
+        --sidebar-bg: #ffffff;
+        --text: #1e293b;
+        --text-secondary: #64748b;
+        --text-light: #94a3b8;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow-lg: 2px 0 12px rgba(0, 0, 0, 0.07);
+        --radius: 10px;
+        --radius-sm: 6px;
+        --font: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+        --grid-size: 25px;
+        --major-grid-mult: 5;
+        --grid-color: #d0d8e8;
+        --grid-major-color: #b0c0d8;
+        --red: #dc2626;
+        --blue: #2563eb;
+        --green: #16a34a;
+        --black: #1a1a1a;
+      }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  font-family: var(--font);
-  background: var(--paper);
-  color: var(--text);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: var(--font);
+        background: var(--paper);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
 
-/* ============================================================
+      /* ============================================================
    LAYOUT
    ============================================================ */
-.app {
-  display: flex;
-  width: 100%;
-  height: 100%;
-}
+      .app {
+        display: flex;
+        width: 100%;
+        height: 100%;
+      }
 
-/* ============================================================
+      /* ============================================================
    SIDEBAR
    ============================================================ */
-.sidebar {
-  width: var(--sidebar-w);
-  min-width: var(--sidebar-w);
-  height: 100%;
-  background: var(--sidebar-bg);
-  box-shadow: var(--shadow-lg);
-  display: flex;
-  flex-direction: column;
-  z-index: 10;
-  position: relative;
-  overflow-y: auto;
-}
+      .sidebar {
+        width: var(--sidebar-w);
+        min-width: var(--sidebar-w);
+        height: 100%;
+        background: var(--sidebar-bg);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        z-index: 10;
+        position: relative;
+        overflow-y: auto;
+      }
 
-/* Sidebar header */
-.sidebar-header {
-  padding: 20px 20px 12px;
-  border-bottom: 1px solid #f1f5f9;
-}
+      /* Sidebar header */
+      .sidebar-header {
+        padding: 20px 20px 12px;
+        border-bottom: 1px solid #f1f5f9;
+      }
 
-.sidebar-header h1 {
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text);
-  line-height: 1.2;
-}
+      .sidebar-header h1 {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        line-height: 1.2;
+      }
 
-.sidebar-header .subtitle {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  letter-spacing: 0.01em;
-  margin-top: 2px;
-}
+      .sidebar-header .subtitle {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        letter-spacing: 0.01em;
+        margin-top: 2px;
+      }
 
-/* Sidebar body (flex-grow for tools) */
-.sidebar-body {
-  flex: 1;
-  padding: 16px 16px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  overflow-y: auto;
-}
+      /* Sidebar body (flex-grow for tools) */
+      .sidebar-body {
+        flex: 1;
+        padding: 16px 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        overflow-y: auto;
+      }
 
-/* Section labels */
-.section-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-light);
-  margin-bottom: 6px;
-}
+      /* Section labels */
+      .section-label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-light);
+        margin-bottom: 6px;
+      }
 
-/* ============================================================
+      /* ============================================================
    COLOR PICKER
    ============================================================ */
-.color-picker {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
+      .color-picker {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
 
-.color-dot {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  position: relative;
-}
+      .color-dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        position: relative;
+      }
 
-.color-dot:hover {
-  transform: scale(1.15);
-}
+      .color-dot:hover {
+        transform: scale(1.15);
+      }
 
-.color-dot.active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent);
-}
+      .color-dot.active {
+        border-color: var(--accent);
+        box-shadow:
+          0 0 0 2px white,
+          0 0 0 4px var(--accent);
+      }
 
-.color-dot[data-color="black"]   { background: var(--black); }
-.color-dot[data-color="blue"]    { background: var(--blue); }
-.color-dot[data-color="red"]     { background: var(--red); }
-.color-dot[data-color="green"]   { background: var(--green); }
+      .color-dot[data-color='black'] {
+        background: var(--black);
+      }
+      .color-dot[data-color='blue'] {
+        background: var(--blue);
+      }
+      .color-dot[data-color='red'] {
+        background: var(--red);
+      }
+      .color-dot[data-color='green'] {
+        background: var(--green);
+      }
 
-/* ============================================================
+      /* ============================================================
    TOGGLE (Grid Snap)
    ============================================================ */
-.toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
 
-.toggle-row label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-  cursor: pointer;
-  user-select: none;
-}
+      .toggle-row label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+        cursor: pointer;
+        user-select: none;
+      }
 
-/* Custom toggle switch */
-.toggle-switch {
-  position: relative;
-  width: 38px;
-  height: 22px;
-  flex-shrink: 0;
-}
+      /* Custom toggle switch */
+      .toggle-switch {
+        position: relative;
+        width: 38px;
+        height: 22px;
+        flex-shrink: 0;
+      }
 
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
 
-.toggle-slider {
-  position: absolute;
-  inset: 0;
-  background: #cbd5e1;
-  border-radius: 22px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
+      .toggle-slider {
+        position: absolute;
+        inset: 0;
+        background: #cbd5e1;
+        border-radius: 22px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
 
-.toggle-slider::after {
-  content: '';
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  left: 2px;
-  bottom: 2px;
-  background: white;
-  border-radius: 50%;
-  transition: transform 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
+      .toggle-slider::after {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        left: 2px;
+        bottom: 2px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
 
-.toggle-switch input:checked + .toggle-slider {
-  background: var(--accent);
-}
+      .toggle-switch input:checked + .toggle-slider {
+        background: var(--accent);
+      }
 
-.toggle-switch input:checked + .toggle-slider::after {
-  transform: translateX(16px);
-}
+      .toggle-switch input:checked + .toggle-slider::after {
+        transform: translateX(16px);
+      }
 
-/* ============================================================
+      /* ============================================================
    TOOL BUTTONS
    ============================================================ */
-.tool-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
+      .tool-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
 
-.tool-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 10px 4px;
-  border: 1.5px solid #e2e8f0;
-  border-radius: var(--radius-sm);
-  background: var(--sidebar-bg);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-family: var(--font);
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
+      .tool-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 10px 4px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: var(--radius-sm);
+        background: var(--sidebar-bg);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font-family: var(--font);
+        font-size: 10px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
 
-.tool-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-}
+      .tool-btn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
 
-.tool-btn:active {
-  transform: scale(0.96);
-}
+      .tool-btn:active {
+        transform: scale(0.96);
+      }
 
-.tool-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
-}
+      .tool-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+      }
 
-.tool-btn.active svg {
-  stroke: white;
-}
+      .tool-btn.active svg {
+        stroke: white;
+      }
 
-.tool-btn svg {
-  stroke: var(--text-secondary);
-  stroke-width: 1.8;
-  fill: none;
-  transition: stroke 0.15s ease;
-}
+      .tool-btn svg {
+        stroke: var(--text-secondary);
+        stroke-width: 1.8;
+        fill: none;
+        transition: stroke 0.15s ease;
+      }
 
-.tool-btn.span-full {
-  grid-column: 1 / -1;
-  flex-direction: row;
-  gap: 8px;
-  color: var(--red);
-  border-color: #fecaca;
-}
+      .tool-btn.span-full {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        gap: 8px;
+        color: var(--red);
+        border-color: #fecaca;
+      }
 
-.tool-btn.span-full:hover {
-  background: #fef2f2;
-  border-color: #fca5a5;
-}
+      .tool-btn.span-full:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+      }
 
-.tool-btn.span-full svg {
-  stroke: var(--red);
-}
+      .tool-btn.span-full svg {
+        stroke: var(--red);
+      }
 
-/* ============================================================
+      /* ============================================================
    SIDEBAR FOOTER (Info)
    ============================================================ */
-.sidebar-footer {
-  padding: 12px 16px 16px;
-  border-top: 1px solid #f1f5f9;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
+      .sidebar-footer {
+        padding: 12px 16px 16px;
+        border-top: 1px solid #f1f5f9;
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
 
-.sidebar-footer .info-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 0;
-}
+      .sidebar-footer .info-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 2px 0;
+      }
 
-.sidebar-footer .info-row .label {
-  font-weight: 500;
-  color: var(--text-light);
-  min-width: 60px;
-}
+      .sidebar-footer .info-row .label {
+        font-weight: 500;
+        color: var(--text-light);
+        min-width: 60px;
+      }
 
-.sidebar-footer .info-row .value {
-  font-weight: 600;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
+      .sidebar-footer .info-row .value {
+        font-weight: 600;
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+      }
 
-/* ============================================================
+      /* ============================================================
    CANVAS
    ============================================================ */
-.canvas-wrapper {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  background: var(--paper);
-}
+      .canvas-wrapper {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        background: var(--paper);
+      }
 
-#drawCanvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  cursor: crosshair;
-  touch-action: none; /* prevent scroll/zoom on touch devices */
-}
+      #drawCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: crosshair;
+        touch-action: none; /* prevent scroll/zoom on touch devices */
+      }
 
-/* ============================================================
+      /* ============================================================
    RESPONSIVE: Collapse sidebar to top bar at < 768px
    ============================================================ */
-@media (max-width: 767px) {
-  .app {
-    flex-direction: column;
-  }
+      @media (max-width: 767px) {
+        .app {
+          flex-direction: column;
+        }
 
-  .sidebar {
-    width: 100%;
-    min-width: unset;
-    height: auto;
-    max-height: 50vh;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-    flex-shrink: 0;
-  }
+        .sidebar {
+          width: 100%;
+          min-width: unset;
+          height: auto;
+          max-height: 50vh;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+          flex-shrink: 0;
+        }
 
-  .sidebar-header {
-    padding: 12px 16px 8px;
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    border-bottom: none;
-  }
+        .sidebar-header {
+          padding: 12px 16px 8px;
+          display: flex;
+          align-items: baseline;
+          gap: 12px;
+          border-bottom: none;
+        }
 
-  .sidebar-header h1 {
-    font-size: 16px;
-  }
+        .sidebar-header h1 {
+          font-size: 16px;
+        }
 
-  .sidebar-header .subtitle {
-    font-size: 11px;
-  }
+        .sidebar-header .subtitle {
+          font-size: 11px;
+        }
 
-  .sidebar-body {
-    padding: 10px 12px;
-    gap: 10px;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-  }
+        .sidebar-body {
+          padding: 10px 12px;
+          gap: 10px;
+          flex-direction: row;
+          flex-wrap: wrap;
+          align-items: center;
+        }
 
-  .section-label {
-    display: none;
-  }
+        .section-label {
+          display: none;
+        }
 
-  .color-picker {
-    order: 1;
-  }
+        .color-picker {
+          order: 1;
+        }
 
-  .toggle-row {
-    order: 2;
-    margin-left: auto;
-  }
+        .toggle-row {
+          order: 2;
+          margin-left: auto;
+        }
 
-  .toggle-row label {
-    font-size: 11px;
-  }
+        .toggle-row label {
+          font-size: 11px;
+        }
 
-  .tool-grid {
-    order: 3;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    width: 100%;
-  }
+        .tool-grid {
+          order: 3;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+          width: 100%;
+        }
 
-  .tool-btn {
-    flex: 0 0 auto;
-    padding: 8px 10px;
-    font-size: 10px;
-    gap: 3px;
-    flex-direction: row;
-  }
+        .tool-btn {
+          flex: 0 0 auto;
+          padding: 8px 10px;
+          font-size: 10px;
+          gap: 3px;
+          flex-direction: row;
+        }
 
-  .tool-btn svg {
-    width: 16px;
-    height: 16px;
-  }
+        .tool-btn svg {
+          width: 16px;
+          height: 16px;
+        }
 
-  .tool-btn.span-full {
-    flex-direction: row;
-    gap: 6px;
-    color: var(--red);
-    margin-left: auto;
-  }
+        .tool-btn.span-full {
+          flex-direction: row;
+          gap: 6px;
+          color: var(--red);
+          margin-left: auto;
+        }
 
-  .sidebar-footer {
-    padding: 8px 16px;
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
+        .sidebar-footer {
+          padding: 8px 16px;
+          display: flex;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
 
-  .sidebar-footer .info-row .label {
-    min-width: auto;
-  }
-}
+        .sidebar-footer .info-row .label {
+          min-width: auto;
+        }
+      }
 
-@media (max-width: 480px) {
-  .sidebar-header .subtitle {
-    display: none;
-  }
-}
-</style>
-</head>
-<body>
-
-<div class="app" id="app">
-  <!-- ==========================================================
+      @media (max-width: 480px) {
+        .sidebar-header .subtitle {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app" id="app">
+      <!-- ==========================================================
        SIDEBAR
        ========================================================== -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <h1>Kariertes Heft</h1>
-      <div class="subtitle">Zeichenblatt für die Mittelschule</div>
-    </div>
-
-    <div class="sidebar-body">
-      <!-- Colors -->
-      <div>
-        <div class="section-label">Farbe</div>
-        <div class="color-picker" id="colorPicker">
-          <button class="color-dot active" data-color="black"  title="Schwarz"  aria-label="Schwarz"></button>
-          <button class="color-dot"        data-color="blue"   title="Blau"     aria-label="Blau"></button>
-          <button class="color-dot"        data-color="red"    title="Rot"      aria-label="Rot"></button>
-          <button class="color-dot"        data-color="green"  title="Grün"     aria-label="Grün"></button>
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <h1>Kariertes Heft</h1>
+          <div class="subtitle">Zeichenblatt für die Mittelschule</div>
         </div>
-      </div>
 
-      <!-- Grid snap toggle -->
-      <div class="toggle-row">
-        <label for="gridSnap">Am Raster einrasten</label>
-        <div class="toggle-switch">
-          <input type="checkbox" id="gridSnap" checked>
-          <span class="toggle-slider"></span>
+        <div class="sidebar-body">
+          <!-- Colors -->
+          <div>
+            <div class="section-label">Farbe</div>
+            <div class="color-picker" id="colorPicker">
+              <button
+                class="color-dot active"
+                data-color="black"
+                title="Schwarz"
+                aria-label="Schwarz"
+              ></button>
+              <button class="color-dot" data-color="blue" title="Blau" aria-label="Blau"></button>
+              <button class="color-dot" data-color="red" title="Rot" aria-label="Rot"></button>
+              <button class="color-dot" data-color="green" title="Grün" aria-label="Grün"></button>
+            </div>
+          </div>
+
+          <!-- Grid snap toggle -->
+          <div class="toggle-row">
+            <label for="gridSnap">Am Raster einrasten</label>
+            <div class="toggle-switch">
+              <input type="checkbox" id="gridSnap" checked />
+              <span class="toggle-slider"></span>
+            </div>
+          </div>
+
+          <!-- Tool buttons -->
+          <div>
+            <div class="section-label">Werkzeuge</div>
+            <div class="tool-grid" id="toolGrid">
+              <!-- Auswählen -->
+              <button class="tool-btn active" data-tool="select" title="Auswählen / Verschieben">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
+                  <path d="M13 13l6 6" />
+                </svg>
+                <span>Auswählen</span>
+              </button>
+              <!-- Stift -->
+              <button class="tool-btn" data-tool="pencil" title="Stift (Freihand)">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+                <span>Stift</span>
+              </button>
+              <!-- Linie -->
+              <button class="tool-btn" data-tool="line" title="Linie">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="5" y1="19" x2="19" y2="5" />
+                  <circle cx="5" cy="19" r="1.5" fill="currentColor" />
+                  <circle cx="19" cy="5" r="1.5" fill="currentColor" />
+                </svg>
+                <span>Linie</span>
+              </button>
+              <!-- Kreis -->
+              <button class="tool-btn" data-tool="circle" title="Kreis">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                </svg>
+                <span>Kreis</span>
+              </button>
+              <!-- Rechteck -->
+              <button class="tool-btn" data-tool="rect" title="Rechteck">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="1" />
+                </svg>
+                <span>Rechteck</span>
+              </button>
+              <!-- Radierer -->
+              <button class="tool-btn" data-tool="eraser" title="Radierer">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M18 10l-8 8-6-6 8-8 6 6z" />
+                  <line x1="14" y1="14" x2="20" y2="20" />
+                  <line x1="20" y1="20" x2="22" y2="22" />
+                </svg>
+                <span>Radierer</span>
+              </button>
+              <!-- Alles löschen (span full width) -->
+              <button class="tool-btn span-full" data-tool="clear" title="Alles löschen">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="3 6 5 6 21 6" />
+                  <path
+                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                  />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+                <span>Alles löschen</span>
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- Tool buttons -->
-      <div>
-        <div class="section-label">Werkzeuge</div>
-        <div class="tool-grid" id="toolGrid">
-          <!-- Auswählen -->
-          <button class="tool-btn active" data-tool="select" title="Auswählen / Verschieben">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
-              <path d="M13 13l6 6"/>
-            </svg>
-            <span>Auswählen</span>
-          </button>
-          <!-- Stift -->
-          <button class="tool-btn" data-tool="pencil" title="Stift (Freihand)">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-            </svg>
-            <span>Stift</span>
-          </button>
-          <!-- Linie -->
-          <button class="tool-btn" data-tool="line" title="Linie">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="19" x2="19" y2="5"/>
-              <circle cx="5" cy="19" r="1.5" fill="currentColor"/>
-              <circle cx="19" cy="5" r="1.5" fill="currentColor"/>
-            </svg>
-            <span>Linie</span>
-          </button>
-          <!-- Kreis -->
-          <button class="tool-btn" data-tool="circle" title="Kreis">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9"/>
-              <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
-            </svg>
-            <span>Kreis</span>
-          </button>
-          <!-- Rechteck -->
-          <button class="tool-btn" data-tool="rect" title="Rechteck">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="1"/>
-            </svg>
-            <span>Rechteck</span>
-          </button>
-          <!-- Radierer -->
-          <button class="tool-btn" data-tool="eraser" title="Radierer">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 10l-8 8-6-6 8-8 6 6z"/>
-              <line x1="14" y1="14" x2="20" y2="20"/>
-              <line x1="20" y1="20" x2="22" y2="22"/>
-            </svg>
-            <span>Radierer</span>
-          </button>
-          <!-- Alles löschen (span full width) -->
-          <button class="tool-btn span-full" data-tool="clear" title="Alles löschen">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-              <line x1="10" y1="11" x2="10" y2="17"/>
-              <line x1="14" y1="11" x2="14" y2="17"/>
-            </svg>
-            <span>Alles löschen</span>
-          </button>
+        <!-- Footer info -->
+        <div class="sidebar-footer">
+          <div class="info-row">
+            <span class="label">Maßstab:</span>
+            <span class="value">1 Kästchen = 0,5 cm</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Position:</span>
+            <span class="value" id="cursorPos">—</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Elemente:</span>
+            <span class="value" id="elementCount">0</span>
+          </div>
         </div>
-      </div>
-    </div>
+      </aside>
 
-    <!-- Footer info -->
-    <div class="sidebar-footer">
-      <div class="info-row">
-        <span class="label">Maßstab:</span>
-        <span class="value">1 Kästchen = 0,5 cm</span>
-      </div>
-      <div class="info-row">
-        <span class="label">Position:</span>
-        <span class="value" id="cursorPos">—</span>
-      </div>
-      <div class="info-row">
-        <span class="label">Elemente:</span>
-        <span class="value" id="elementCount">0</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- ==========================================================
+      <!-- ==========================================================
        CANVAS
        ========================================================== -->
-  <main class="canvas-wrapper">
-    <canvas id="drawCanvas"></canvas>
-  </main>
-</div>
+      <main class="canvas-wrapper">
+        <canvas id="drawCanvas"></canvas>
+      </main>
+    </div>
 
-<script>
-/* ============================================================
+    <script>
+      /* ============================================================
    KARIERTES HEFT — Interactive Graph Paper Drawing Tool
    ============================================================
    A standalone drawing tool for Austrian teachers. Features
    grid-snapping, measurement labels, and multiple drawing tools.
    ============================================================ */
 
-(function () {
-  'use strict';
-
-  // ============================================================
-  // POLYFILL — CanvasRenderingContext2D.roundRect (for older browsers)
-  // ============================================================
-  if (!CanvasRenderingContext2D.prototype.roundRect) {
-    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, radii) {
-      const r = typeof radii === 'number' ? radii : (radii || 0);
-      this.moveTo(x + r, y);
-      this.lineTo(x + w - r, y);
-      this.quadraticCurveTo(x + w, y, x + w, y + r);
-      this.lineTo(x + w, y + h - r);
-      this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-      this.lineTo(x + r, y + h);
-      this.quadraticCurveTo(x, y + h, x, y + h - r);
-      this.lineTo(x, y + r);
-      this.quadraticCurveTo(x, y, x + r, y);
-      return this;
-    };
-  }
-
-  // ============================================================
-  // CONSTANTS
-  // ============================================================
-  const GRID_PX  = 25;           // 1 square = 25px = 5mm
-  const MAJOR_N  = 5;            // Every 5th line = major grid
-  const CM_RATIO = 50;           // 1cm = 50px
-  const COLORS = {
-    black: '#1a1a1a',
-    blue:  '#2563eb',
-    red:   '#dc2626',
-    green: '#16a34a'
-  };
-  const HIT_THRESHOLD = 10;      // px tolerance for eraser/select hit test
-
-  // ============================================================
-  // DOM REFS
-  // ============================================================
-  const canvas  = document.getElementById('drawCanvas');
-  const ctx     = canvas.getContext('2d');
-  const wrapper = document.querySelector('.canvas-wrapper');
-  const cursorPosEl  = document.getElementById('cursorPos');
-  const elementCountEl = document.getElementById('elementCount');
-  const gridSnapCheck = document.getElementById('gridSnap');
-  const colorPicker   = document.getElementById('colorPicker');
-  const toolGrid      = document.getElementById('toolGrid');
-
-  // ============================================================
-  // STATE
-  // ============================================================
-  const state = {
-    tool: 'select',           // current active tool
-    color: COLORS.black,      // current drawing color
-    snap: true,               // grid snapping on/off
-    elements: [],             // array of drawn element objects
-    isDrawing: false,         // true while mouse/touch is down
-    startPoint: null,         // {x, y} of initial press
-    currentPoint: null,       // {x, y} of current pointer position (for live preview)
-    pencilPoints: [],         // accumulated points for current pencil stroke
-    cursorX: 0,               // last known cursor x (for position display)
-    cursorY: 0,               // last known cursor y
-    // for select tool
-    dragOffset: null,         // offset from mouse to element origin while dragging
-    selectedElement: null,    // currently selected/moving element
-  };
-
-  // ============================================================
-  // CANVAS SIZING
-  // ============================================================
-  /** Resize the canvas buffer to match its CSS size (with DPR support). */
-  function resizeCanvas() {
-    const rect = wrapper.getBoundingClientRect();
-    const dpr  = window.devicePixelRatio || 1;
-    canvas.width  = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    // Store CSS pixel dimensions for coordinate conversion
-    canvas._w = rect.width;
-    canvas._h = rect.height;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    draw();
-  }
-
-  // ============================================================
-  // COORDINATE HELPERS
-  // ============================================================
-
-  /** Get canvas-local CSS-pixel coordinates from a mouse or touch event. */
-  function getCanvasCoords(e) {
-    const rect = canvas.getBoundingClientRect();
-    let clientX, clientY;
-    if (e.touches) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-    return { x: clientX - rect.left, y: clientY - rect.top };
-  }
-
-  /** Snap a coordinate to the nearest grid intersection. */
-  function snap(val) {
-    return Math.round(val / GRID_PX) * GRID_PX;
-  }
-
-  /** Apply grid snapping to a point if enabled. */
-  function maybeSnapPoint(x, y) {
-    if (state.snap) {
-      return { x: snap(x), y: snap(y) };
-    }
-    return { x, y };
-  }
-
-  /** Convert pixels to cm string (e.g. "4.5"). 50px = 1cm. */
-  function pxToCm(px) {
-    return (px / CM_RATIO).toFixed(1);
-  }
-
-  /** Convert a pixel distance to a formatted cm label. */
-  function cmLabel(px) {
-    return pxToCm(px) + ' cm';
-  }
-
-  /** Calculate distance between two points. */
-  function distance(x1, y1, x2, y2) {
-    return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-  }
-
-  // ============================================================
-  // DRAWING — GRID
-  // ============================================================
-
-  /** Draw the kariertes Heft grid background. */
-  function drawGrid() {
-    const w = canvas._w;
-    const h = canvas._h;
-
-    // Paper background
-    ctx.fillStyle = '#fafaf8';
-    ctx.fillRect(0, 0, w, h);
-
-    // Grid lines
-    const totalLinesX = Math.ceil(w / GRID_PX);
-    const totalLinesY = Math.ceil(h / GRID_PX);
-
-    ctx.beginPath();
-    for (let i = 0; i <= totalLinesX; i++) {
-      const x = i * GRID_PX;
-      const isMajor = (i % MAJOR_N === 0);
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-    }
-    for (let i = 0; i <= totalLinesY; i++) {
-      const y = i * GRID_PX;
-      const isMajor = (i % MAJOR_N === 0);
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-    }
-    ctx.strokeStyle = '#d0d8e8';
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
-
-    // Major grid (every 5th line = 2.5cm)
-    ctx.beginPath();
-    for (let i = 0; i <= totalLinesX; i += MAJOR_N) {
-      const x = i * GRID_PX;
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-    }
-    for (let i = 0; i <= totalLinesY; i += MAJOR_N) {
-      const y = i * GRID_PX;
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-    }
-    ctx.strokeStyle = '#b0c0d8';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-
-    // Very faint cross at origin (top-left corner accent)
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(GRID_PX * 0.4, 0);
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, GRID_PX * 0.4);
-    ctx.strokeStyle = '#a0b0c8';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  }
-
-  // ============================================================
-  // DRAWING — ELEMENTS
-  // ============================================================
-
-  /** Draw a measurement label on the canvas with background. */
-  function drawLabel(x, y, text, color) {
-    ctx.save();
-    ctx.font = '10px "Space Grotesk", system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    const metrics = ctx.measureText(text);
-    const pad = 4;
-    const tw = metrics.width;
-    const lw = tw + pad * 2;
-    const lh = 16;
-
-    // Background pill
-    ctx.fillStyle = 'rgba(255,255,255,0.88)';
-    ctx.shadowColor = 'rgba(0,0,0,0.08)';
-    ctx.shadowBlur = 3;
-    ctx.beginPath();
-    ctx.roundRect(x - lw / 2, y - lh / 2, lw, lh, 4);
-    ctx.fill();
-    // Reset shadow before stroke
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
-
-    // Text
-    ctx.fillStyle = color || 'rgba(0,0,0,0.65)';
-    ctx.font = '10px "Space Grotesk", system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, x, y + 0.5);
-    ctx.restore();
-  }
-
-  /** Draw a pencil (freehand) stroke. */
-  function drawPencilElement(el) {
-    if (!el.points || el.points.length < 2) return;
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(el.points[0].x, el.points[0].y);
-    // Smooth with quadratic bezier through midpoints
-    for (let i = 1; i < el.points.length - 1; i++) {
-      const mx = (el.points[i].x + el.points[i + 1].x) / 2;
-      const my = (el.points[i].y + el.points[i + 1].y) / 2;
-      ctx.quadraticCurveTo(el.points[i].x, el.points[i].y, mx, my);
-    }
-    ctx.lineTo(el.points[el.points.length - 1].x, el.points[el.points.length - 1].y);
-    ctx.strokeStyle = el.color;
-    ctx.lineWidth = el.lineWidth || 2;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  /** Draw a line element with measurement label. */
-  function drawLineElement(el) {
-    const { x1, y1, x2, y2 } = el;
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.strokeStyle = el.color;
-    ctx.lineWidth = 1.5;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-
-    // Measurement label at midpoint
-    const mx = (x1 + x2) / 2;
-    const my = (y1 + y2) / 2;
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const distCm = pxToCm(distance(x1, y1, x2, y2));
-    const angle   = Math.abs(Math.atan2(dy, dx) * (180 / Math.PI));
-
-    // Only show angle if not nearly horizontal/vertical (within 3°)
-    const nearAxis = (angle < 3 || angle > 177 || (angle > 87 && angle < 93));
-    const labelText = nearAxis
-      ? distCm + ' cm'
-      : distCm + ' cm, ' + Math.round(angle) + '°';
-
-    drawLabel(mx, my, labelText, el.color);
-    ctx.restore();
-  }
-
-  /** Draw a circle element with measurement label. */
-  function drawCircleElement(el) {
-    const { cx, cy, r } = el;
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.strokeStyle = el.color;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Label at center
-    drawLabel(cx, cy, 'r = ' + cmLabel(r), el.color);
-    ctx.restore();
-  }
-
-  /** Draw a rectangle element with measurement label. */
-  function drawRectElement(el) {
-    const { x, y, w, h } = el;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x, y, w, h);
-    ctx.strokeStyle = el.color;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Label at center
-    const cx = x + w / 2;
-    const cy = y + h / 2;
-    const wCm = pxToCm(Math.abs(w));
-    const hCm = pxToCm(Math.abs(h));
-    drawLabel(cx, cy, wCm + ' × ' + hCm + ' cm', el.color);
-    ctx.restore();
-  }
-
-  /** Draw a selection highlight around an element. */
-  function drawSelectionHighlight(el) {
-    if (!el) return;
-    ctx.save();
-    ctx.setLineDash([4, 4]);
-    ctx.strokeStyle = '#2563eb';
-    ctx.lineWidth = 1.5;
-
-    if (el.type === 'pencil' && el.points.length > 0) {
-      // Find bounding box of pencil stroke
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      for (const p of el.points) {
-        if (p.x < minX) minX = p.x;
-        if (p.y < minY) minY = p.y;
-        if (p.x > maxX) maxX = p.x;
-        if (p.y > maxY) maxY = p.y;
-      }
-      const pad = 4;
-      ctx.strokeRect(minX - pad, minY - pad, maxX - minX + pad * 2, maxY - minY + pad * 2);
-    } else if (el.type === 'line') {
-      const pad = 6;
-      const minX = Math.min(el.x1, el.x2) - pad;
-      const minY = Math.min(el.y1, el.y2) - pad;
-      const bw = Math.abs(el.x2 - el.x1) + pad * 2;
-      const bh = Math.abs(el.y2 - el.y1) + pad * 2;
-      ctx.strokeRect(minX, minY, bw, bh);
-    } else if (el.type === 'circle') {
-      const pad = 4;
-      ctx.beginPath();
-      ctx.arc(el.cx, el.cy, el.r + pad, 0, Math.PI * 2);
-      ctx.stroke();
-    } else if (el.type === 'rect') {
-      const pad = 4;
-      ctx.strokeRect(el.x - pad, el.y - pad, Math.abs(el.w) + pad * 2, Math.abs(el.h) + pad * 2);
-    }
-    ctx.restore();
-  }
-
-  /** Draw all stored elements. */
-  function drawElements() {
-    for (const el of state.elements) {
-      switch (el.type) {
-        case 'pencil': drawPencilElement(el); break;
-        case 'line':   drawLineElement(el);   break;
-        case 'circle': drawCircleElement(el); break;
-        case 'rect':   drawRectElement(el);   break;
-      }
-      // Draw selection highlight on selected element
-      if (state.selectedElement === el) {
-        drawSelectionHighlight(el);
-      }
-    }
-  }
-
-  // ============================================================
-  // DRAWING — LIVE PREVIEW (while dragging)
-  // ============================================================
-
-  /** Draw the in-progress element preview. */
-  function drawPreview() {
-    if (!state.isDrawing || !state.startPoint || !state.currentPoint) return;
-
-    const sp = state.startPoint;
-    const cp = state.currentPoint;
-
-    ctx.save();
-
-    if (state.tool === 'pencil') {
-      // Pencil preview uses the stored pencilPoints
-      if (state.pencilPoints.length >= 2) {
-        ctx.beginPath();
-        ctx.moveTo(state.pencilPoints[0].x, state.pencilPoints[0].y);
-        for (let i = 1; i < state.pencilPoints.length - 1; i++) {
-          const mx = (state.pencilPoints[i].x + state.pencilPoints[i + 1].x) / 2;
-          const my = (state.pencilPoints[i].y + state.pencilPoints[i + 1].y) / 2;
-          ctx.quadraticCurveTo(state.pencilPoints[i].x, state.pencilPoints[i].y, mx, my);
-        }
-        ctx.lineTo(state.pencilPoints[state.pencilPoints.length - 1].x, state.pencilPoints[state.pencilPoints.length - 1].y);
-        ctx.strokeStyle = state.color;
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke();
-      }
-    } else if (state.tool === 'line') {
-      // Line preview with live measurement
-      ctx.beginPath();
-      ctx.moveTo(sp.x, sp.y);
-      ctx.lineTo(cp.x, cp.y);
-      ctx.strokeStyle = state.color;
-      ctx.lineWidth = 1.5;
-      ctx.lineCap = 'round';
-      ctx.stroke();
-
-      // Live measurement label near cursor
-      const dx = cp.x - sp.x;
-      const dy = cp.y - sp.y;
-      const distCm = pxToCm(distance(sp.x, sp.y, cp.x, cp.y));
-      const angle   = Math.abs(Math.atan2(dy, dx) * (180 / Math.PI));
-      const nearAxis = (angle < 3 || angle > 177 || (angle > 87 && angle < 93));
-      const labelText = nearAxis
-        ? distCm + ' cm'
-        : distCm + ' cm, ' + Math.round(angle) + '°';
-
-      // Draw label offset from cursor
-      drawLabel(cp.x + 15, cp.y - 15, labelText, state.color);
-    } else if (state.tool === 'circle') {
-      // Circle preview with radius
-      const r = distance(sp.x, sp.y, cp.x, cp.y);
-      ctx.beginPath();
-      ctx.arc(sp.x, sp.y, r, 0, Math.PI * 2);
-      ctx.strokeStyle = state.color;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      // Live radius label
-      const labelText = 'r = ' + cmLabel(r);
-      drawLabel(cp.x + 15, cp.y - 15, labelText, state.color);
-
-      // Dashed radius line
-      ctx.beginPath();
-      ctx.moveTo(sp.x, sp.y);
-      ctx.lineTo(cp.x, cp.y);
-      ctx.setLineDash([3, 4]);
-      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-    } else if (state.tool === 'rect') {
-      // Rectangle preview with dimensions
-      const rx = Math.min(sp.x, cp.x);
-      const ry = Math.min(sp.y, cp.y);
-      const rw = Math.abs(cp.x - sp.x);
-      const rh = Math.abs(cp.y - sp.y);
-      ctx.beginPath();
-      ctx.rect(rx, ry, rw, rh);
-      ctx.strokeStyle = state.color;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      // Live dimension label
-      const wCm = pxToCm(rw);
-      const hCm = pxToCm(rh);
-      const labelText = wCm + ' × ' + hCm + ' cm';
-      drawLabel(cp.x + 15, cp.y - 15, labelText, state.color);
-    }
-
-    ctx.restore();
-  }
-
-  // ============================================================
-  // MAIN DRAW LOOP
-  // ============================================================
-
-  function draw() {
-    ctx.clearRect(0, 0, canvas._w, canvas._h);
-    drawGrid();
-    drawElements();
-    drawPreview();
-  }
-
-  // ============================================================
-  // HIT TESTING (for select & eraser)
-  // ============================================================
-
-  /** Find the element at a given point, or null. Pencil strokes checked
-   *  via distance to segments; circles by distance to center ± radius;
-   *  rects by point-in-rect; lines by distance to segment. */
-  function hitTest(px, py) {
-    // Iterate in reverse (topmost first)
-    for (let i = state.elements.length - 1; i >= 0; i--) {
-      const el = state.elements[i];
-
-      if (el.type === 'pencil') {
-        // Check distance from (px,py) to any segment of the stroke
-        const pts = el.points;
-        for (let j = 1; j < pts.length; j++) {
-          const d = distToSegment(px, py, pts[j - 1].x, pts[j - 1].y, pts[j].x, pts[j].y);
-          if (d < HIT_THRESHOLD) return el;
-        }
-      } else if (el.type === 'line') {
-        const d = distToSegment(px, py, el.x1, el.y1, el.x2, el.y2);
-        if (d < HIT_THRESHOLD) return el;
-      } else if (el.type === 'circle') {
-        const d = distance(px, py, el.cx, el.cy);
-        // Click near the circumference (threshold from radius)
-        if (Math.abs(d - el.r) < HIT_THRESHOLD) return el;
-      } else if (el.type === 'rect') {
-        const rx = Math.min(el.x, el.x + el.w);
-        const ry = Math.min(el.y, el.y + el.h);
-        const rw = Math.abs(el.w);
-        const rh = Math.abs(el.h);
-        // Check if point is inside or near the border
-        const inside = px >= rx && px <= rx + rw && py >= ry && py <= ry + rh;
-        const nearEdge = inside && (
-          px - rx < HIT_THRESHOLD || rx + rw - px < HIT_THRESHOLD ||
-          py - ry < HIT_THRESHOLD || ry + rh - py < HIT_THRESHOLD
-        );
-        if (nearEdge) return el;
-      }
-    }
-    return null;
-  }
-
-  /** Minimum distance from point (px,py) to line segment (x1,y1)-(x2,y2). */
-  function distToSegment(px, py, x1, y1, x2, y2) {
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const lenSq = dx * dx + dy * dy;
-    if (lenSq === 0) return distance(px, py, x1, y1);
-    let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
-    t = Math.max(0, Math.min(1, t));
-    const nearX = x1 + t * dx;
-    const nearY = y1 + t * dy;
-    return distance(px, py, nearX, nearY);
-  }
-
-  // ============================================================
-  // ELEMENT CREATION
-  // ============================================================
-
-  let addElement = function (el) {
-    // Store original positions for pencil stroke drag support
-    if (el.type === 'pencil' && el.points) {
-      for (const p of el.points) {
-        p._origX = p.x;
-        p._origY = p.y;
-      }
-    }
-    state.elements.push(el);
-    state.selectedElement = el;
-    updateElementCount();
-    draw();
-  };
-
-  function removeElement(el) {
-    const idx = state.elements.indexOf(el);
-    if (idx !== -1) {
-      state.elements.splice(idx, 1);
-      if (state.selectedElement === el) {
-        state.selectedElement = null;
-      }
-      updateElementCount();
-      draw();
-    }
-  }
-
-  function clearAllElements() {
-    state.elements = [];
-    state.selectedElement = null;
-    updateElementCount();
-    draw();
-  }
-
-  function updateElementCount() {
-    elementCountEl.textContent = state.elements.length;
-  }
-
-  // ============================================================
-  // EVENT HANDLERS
-  // ============================================================
-
-  /** Get the snapped or raw coordinates from an event. */
-  function getDrawCoords(e) {
-    const pt = getCanvasCoords(e);
-    return maybeSnapPoint(pt.x, pt.y);
-  }
-
-  function onPointerDown(e) {
-    e.preventDefault();
-
-    const pt = getDrawCoords(e);
-    state.startPoint = { ...pt };
-    state.currentPoint = { ...pt };
-    state.isDrawing = true;
-
-    if (state.tool === 'select') {
-      // Hit test for selection
-      const hit = hitTest(pt.x, pt.y);
-      if (hit) {
-        state.selectedElement = hit;
-        // Calculate offset for dragging
-        if (hit.type === 'circle') {
-          state.dragOffset = { cx: hit.cx, cy: hit.cy, startX: pt.x, startY: pt.y };
-        } else if (hit.type === 'line') {
-          // For lines, we'll use the closest point approach
-          state.dragOffset = { type: 'line', x1: hit.x1, y1: hit.y1, x2: hit.x2, y2: hit.y2, startX: pt.x, startY: pt.y };
-        } else if (hit.type === 'rect') {
-          state.dragOffset = { type: 'rect', x: hit.x, y: hit.y, w: hit.w, h: hit.h, startX: pt.x, startY: pt.y };
-        } else if (hit.type === 'pencil') {
-          state.dragOffset = { type: 'pencil', startX: pt.x, startY: pt.y };
-        }
-        draw();
-      } else {
-        state.selectedElement = null;
-        draw();
-      }
-    } else if (state.tool === 'eraser') {
-      // Click: try to delete the element under cursor
-      const hit = hitTest(pt.x, pt.y);
-      if (hit) {
-        removeElement(hit);
-      }
-      // For drag-erase on pencil, we also track points
-      state.pencilPoints = [{ ...pt }];
-    } else if (state.tool === 'pencil') {
-      state.pencilPoints = [{ ...pt }];
-    } else {
-      // line, circle, rect: just record start
-      state.selectedElement = null;
-    }
-  }
-
-  function onPointerMove(e) {
-    e.preventDefault();
-    const pt = getCanvasCoords(e);
-    state.cursorX = pt.x;
-    state.cursorY = pt.y;
-
-    // Update cursor position display (in grid units)
-    const gridX = Math.floor(pt.x / GRID_PX);
-    const gridY = Math.floor(pt.y / GRID_PX);
-    cursorPosEl.textContent = gridX + ' × ' + gridY;
-
-    const snapped = maybeSnapPoint(pt.x, pt.y);
-
-    if (state.isDrawing) {
-      state.currentPoint = snapped;
-
-      if (state.tool === 'select' && state.selectedElement && state.dragOffset) {
-        // Drag the selected element
-        const dx = snapped.x - state.dragOffset.startX;
-        const dy = snapped.y - state.dragOffset.startY;
-
-        if (state.selectedElement.type === 'circle') {
-          state.selectedElement.cx = state.dragOffset.cx + dx;
-          state.selectedElement.cy = state.dragOffset.cy + dy;
-        } else if (state.selectedElement.type === 'line') {
-          state.selectedElement.x1 = state.dragOffset.x1 + dx;
-          state.selectedElement.y1 = state.dragOffset.y1 + dy;
-          state.selectedElement.x2 = state.dragOffset.x2 + dx;
-          state.selectedElement.y2 = state.dragOffset.y2 + dy;
-        } else if (state.selectedElement.type === 'rect') {
-          state.selectedElement.x = state.dragOffset.x + dx;
-          state.selectedElement.y = state.dragOffset.y + dy;
-        } else if (state.selectedElement.type === 'pencil') {
-          const pts = state.selectedElement.points;
-          for (let i = 0; i < pts.length; i++) {
-            // Mutate in-place to preserve _origX/_origY for subsequent drags
-            pts[i].x = pts[i]._origX + dx;
-            pts[i].y = pts[i]._origY + dy;
+      ;(function () {
+        'use strict'
+
+        // ============================================================
+        // POLYFILL — CanvasRenderingContext2D.roundRect (for older browsers)
+        // ============================================================
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+          CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, radii) {
+            const r = typeof radii === 'number' ? radii : radii || 0
+            this.moveTo(x + r, y)
+            this.lineTo(x + w - r, y)
+            this.quadraticCurveTo(x + w, y, x + w, y + r)
+            this.lineTo(x + w, y + h - r)
+            this.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+            this.lineTo(x + r, y + h)
+            this.quadraticCurveTo(x, y + h, x, y + h - r)
+            this.lineTo(x, y + r)
+            this.quadraticCurveTo(x, y, x + r, y)
+            return this
           }
         }
-        draw();
-      } else if (state.tool === 'pencil') {
-        state.pencilPoints.push({ ...snapped });
-        draw();
-      } else if (state.tool === 'eraser') {
-        // Eraser drag: test elements against the eraser path
-        state.pencilPoints.push({ ...snapped });
-        let didErase = false;
-        // For efficiency, only check every few points
-        if (state.pencilPoints.length % 3 === 0 || state.pencilPoints.length === 2) {
-          const toRemove = new Set();
-          const lastPts = state.pencilPoints;
-          if (lastPts.length >= 2) {
-            const ep1 = lastPts[lastPts.length - 2];
-            const ep2 = lastPts[lastPts.length - 1];
-            for (const el of state.elements) {
-              if (el.type === 'pencil') {
-                for (let j = 1; j < el.points.length; j++) {
-                  const d = distToSegment(ep1.x, ep1.y, ep2.x, ep2.y,
-                    el.points[j - 1].x, el.points[j - 1].y,
-                    el.points[j].x, el.points[j].y);
-                  if (d < HIT_THRESHOLD * 1.5) {
-                    toRemove.add(el);
-                    break;
-                  }
-                }
-              } else {
-                // For other element types, check if eraser path passes near them
-                const ex = el.type === 'circle' ? el.cx : (el.type === 'line' ? (el.x1 + el.x2) / 2 : el.x + el.w / 2);
-                const ey = el.type === 'circle' ? el.cy : (el.type === 'line' ? (el.y1 + el.y2) / 2 : el.y + el.h / 2);
-                const centerDist = distance(ep1.x, ep1.y, ex, ey);
-                if (centerDist < HIT_THRESHOLD * 3) {
-                  toRemove.add(el);
-                }
-              }
+
+        // ============================================================
+        // CONSTANTS
+        // ============================================================
+        const GRID_PX = 25 // 1 square = 25px = 5mm
+        const MAJOR_N = 5 // Every 5th line = major grid
+        const CM_RATIO = 50 // 1cm = 50px
+        const COLORS = {
+          black: '#1a1a1a',
+          blue: '#2563eb',
+          red: '#dc2626',
+          green: '#16a34a',
+        }
+        const HIT_THRESHOLD = 10 // px tolerance for eraser/select hit test
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const canvas = document.getElementById('drawCanvas')
+        const ctx = canvas.getContext('2d')
+        const wrapper = document.querySelector('.canvas-wrapper')
+        const cursorPosEl = document.getElementById('cursorPos')
+        const elementCountEl = document.getElementById('elementCount')
+        const gridSnapCheck = document.getElementById('gridSnap')
+        const colorPicker = document.getElementById('colorPicker')
+        const toolGrid = document.getElementById('toolGrid')
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        const state = {
+          tool: 'select', // current active tool
+          color: COLORS.black, // current drawing color
+          snap: true, // grid snapping on/off
+          elements: [], // array of drawn element objects
+          isDrawing: false, // true while mouse/touch is down
+          startPoint: null, // {x, y} of initial press
+          currentPoint: null, // {x, y} of current pointer position (for live preview)
+          pencilPoints: [], // accumulated points for current pencil stroke
+          cursorX: 0, // last known cursor x (for position display)
+          cursorY: 0, // last known cursor y
+          // for select tool
+          dragOffset: null, // offset from mouse to element origin while dragging
+          selectedElement: null, // currently selected/moving element
+        }
+
+        // ============================================================
+        // CANVAS SIZING
+        // ============================================================
+        /** Resize the canvas buffer to match its CSS size (with DPR support). */
+        function resizeCanvas() {
+          const rect = wrapper.getBoundingClientRect()
+          const dpr = window.devicePixelRatio || 1
+          canvas.width = rect.width * dpr
+          canvas.height = rect.height * dpr
+          // Store CSS pixel dimensions for coordinate conversion
+          canvas._w = rect.width
+          canvas._h = rect.height
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+          draw()
+        }
+
+        // ============================================================
+        // COORDINATE HELPERS
+        // ============================================================
+
+        /** Get canvas-local CSS-pixel coordinates from a mouse or touch event. */
+        function getCanvasCoords(e) {
+          const rect = canvas.getBoundingClientRect()
+          let clientX, clientY
+          if (e.touches) {
+            clientX = e.touches[0].clientX
+            clientY = e.touches[0].clientY
+          } else {
+            clientX = e.clientX
+            clientY = e.clientY
+          }
+          return { x: clientX - rect.left, y: clientY - rect.top }
+        }
+
+        /** Snap a coordinate to the nearest grid intersection. */
+        function snap(val) {
+          return Math.round(val / GRID_PX) * GRID_PX
+        }
+
+        /** Apply grid snapping to a point if enabled. */
+        function maybeSnapPoint(x, y) {
+          if (state.snap) {
+            return { x: snap(x), y: snap(y) }
+          }
+          return { x, y }
+        }
+
+        /** Convert pixels to cm string (e.g. "4.5"). 50px = 1cm. */
+        function pxToCm(px) {
+          return (px / CM_RATIO).toFixed(1)
+        }
+
+        /** Convert a pixel distance to a formatted cm label. */
+        function cmLabel(px) {
+          return pxToCm(px) + ' cm'
+        }
+
+        /** Calculate distance between two points. */
+        function distance(x1, y1, x2, y2) {
+          return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        }
+
+        // ============================================================
+        // DRAWING — GRID
+        // ============================================================
+
+        /** Draw the kariertes Heft grid background. */
+        function drawGrid() {
+          const w = canvas._w
+          const h = canvas._h
+
+          // Paper background
+          ctx.fillStyle = '#fafaf8'
+          ctx.fillRect(0, 0, w, h)
+
+          // Grid lines
+          const totalLinesX = Math.ceil(w / GRID_PX)
+          const totalLinesY = Math.ceil(h / GRID_PX)
+
+          ctx.beginPath()
+          for (let i = 0; i <= totalLinesX; i++) {
+            const x = i * GRID_PX
+            const isMajor = i % MAJOR_N === 0
+            ctx.moveTo(x, 0)
+            ctx.lineTo(x, h)
+          }
+          for (let i = 0; i <= totalLinesY; i++) {
+            const y = i * GRID_PX
+            const isMajor = i % MAJOR_N === 0
+            ctx.moveTo(0, y)
+            ctx.lineTo(w, y)
+          }
+          ctx.strokeStyle = '#d0d8e8'
+          ctx.lineWidth = 0.5
+          ctx.stroke()
+
+          // Major grid (every 5th line = 2.5cm)
+          ctx.beginPath()
+          for (let i = 0; i <= totalLinesX; i += MAJOR_N) {
+            const x = i * GRID_PX
+            ctx.moveTo(x, 0)
+            ctx.lineTo(x, h)
+          }
+          for (let i = 0; i <= totalLinesY; i += MAJOR_N) {
+            const y = i * GRID_PX
+            ctx.moveTo(0, y)
+            ctx.lineTo(w, y)
+          }
+          ctx.strokeStyle = '#b0c0d8'
+          ctx.lineWidth = 1.2
+          ctx.stroke()
+
+          // Very faint cross at origin (top-left corner accent)
+          ctx.beginPath()
+          ctx.moveTo(0, 0)
+          ctx.lineTo(GRID_PX * 0.4, 0)
+          ctx.moveTo(0, 0)
+          ctx.lineTo(0, GRID_PX * 0.4)
+          ctx.strokeStyle = '#a0b0c8'
+          ctx.lineWidth = 1.5
+          ctx.stroke()
+        }
+
+        // ============================================================
+        // DRAWING — ELEMENTS
+        // ============================================================
+
+        /** Draw a measurement label on the canvas with background. */
+        function drawLabel(x, y, text, color) {
+          ctx.save()
+          ctx.font = '10px "Space Grotesk", system-ui, sans-serif'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+
+          const metrics = ctx.measureText(text)
+          const pad = 4
+          const tw = metrics.width
+          const lw = tw + pad * 2
+          const lh = 16
+
+          // Background pill
+          ctx.fillStyle = 'rgba(255,255,255,0.88)'
+          ctx.shadowColor = 'rgba(0,0,0,0.08)'
+          ctx.shadowBlur = 3
+          ctx.beginPath()
+          ctx.roundRect(x - lw / 2, y - lh / 2, lw, lh, 4)
+          ctx.fill()
+          // Reset shadow before stroke
+          ctx.shadowColor = 'transparent'
+          ctx.shadowBlur = 0
+          ctx.strokeStyle = 'rgba(0,0,0,0.06)'
+          ctx.lineWidth = 0.5
+          ctx.stroke()
+
+          // Text
+          ctx.fillStyle = color || 'rgba(0,0,0,0.65)'
+          ctx.font = '10px "Space Grotesk", system-ui, sans-serif'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText(text, x, y + 0.5)
+          ctx.restore()
+        }
+
+        /** Draw a pencil (freehand) stroke. */
+        function drawPencilElement(el) {
+          if (!el.points || el.points.length < 2) return
+          ctx.save()
+          ctx.beginPath()
+          ctx.moveTo(el.points[0].x, el.points[0].y)
+          // Smooth with quadratic bezier through midpoints
+          for (let i = 1; i < el.points.length - 1; i++) {
+            const mx = (el.points[i].x + el.points[i + 1].x) / 2
+            const my = (el.points[i].y + el.points[i + 1].y) / 2
+            ctx.quadraticCurveTo(el.points[i].x, el.points[i].y, mx, my)
+          }
+          ctx.lineTo(el.points[el.points.length - 1].x, el.points[el.points.length - 1].y)
+          ctx.strokeStyle = el.color
+          ctx.lineWidth = el.lineWidth || 2
+          ctx.lineCap = 'round'
+          ctx.lineJoin = 'round'
+          ctx.stroke()
+          ctx.restore()
+        }
+
+        /** Draw a line element with measurement label. */
+        function drawLineElement(el) {
+          const { x1, y1, x2, y2 } = el
+          ctx.save()
+          ctx.beginPath()
+          ctx.moveTo(x1, y1)
+          ctx.lineTo(x2, y2)
+          ctx.strokeStyle = el.color
+          ctx.lineWidth = 1.5
+          ctx.lineCap = 'round'
+          ctx.stroke()
+
+          // Measurement label at midpoint
+          const mx = (x1 + x2) / 2
+          const my = (y1 + y2) / 2
+          const dx = x2 - x1
+          const dy = y2 - y1
+          const distCm = pxToCm(distance(x1, y1, x2, y2))
+          const angle = Math.abs(Math.atan2(dy, dx) * (180 / Math.PI))
+
+          // Only show angle if not nearly horizontal/vertical (within 3°)
+          const nearAxis = angle < 3 || angle > 177 || (angle > 87 && angle < 93)
+          const labelText = nearAxis ? distCm + ' cm' : distCm + ' cm, ' + Math.round(angle) + '°'
+
+          drawLabel(mx, my, labelText, el.color)
+          ctx.restore()
+        }
+
+        /** Draw a circle element with measurement label. */
+        function drawCircleElement(el) {
+          const { cx, cy, r } = el
+          ctx.save()
+          ctx.beginPath()
+          ctx.arc(cx, cy, r, 0, Math.PI * 2)
+          ctx.strokeStyle = el.color
+          ctx.lineWidth = 1.5
+          ctx.stroke()
+
+          // Label at center
+          drawLabel(cx, cy, 'r = ' + cmLabel(r), el.color)
+          ctx.restore()
+        }
+
+        /** Draw a rectangle element with measurement label. */
+        function drawRectElement(el) {
+          const { x, y, w, h } = el
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(x, y, w, h)
+          ctx.strokeStyle = el.color
+          ctx.lineWidth = 1.5
+          ctx.stroke()
+
+          // Label at center
+          const cx = x + w / 2
+          const cy = y + h / 2
+          const wCm = pxToCm(Math.abs(w))
+          const hCm = pxToCm(Math.abs(h))
+          drawLabel(cx, cy, wCm + ' × ' + hCm + ' cm', el.color)
+          ctx.restore()
+        }
+
+        /** Draw a selection highlight around an element. */
+        function drawSelectionHighlight(el) {
+          if (!el) return
+          ctx.save()
+          ctx.setLineDash([4, 4])
+          ctx.strokeStyle = '#2563eb'
+          ctx.lineWidth = 1.5
+
+          if (el.type === 'pencil' && el.points.length > 0) {
+            // Find bounding box of pencil stroke
+            let minX = Infinity,
+              minY = Infinity,
+              maxX = -Infinity,
+              maxY = -Infinity
+            for (const p of el.points) {
+              if (p.x < minX) minX = p.x
+              if (p.y < minY) minY = p.y
+              if (p.x > maxX) maxX = p.x
+              if (p.y > maxY) maxY = p.y
+            }
+            const pad = 4
+            ctx.strokeRect(minX - pad, minY - pad, maxX - minX + pad * 2, maxY - minY + pad * 2)
+          } else if (el.type === 'line') {
+            const pad = 6
+            const minX = Math.min(el.x1, el.x2) - pad
+            const minY = Math.min(el.y1, el.y2) - pad
+            const bw = Math.abs(el.x2 - el.x1) + pad * 2
+            const bh = Math.abs(el.y2 - el.y1) + pad * 2
+            ctx.strokeRect(minX, minY, bw, bh)
+          } else if (el.type === 'circle') {
+            const pad = 4
+            ctx.beginPath()
+            ctx.arc(el.cx, el.cy, el.r + pad, 0, Math.PI * 2)
+            ctx.stroke()
+          } else if (el.type === 'rect') {
+            const pad = 4
+            ctx.strokeRect(
+              el.x - pad,
+              el.y - pad,
+              Math.abs(el.w) + pad * 2,
+              Math.abs(el.h) + pad * 2,
+            )
+          }
+          ctx.restore()
+        }
+
+        /** Draw all stored elements. */
+        function drawElements() {
+          for (const el of state.elements) {
+            switch (el.type) {
+              case 'pencil':
+                drawPencilElement(el)
+                break
+              case 'line':
+                drawLineElement(el)
+                break
+              case 'circle':
+                drawCircleElement(el)
+                break
+              case 'rect':
+                drawRectElement(el)
+                break
+            }
+            // Draw selection highlight on selected element
+            if (state.selectedElement === el) {
+              drawSelectionHighlight(el)
             }
           }
-          for (const el of toRemove) {
-            removeElement(el);
-            didErase = true;
+        }
+
+        // ============================================================
+        // DRAWING — LIVE PREVIEW (while dragging)
+        // ============================================================
+
+        /** Draw the in-progress element preview. */
+        function drawPreview() {
+          if (!state.isDrawing || !state.startPoint || !state.currentPoint) return
+
+          const sp = state.startPoint
+          const cp = state.currentPoint
+
+          ctx.save()
+
+          if (state.tool === 'pencil') {
+            // Pencil preview uses the stored pencilPoints
+            if (state.pencilPoints.length >= 2) {
+              ctx.beginPath()
+              ctx.moveTo(state.pencilPoints[0].x, state.pencilPoints[0].y)
+              for (let i = 1; i < state.pencilPoints.length - 1; i++) {
+                const mx = (state.pencilPoints[i].x + state.pencilPoints[i + 1].x) / 2
+                const my = (state.pencilPoints[i].y + state.pencilPoints[i + 1].y) / 2
+                ctx.quadraticCurveTo(state.pencilPoints[i].x, state.pencilPoints[i].y, mx, my)
+              }
+              ctx.lineTo(
+                state.pencilPoints[state.pencilPoints.length - 1].x,
+                state.pencilPoints[state.pencilPoints.length - 1].y,
+              )
+              ctx.strokeStyle = state.color
+              ctx.lineWidth = 2
+              ctx.lineCap = 'round'
+              ctx.lineJoin = 'round'
+              ctx.stroke()
+            }
+          } else if (state.tool === 'line') {
+            // Line preview with live measurement
+            ctx.beginPath()
+            ctx.moveTo(sp.x, sp.y)
+            ctx.lineTo(cp.x, cp.y)
+            ctx.strokeStyle = state.color
+            ctx.lineWidth = 1.5
+            ctx.lineCap = 'round'
+            ctx.stroke()
+
+            // Live measurement label near cursor
+            const dx = cp.x - sp.x
+            const dy = cp.y - sp.y
+            const distCm = pxToCm(distance(sp.x, sp.y, cp.x, cp.y))
+            const angle = Math.abs(Math.atan2(dy, dx) * (180 / Math.PI))
+            const nearAxis = angle < 3 || angle > 177 || (angle > 87 && angle < 93)
+            const labelText = nearAxis ? distCm + ' cm' : distCm + ' cm, ' + Math.round(angle) + '°'
+
+            // Draw label offset from cursor
+            drawLabel(cp.x + 15, cp.y - 15, labelText, state.color)
+          } else if (state.tool === 'circle') {
+            // Circle preview with radius
+            const r = distance(sp.x, sp.y, cp.x, cp.y)
+            ctx.beginPath()
+            ctx.arc(sp.x, sp.y, r, 0, Math.PI * 2)
+            ctx.strokeStyle = state.color
+            ctx.lineWidth = 1.5
+            ctx.stroke()
+
+            // Live radius label
+            const labelText = 'r = ' + cmLabel(r)
+            drawLabel(cp.x + 15, cp.y - 15, labelText, state.color)
+
+            // Dashed radius line
+            ctx.beginPath()
+            ctx.moveTo(sp.x, sp.y)
+            ctx.lineTo(cp.x, cp.y)
+            ctx.setLineDash([3, 4])
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)'
+            ctx.lineWidth = 0.8
+            ctx.stroke()
+          } else if (state.tool === 'rect') {
+            // Rectangle preview with dimensions
+            const rx = Math.min(sp.x, cp.x)
+            const ry = Math.min(sp.y, cp.y)
+            const rw = Math.abs(cp.x - sp.x)
+            const rh = Math.abs(cp.y - sp.y)
+            ctx.beginPath()
+            ctx.rect(rx, ry, rw, rh)
+            ctx.strokeStyle = state.color
+            ctx.lineWidth = 1.5
+            ctx.stroke()
+
+            // Live dimension label
+            const wCm = pxToCm(rw)
+            const hCm = pxToCm(rh)
+            const labelText = wCm + ' × ' + hCm + ' cm'
+            drawLabel(cp.x + 15, cp.y - 15, labelText, state.color)
+          }
+
+          ctx.restore()
+        }
+
+        // ============================================================
+        // MAIN DRAW LOOP
+        // ============================================================
+
+        function draw() {
+          ctx.clearRect(0, 0, canvas._w, canvas._h)
+          drawGrid()
+          drawElements()
+          drawPreview()
+        }
+
+        // ============================================================
+        // HIT TESTING (for select & eraser)
+        // ============================================================
+
+        /** Find the element at a given point, or null. Pencil strokes checked
+         *  via distance to segments; circles by distance to center ± radius;
+         *  rects by point-in-rect; lines by distance to segment. */
+        function hitTest(px, py) {
+          // Iterate in reverse (topmost first)
+          for (let i = state.elements.length - 1; i >= 0; i--) {
+            const el = state.elements[i]
+
+            if (el.type === 'pencil') {
+              // Check distance from (px,py) to any segment of the stroke
+              const pts = el.points
+              for (let j = 1; j < pts.length; j++) {
+                const d = distToSegment(px, py, pts[j - 1].x, pts[j - 1].y, pts[j].x, pts[j].y)
+                if (d < HIT_THRESHOLD) return el
+              }
+            } else if (el.type === 'line') {
+              const d = distToSegment(px, py, el.x1, el.y1, el.x2, el.y2)
+              if (d < HIT_THRESHOLD) return el
+            } else if (el.type === 'circle') {
+              const d = distance(px, py, el.cx, el.cy)
+              // Click near the circumference (threshold from radius)
+              if (Math.abs(d - el.r) < HIT_THRESHOLD) return el
+            } else if (el.type === 'rect') {
+              const rx = Math.min(el.x, el.x + el.w)
+              const ry = Math.min(el.y, el.y + el.h)
+              const rw = Math.abs(el.w)
+              const rh = Math.abs(el.h)
+              // Check if point is inside or near the border
+              const inside = px >= rx && px <= rx + rw && py >= ry && py <= ry + rh
+              const nearEdge =
+                inside &&
+                (px - rx < HIT_THRESHOLD ||
+                  rx + rw - px < HIT_THRESHOLD ||
+                  py - ry < HIT_THRESHOLD ||
+                  ry + rh - py < HIT_THRESHOLD)
+              if (nearEdge) return el
+            }
+          }
+          return null
+        }
+
+        /** Minimum distance from point (px,py) to line segment (x1,y1)-(x2,y2). */
+        function distToSegment(px, py, x1, y1, x2, y2) {
+          const dx = x2 - x1
+          const dy = y2 - y1
+          const lenSq = dx * dx + dy * dy
+          if (lenSq === 0) return distance(px, py, x1, y1)
+          let t = ((px - x1) * dx + (py - y1) * dy) / lenSq
+          t = Math.max(0, Math.min(1, t))
+          const nearX = x1 + t * dx
+          const nearY = y1 + t * dy
+          return distance(px, py, nearX, nearY)
+        }
+
+        // ============================================================
+        // ELEMENT CREATION
+        // ============================================================
+
+        let addElement = function (el) {
+          // Store original positions for pencil stroke drag support
+          if (el.type === 'pencil' && el.points) {
+            for (const p of el.points) {
+              p._origX = p.x
+              p._origY = p.y
+            }
+          }
+          state.elements.push(el)
+          state.selectedElement = el
+          updateElementCount()
+          draw()
+        }
+
+        function removeElement(el) {
+          const idx = state.elements.indexOf(el)
+          if (idx !== -1) {
+            state.elements.splice(idx, 1)
+            if (state.selectedElement === el) {
+              state.selectedElement = null
+            }
+            updateElementCount()
+            draw()
           }
         }
-        // Only redraw once if nothing was erased (removeElement calls draw internally)
-        if (!didErase) draw();
-      } else {
-        // line, circle, rect: draw preview
-        draw();
-      }
-    }
-  }
 
-  function onPointerUp(e) {
-    e.preventDefault();
-
-    if (!state.isDrawing) return;
-    state.isDrawing = false;
-
-    const sp = state.startPoint;
-    const cp = state.currentPoint;
-
-    if (state.tool === 'pencil' && state.pencilPoints.length >= 2) {
-      addElement({
-        type: 'pencil',
-        points: state.pencilPoints.map(p => ({ ...p })),
-        color: state.color,
-        lineWidth: 2
-      });
-    } else if (state.tool === 'line') {
-      // Don't add zero-length lines
-      if (distance(sp.x, sp.y, cp.x, cp.y) > 2) {
-        addElement({
-          type: 'line',
-          x1: sp.x, y1: sp.y,
-          x2: cp.x, y2: cp.y,
-          color: state.color
-        });
-      }
-    } else if (state.tool === 'circle') {
-      const r = distance(sp.x, sp.y, cp.x, cp.y);
-      if (r > 2) {
-        addElement({
-          type: 'circle',
-          cx: sp.x, cy: sp.y,
-          r: r,
-          color: state.color
-        });
-      }
-    } else if (state.tool === 'rect') {
-      const rw = Math.abs(cp.x - sp.x);
-      const rh = Math.abs(cp.y - sp.y);
-      if (rw > 2 && rh > 2) {
-        addElement({
-          type: 'rect',
-          x: Math.min(sp.x, cp.x),
-          y: Math.min(sp.y, cp.y),
-          w: Math.abs(cp.x - sp.x),
-          h: Math.abs(cp.y - sp.y),
-          color: state.color
-        });
-      }
-    } else if (state.tool === 'select') {
-      // Finalize drag: store final positions for pencil strokes
-      // For pencil strokes, we need to update the "original" positions
-      if (state.selectedElement && state.dragOffset && state.selectedElement.type === 'pencil') {
-        // Store the current positions as new originals
-        for (const p of state.selectedElement.points) {
-          p._origX = p.x;
-          p._origY = p.y;
+        function clearAllElements() {
+          state.elements = []
+          state.selectedElement = null
+          updateElementCount()
+          draw()
         }
-      }
-      state.dragOffset = null;
-    }
 
-    // Cleanup pencil/eraser point buffers
-    state.pencilPoints = [];
+        function updateElementCount() {
+          elementCountEl.textContent = state.elements.length
+        }
 
-    state.startPoint = null;
-    state.currentPoint = null;
-    draw();
+        // ============================================================
+        // EVENT HANDLERS
+        // ============================================================
 
-    // When select is released on nothing, deselect
-    if (state.tool === 'select' && !state.selectedElement) {
-      // already handled
-    }
-  }
+        /** Get the snapped or raw coordinates from an event. */
+        function getDrawCoords(e) {
+          const pt = getCanvasCoords(e)
+          return maybeSnapPoint(pt.x, pt.y)
+        }
 
-  // ============================================================
-  // TOUCH SUPPORT — translate touch events to pointer-like events
-  // ============================================================
+        function onPointerDown(e) {
+          e.preventDefault()
 
-  function onTouchStart(e) {
-    // Prevent default to avoid scrolling
-    e.preventDefault();
-    const touch = e.touches[0];
-    const mouseEvent = new MouseEvent('mousedown', {
-      clientX: touch.clientX,
-      clientY: touch.clientY,
-      button: 0
-    });
-    canvas.dispatchEvent(mouseEvent);
-  }
+          const pt = getDrawCoords(e)
+          state.startPoint = { ...pt }
+          state.currentPoint = { ...pt }
+          state.isDrawing = true
 
-  function onTouchMove(e) {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const mouseEvent = new MouseEvent('mousemove', {
-      clientX: touch.clientX,
-      clientY: touch.clientY,
-      button: 0
-    });
-    canvas.dispatchEvent(mouseEvent);
-  }
+          if (state.tool === 'select') {
+            // Hit test for selection
+            const hit = hitTest(pt.x, pt.y)
+            if (hit) {
+              state.selectedElement = hit
+              // Calculate offset for dragging
+              if (hit.type === 'circle') {
+                state.dragOffset = { cx: hit.cx, cy: hit.cy, startX: pt.x, startY: pt.y }
+              } else if (hit.type === 'line') {
+                // For lines, we'll use the closest point approach
+                state.dragOffset = {
+                  type: 'line',
+                  x1: hit.x1,
+                  y1: hit.y1,
+                  x2: hit.x2,
+                  y2: hit.y2,
+                  startX: pt.x,
+                  startY: pt.y,
+                }
+              } else if (hit.type === 'rect') {
+                state.dragOffset = {
+                  type: 'rect',
+                  x: hit.x,
+                  y: hit.y,
+                  w: hit.w,
+                  h: hit.h,
+                  startX: pt.x,
+                  startY: pt.y,
+                }
+              } else if (hit.type === 'pencil') {
+                state.dragOffset = { type: 'pencil', startX: pt.x, startY: pt.y }
+              }
+              draw()
+            } else {
+              state.selectedElement = null
+              draw()
+            }
+          } else if (state.tool === 'eraser') {
+            // Click: try to delete the element under cursor
+            const hit = hitTest(pt.x, pt.y)
+            if (hit) {
+              removeElement(hit)
+            }
+            // For drag-erase on pencil, we also track points
+            state.pencilPoints = [{ ...pt }]
+          } else if (state.tool === 'pencil') {
+            state.pencilPoints = [{ ...pt }]
+          } else {
+            // line, circle, rect: just record start
+            state.selectedElement = null
+          }
+        }
 
-  function onTouchEnd(e) {
-    e.preventDefault();
-    const mouseEvent = new MouseEvent('mouseup', {
-      clientX: 0,
-      clientY: 0,
-      button: 0
-    });
-    canvas.dispatchEvent(mouseEvent);
-  }
+        function onPointerMove(e) {
+          e.preventDefault()
+          const pt = getCanvasCoords(e)
+          state.cursorX = pt.x
+          state.cursorY = pt.y
 
-  // ============================================================
-  // SETUP — Event Listeners
-  // ============================================================
+          // Update cursor position display (in grid units)
+          const gridX = Math.floor(pt.x / GRID_PX)
+          const gridY = Math.floor(pt.y / GRID_PX)
+          cursorPosEl.textContent = gridX + ' × ' + gridY
 
-  // Mouse events
-  canvas.addEventListener('mousedown', onPointerDown);
-  canvas.addEventListener('mousemove', onPointerMove);
-  canvas.addEventListener('mouseup',   onPointerUp);
-  canvas.addEventListener('mouseleave', function (e) {
-    // If mouse leaves canvas while drawing, end the stroke
-    if (state.isDrawing) {
-      onPointerUp(e);
-    }
-  });
+          const snapped = maybeSnapPoint(pt.x, pt.y)
 
-  // Touch events
-  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-  canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
-  canvas.addEventListener('touchend',   onTouchEnd,   { passive: false });
-  canvas.addEventListener('touchcancel', onTouchEnd,  { passive: false });
+          if (state.isDrawing) {
+            state.currentPoint = snapped
 
-  // ============================================================
-  // SETUP — Tool Buttons
-  // ============================================================
+            if (state.tool === 'select' && state.selectedElement && state.dragOffset) {
+              // Drag the selected element
+              const dx = snapped.x - state.dragOffset.startX
+              const dy = snapped.y - state.dragOffset.startY
 
-  toolGrid.addEventListener('click', function (e) {
-    const btn = e.target.closest('.tool-btn');
-    if (!btn) return;
+              if (state.selectedElement.type === 'circle') {
+                state.selectedElement.cx = state.dragOffset.cx + dx
+                state.selectedElement.cy = state.dragOffset.cy + dy
+              } else if (state.selectedElement.type === 'line') {
+                state.selectedElement.x1 = state.dragOffset.x1 + dx
+                state.selectedElement.y1 = state.dragOffset.y1 + dy
+                state.selectedElement.x2 = state.dragOffset.x2 + dx
+                state.selectedElement.y2 = state.dragOffset.y2 + dy
+              } else if (state.selectedElement.type === 'rect') {
+                state.selectedElement.x = state.dragOffset.x + dx
+                state.selectedElement.y = state.dragOffset.y + dy
+              } else if (state.selectedElement.type === 'pencil') {
+                const pts = state.selectedElement.points
+                for (let i = 0; i < pts.length; i++) {
+                  // Mutate in-place to preserve _origX/_origY for subsequent drags
+                  pts[i].x = pts[i]._origX + dx
+                  pts[i].y = pts[i]._origY + dy
+                }
+              }
+              draw()
+            } else if (state.tool === 'pencil') {
+              state.pencilPoints.push({ ...snapped })
+              draw()
+            } else if (state.tool === 'eraser') {
+              // Eraser drag: test elements against the eraser path
+              state.pencilPoints.push({ ...snapped })
+              let didErase = false
+              // For efficiency, only check every few points
+              if (state.pencilPoints.length % 3 === 0 || state.pencilPoints.length === 2) {
+                const toRemove = new Set()
+                const lastPts = state.pencilPoints
+                if (lastPts.length >= 2) {
+                  const ep1 = lastPts[lastPts.length - 2]
+                  const ep2 = lastPts[lastPts.length - 1]
+                  for (const el of state.elements) {
+                    if (el.type === 'pencil') {
+                      for (let j = 1; j < el.points.length; j++) {
+                        const d = distToSegment(
+                          ep1.x,
+                          ep1.y,
+                          ep2.x,
+                          ep2.y,
+                          el.points[j - 1].x,
+                          el.points[j - 1].y,
+                          el.points[j].x,
+                          el.points[j].y,
+                        )
+                        if (d < HIT_THRESHOLD * 1.5) {
+                          toRemove.add(el)
+                          break
+                        }
+                      }
+                    } else {
+                      // For other element types, check if eraser path passes near them
+                      const ex =
+                        el.type === 'circle'
+                          ? el.cx
+                          : el.type === 'line'
+                            ? (el.x1 + el.x2) / 2
+                            : el.x + el.w / 2
+                      const ey =
+                        el.type === 'circle'
+                          ? el.cy
+                          : el.type === 'line'
+                            ? (el.y1 + el.y2) / 2
+                            : el.y + el.h / 2
+                      const centerDist = distance(ep1.x, ep1.y, ex, ey)
+                      if (centerDist < HIT_THRESHOLD * 3) {
+                        toRemove.add(el)
+                      }
+                    }
+                  }
+                }
+                for (const el of toRemove) {
+                  removeElement(el)
+                  didErase = true
+                }
+              }
+              // Only redraw once if nothing was erased (removeElement calls draw internally)
+              if (!didErase) draw()
+            } else {
+              // line, circle, rect: draw preview
+              draw()
+            }
+          }
+        }
 
-    const tool = btn.dataset.tool;
+        function onPointerUp(e) {
+          e.preventDefault()
 
-    if (tool === 'clear') {
-      if (state.elements.length === 0) return;
-      if (confirm('Wirklich alle Zeichnungen löschen?')) {
-        clearAllElements();
-      }
-      return;
-    }
+          if (!state.isDrawing) return
+          state.isDrawing = false
 
-    // Deactivate all, activate the clicked one
-    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+          const sp = state.startPoint
+          const cp = state.currentPoint
 
-    state.tool = tool;
-    state.selectedElement = null;
-    state.dragOffset = null;
+          if (state.tool === 'pencil' && state.pencilPoints.length >= 2) {
+            addElement({
+              type: 'pencil',
+              points: state.pencilPoints.map((p) => ({ ...p })),
+              color: state.color,
+              lineWidth: 2,
+            })
+          } else if (state.tool === 'line') {
+            // Don't add zero-length lines
+            if (distance(sp.x, sp.y, cp.x, cp.y) > 2) {
+              addElement({
+                type: 'line',
+                x1: sp.x,
+                y1: sp.y,
+                x2: cp.x,
+                y2: cp.y,
+                color: state.color,
+              })
+            }
+          } else if (state.tool === 'circle') {
+            const r = distance(sp.x, sp.y, cp.x, cp.y)
+            if (r > 2) {
+              addElement({
+                type: 'circle',
+                cx: sp.x,
+                cy: sp.y,
+                r: r,
+                color: state.color,
+              })
+            }
+          } else if (state.tool === 'rect') {
+            const rw = Math.abs(cp.x - sp.x)
+            const rh = Math.abs(cp.y - sp.y)
+            if (rw > 2 && rh > 2) {
+              addElement({
+                type: 'rect',
+                x: Math.min(sp.x, cp.x),
+                y: Math.min(sp.y, cp.y),
+                w: Math.abs(cp.x - sp.x),
+                h: Math.abs(cp.y - sp.y),
+                color: state.color,
+              })
+            }
+          } else if (state.tool === 'select') {
+            // Finalize drag: store final positions for pencil strokes
+            // For pencil strokes, we need to update the "original" positions
+            if (
+              state.selectedElement &&
+              state.dragOffset &&
+              state.selectedElement.type === 'pencil'
+            ) {
+              // Store the current positions as new originals
+              for (const p of state.selectedElement.points) {
+                p._origX = p.x
+                p._origY = p.y
+              }
+            }
+            state.dragOffset = null
+          }
 
-    // Update cursor
-    if (tool === 'select' || tool === 'eraser') {
-      canvas.style.cursor = tool === 'select' ? 'default' : 'cell';
-    } else {
-      canvas.style.cursor = 'crosshair';
-    }
+          // Cleanup pencil/eraser point buffers
+          state.pencilPoints = []
 
-    draw();
-  });
+          state.startPoint = null
+          state.currentPoint = null
+          draw()
 
-  // ============================================================
-  // SETUP — Color Picker
-  // ============================================================
+          // When select is released on nothing, deselect
+          if (state.tool === 'select' && !state.selectedElement) {
+            // already handled
+          }
+        }
 
-  colorPicker.addEventListener('click', function (e) {
-    const dot = e.target.closest('.color-dot');
-    if (!dot) return;
+        // ============================================================
+        // TOUCH SUPPORT — translate touch events to pointer-like events
+        // ============================================================
 
-    const colorName = dot.dataset.color;
-    if (!colorName) return;
+        function onTouchStart(e) {
+          // Prevent default to avoid scrolling
+          e.preventDefault()
+          const touch = e.touches[0]
+          const mouseEvent = new MouseEvent('mousedown', {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            button: 0,
+          })
+          canvas.dispatchEvent(mouseEvent)
+        }
 
-    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-    dot.classList.add('active');
+        function onTouchMove(e) {
+          e.preventDefault()
+          const touch = e.touches[0]
+          const mouseEvent = new MouseEvent('mousemove', {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            button: 0,
+          })
+          canvas.dispatchEvent(mouseEvent)
+        }
 
-    state.color = COLORS[colorName];
-  });
+        function onTouchEnd(e) {
+          e.preventDefault()
+          const mouseEvent = new MouseEvent('mouseup', {
+            clientX: 0,
+            clientY: 0,
+            button: 0,
+          })
+          canvas.dispatchEvent(mouseEvent)
+        }
 
-  // ============================================================
-  // SETUP — Grid Snap Toggle
-  // ============================================================
+        // ============================================================
+        // SETUP — Event Listeners
+        // ============================================================
 
-  gridSnapCheck.addEventListener('change', function () {
-    state.snap = this.checked;
-  });
+        // Mouse events
+        canvas.addEventListener('mousedown', onPointerDown)
+        canvas.addEventListener('mousemove', onPointerMove)
+        canvas.addEventListener('mouseup', onPointerUp)
+        canvas.addEventListener('mouseleave', function (e) {
+          // If mouse leaves canvas while drawing, end the stroke
+          if (state.isDrawing) {
+            onPointerUp(e)
+          }
+        })
 
-  // ============================================================
-  // INIT
-  // ============================================================
+        // Touch events
+        canvas.addEventListener('touchstart', onTouchStart, { passive: false })
+        canvas.addEventListener('touchmove', onTouchMove, { passive: false })
+        canvas.addEventListener('touchend', onTouchEnd, { passive: false })
+        canvas.addEventListener('touchcancel', onTouchEnd, { passive: false })
 
-  function init() {
-    resizeCanvas();
-    updateElementCount();
-    cursorPosEl.textContent = '0 × 0';
-  }
+        // ============================================================
+        // SETUP — Tool Buttons
+        // ============================================================
 
-  // Handle orientation change on mobile
-  let resizeTimer;
-  window.addEventListener('resize', function () {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(resizeCanvas, 150);
-  });
+        toolGrid.addEventListener('click', function (e) {
+          const btn = e.target.closest('.tool-btn')
+          if (!btn) return
 
-  init();
-})();
-</script>
-</body>
+          const tool = btn.dataset.tool
+
+          if (tool === 'clear') {
+            if (state.elements.length === 0) return
+            if (confirm('Wirklich alle Zeichnungen löschen?')) {
+              clearAllElements()
+            }
+            return
+          }
+
+          // Deactivate all, activate the clicked one
+          document.querySelectorAll('.tool-btn').forEach((b) => b.classList.remove('active'))
+          btn.classList.add('active')
+
+          state.tool = tool
+          state.selectedElement = null
+          state.dragOffset = null
+
+          // Update cursor
+          if (tool === 'select' || tool === 'eraser') {
+            canvas.style.cursor = tool === 'select' ? 'default' : 'cell'
+          } else {
+            canvas.style.cursor = 'crosshair'
+          }
+
+          draw()
+        })
+
+        // ============================================================
+        // SETUP — Color Picker
+        // ============================================================
+
+        colorPicker.addEventListener('click', function (e) {
+          const dot = e.target.closest('.color-dot')
+          if (!dot) return
+
+          const colorName = dot.dataset.color
+          if (!colorName) return
+
+          document.querySelectorAll('.color-dot').forEach((d) => d.classList.remove('active'))
+          dot.classList.add('active')
+
+          state.color = COLORS[colorName]
+        })
+
+        // ============================================================
+        // SETUP — Grid Snap Toggle
+        // ============================================================
+
+        gridSnapCheck.addEventListener('change', function () {
+          state.snap = this.checked
+        })
+
+        // ============================================================
+        // INIT
+        // ============================================================
+
+        function init() {
+          resizeCanvas()
+          updateElementCount()
+          cursorPosEl.textContent = '0 × 0'
+        }
+
+        // Handle orientation change on mobile
+        let resizeTimer
+        window.addEventListener('resize', function () {
+          clearTimeout(resizeTimer)
+          resizeTimer = setTimeout(resizeCanvas, 150)
+        })
+
+        init()
+      })()
+    </script>
+  </body>
 </html>
