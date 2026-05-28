@@ -899,9 +899,11 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
           lastError = e
         }
       } else if ((provider === 'gemini' || !['opencode', 'ollama'].includes(provider)) && process.env.GEMINI_API_KEY) {
+        let geminiResult: GeneratedBlock[] = []
+        let geminiError: any = null
         try {
           const response = await fetchWithTimeout(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
             {
               method: 'POST',
               headers: {
@@ -928,13 +930,41 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
           if (response.ok) {
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
             const parsed = JSON.parse(text)
-            candidateBlocks = normalizeGeneratedBlocks(parsed.blocks, length)
+            geminiResult = normalizeGeneratedBlocks(parsed.blocks, length)
           } else {
-            throw new Error(data.error?.message || `Gemini API returned status ${response.status}`)
+            throw new Error(`Gemini API error (${response.status}): ${data.error?.message || 'unknown error'}`)
           }
         } catch (e: any) {
-          console.error('Validation failed for Gemini:', e)
-          lastError = e
+          console.error('Gemini generation failed:', e.message || e)
+          geminiError = e
+        }
+
+        if (geminiResult.length > 0) {
+          candidateBlocks = geminiResult
+        } else {
+          // Fallback: if Gemini failed and OpenCode Zen is configured, try it
+          console.warn('Gemini returned no valid blocks, falling back to OpenCode Zen...')
+          lastError = geminiError
+          if (getZenApiKey()) {
+            try {
+              const zenResponse = await callZenChat('Create the worksheet now and return only valid JSON.', attemptPrompt, false, {
+                response_format: { type: 'json_object' },
+              })
+              const zenData = await zenResponse.json()
+              if (zenResponse.ok) {
+                const zenText = zenData.choices?.[0]?.message?.content || '{}'
+                const zenParsed = JSON.parse(zenText)
+                candidateBlocks = normalizeGeneratedBlocks(zenParsed.blocks, length)
+              } else {
+                throw new Error(`OpenCode Zen fallback API error (${zenResponse.status}): ${zenData.error?.message || 'unknown error'}`)
+              }
+            } catch (fallbackErr: any) {
+              console.error('OpenCode Zen fallback also failed:', fallbackErr.message || fallbackErr)
+              lastError = new Error(`Gemini: ${geminiError?.message || 'failed'}; Zen fallback: ${fallbackErr.message || 'also failed'}`)
+            }
+          } else {
+            lastError = geminiError || new Error('Gemini failed and no OpenCode Zen fallback configured')
+          }
         }
       }
 
@@ -948,7 +978,11 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
     }
 
     if (blocks.length === 0) {
-      res.status(500).json({ error: lastError?.message || 'AI Generator failed to produce any valid exercise blocks.' })
+      const detailedMessage = lastError?.message
+        ? `AI Generator failed after ${maxAttempts} attempts. Last error: ${lastError.message}`
+        : `AI Generator failed to produce any valid exercise blocks after ${maxAttempts} attempts. The AI may have returned content that didn't pass validation, or the API may be unreachable. Check the server logs for details.`
+      console.error(`Worksheet generation failed after ${maxAttempts} attempts. Provider: ${provider}. Subject: ${subject || 'N/A'}. Grade: ${grade_level || 'N/A'}. Last error:`, lastError)
+      res.status(500).json({ error: detailedMessage })
       return
     }
 
@@ -1068,7 +1102,7 @@ RULES:
     } else if ((provider === 'gemini' || !provider) && process.env.GEMINI_API_KEY) {
       try {
         const response = await fetchWithTimeout(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
           {
             method: 'POST',
             headers: {
@@ -1156,9 +1190,10 @@ router.post('/differentiate', requireAuth, requireRole('teacher', 'admin'), asyn
         console.error('Ollama differentiation failed:', e)
       }
     } else if ((request.provider === 'gemini' || !request.provider) && process.env.GEMINI_API_KEY) {
+      let geminiOk = false
       try {
         const response = await fetchWithTimeout(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
           {
             method: 'POST',
             headers: {
@@ -1172,11 +1207,33 @@ router.post('/differentiate', requireAuth, requireRole('teacher', 'admin'), asyn
           },
         )
         const data = await response.json()
-        result = DifferentiateResponseSchema.parse(
-          JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'),
-        )
+        if (response.ok) {
+          result = DifferentiateResponseSchema.parse(
+            JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'),
+          )
+          geminiOk = true
+        } else {
+          throw new Error(`Gemini API error (${response.status}): ${data.error?.message || 'unknown error'}`)
+        }
       } catch (e) {
         console.error('Gemini differentiation failed:', e)
+      }
+      // Fallback to OpenCode Zen if Gemini failed
+      if (!geminiOk && !result && getZenApiKey()) {
+        console.warn('Gemini differentiate failed, falling back to OpenCode Zen...')
+        try {
+          const zenRes = await callZenChat('Differentiate this concept and return JSON only.', prompt, false, {
+            response_format: { type: 'json_object' },
+          })
+          const zenData = await zenRes.json()
+          if (zenRes.ok) {
+            result = DifferentiateResponseSchema.parse(
+              JSON.parse(zenData.choices?.[0]?.message?.content || '{}'),
+            )
+          }
+        } catch (fallbackErr) {
+          console.error('OpenCode Zen differentiate fallback also failed:', fallbackErr)
+        }
       }
     }
 
@@ -1314,7 +1371,7 @@ router.post('/check-answer', requireAuth, async (req, res, next) => {
     if (process.env.GEMINI_API_KEY) {
       try {
         const response = await fetchWithTimeout(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
           {
             method: 'POST',
             headers: {
@@ -1470,7 +1527,7 @@ Rules based on Neurological Research (Active Recall / Cognitive Load Theory):
       }
     } else if (process.env.GEMINI_API_KEY) {
       const geminiRes = await fetchWithTimeout(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse`,
         {
           method: 'POST',
           headers: {
@@ -1603,7 +1660,7 @@ Student asks/explains: ${message}`
       }
     } else if (process.env.GEMINI_API_KEY) {
       const geminiRes = await fetchWithTimeout(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse`,
         {
           method: 'POST',
           headers: {
@@ -1845,7 +1902,7 @@ Mix reading comprehension, vocabulary, and grammar exercises. All content in Ger
         }
       } else if ((provider === 'gemini' || !provider) && process.env.GEMINI_API_KEY) {
         const response = await fetchWithTimeout(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
           {
             method: 'POST',
             headers: {

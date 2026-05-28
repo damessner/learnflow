@@ -290,7 +290,7 @@ async function generateRemediationWithGemini(
   if (!process.env.GEMINI_API_KEY) return null
   try {
     const response = await fetchWithTimeout(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
       {
         method: 'POST',
         headers: {

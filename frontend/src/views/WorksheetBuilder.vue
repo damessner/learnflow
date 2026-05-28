@@ -135,7 +135,7 @@
               <div class="form-group" style="margin-bottom: 0.5rem">
                 <label style="font-size: 0.65rem">AI Provider</label>
                 <select v-model="aiProvider" style="font-size: 0.7rem; padding: 0.25rem">
-                  <option value="gemini">Google Gemini 3.5 Flash</option>
+                  <option value="gemini">Google Gemini 2.0 Flash</option>
                   <option value="opencode">OpenCode AI Client</option>
                 </select>
               </div>
@@ -202,7 +202,7 @@
               <div class="form-group" style="margin-bottom: 0.5rem">
                 <label style="font-size: 0.65rem">AI Provider</label>
                 <select v-model="aiProvider" style="font-size: 0.7rem; padding: 0.25rem">
-                  <option value="gemini">Google Gemini 3.5 Flash</option>
+                  <option value="gemini">Google Gemini 2.0 Flash</option>
                   <option value="opencode">OpenCode AI Client</option>
                 </select>
               </div>
