@@ -243,7 +243,7 @@
                 <template v-else-if="ex.type === 'word_problem'">
                   <div v-for="(step, si) in ex.steps || []" :key="si" style="margin-bottom:0.35rem">
                     <label style="display:block;font-size:0.8rem;color:var(--text-muted)">
-                      Step {{ si + 1 }}: {{ step.description }}
+                      Step {{ Number(si) + 1 }}: {{ step.description }}
                     </label>
                     <input v-model="remediationRoundResponses[round.id][getRemediationExerciseId(ex, exIdx)][String(si)]" />
                   </div>
@@ -678,8 +678,8 @@
                     :name="`${block.id}_row_${ri}`"
                     :value="col"
                     :disabled="readonly"
-                    :checked="getQuestionTableValue(block.id, ri) === col"
-                    @change="setQuestionTableValue(block.id, ri, col)"
+                    :checked="getQuestionTableValue(block.id, Number(ri)) === col"
+                    @change="setQuestionTableValue(block.id, Number(ri), col)"
                   />
                 </td>
               </tr>
@@ -693,7 +693,7 @@
         <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:0.5rem">
           <div v-for="(item, idx) in block.words || []" :key="idx" style="background:var(--bg-main);padding:0.75rem;border-radius:8px;border:1px solid var(--border-color)">
             <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.4rem">
-              {{ idx + 1 }}. {{ item.description }} <span style="font-size:0.8rem;color:var(--text-muted)">({{ (item.word || '').length }} letters)</span>
+              {{ Number(idx) + 1 }}. {{ item.description }} <span style="font-size:0.8rem;color:var(--text-muted)">({{ (item.word || '').length }} letters)</span>
             </div>
             <!-- Letter Boxes -->
             <div style="display:flex;gap:0.25rem">
@@ -702,8 +702,8 @@
                 :key="charIdx"
                 maxlength="1"
                 :disabled="readonly"
-                :value="getCrosswordChar(block.id, idx, charIdx - 1)"
-                @input="setCrosswordChar(block.id, idx, charIdx - 1, ($event.target as HTMLInputElement).value, item.word.length, $event)"
+                :value="getCrosswordChar(block.id, Number(idx), Number(charIdx) - 1)"
+                @input="setCrosswordChar(block.id, Number(idx), Number(charIdx) - 1, ($event.target as HTMLInputElement).value, item.word.length, $event)"
                 style="width:32px;height:32px;text-align:center;font-size:1.1rem;font-weight:bold;text-transform:uppercase;padding:0;border:1px solid var(--border-color);border-radius:4px"
                 class="crossword-char-input"
                 :data-word="idx"
@@ -730,7 +730,7 @@
             >
               🔊
             </button>
-            <span style="font-size:0.85rem;color:var(--text-muted)">Audio #{{ pi + 1 }}</span>
+            <span style="font-size:0.85rem;color:var(--text-muted)">Audio #{{ Number(pi) + 1 }}</span>
             <span style="color:var(--text-muted)">→</span>
             <input
               v-model="answers[block.id][pi]"
@@ -861,10 +861,10 @@
             <button
               v-for="(item, idx) in block.items || []"
               :key="idx"
-              @click="readonly ? null : setOddOneOutSelected(block.id, idx)"
+              @click="readonly ? null : setOddOneOutSelected(block.id, Number(idx))"
               class="btn-sm"
               :style="{
-                background: getOddOneOutSelected(block.id) === idx ? 'var(--primary)' : 'var(--bg-main)',
+                background: getOddOneOutSelected(block.id) === Number(idx) ? 'var(--primary)' : 'var(--bg-main)',
                 color: getOddOneOutSelected(block.id) === idx ? '#fff' : 'var(--text-main)',
                 border: '1px solid var(--border-color)',
                 fontWeight: '600',
@@ -1064,7 +1064,16 @@ const blocks = ref([])
 const answers = reactive({})
 const submitted = ref(false)
 const readonly = ref(false)
-const submitResult = ref({ score: 0, maxScore: 0, feedback: '' })
+interface SubmitResult {
+  score: number
+  maxScore: number
+  feedback: string
+  gritBonusAwarded?: boolean
+  xpEarned?: number
+  xpLost?: number
+  wageringResults?: Array<{ blockId: string; correct: boolean; wagered: number; earned: number }>
+}
+const submitResult = ref<SubmitResult>({ score: 0, maxScore: 0, feedback: '' })
 const saving = ref(false)
 const submitting = ref(false)
 
@@ -1188,39 +1197,37 @@ function setCorrectWordsValue(blockId: string, index: number, value: string): vo
   ;(answers[blockId] as Record<string, string>)[String(index)] = value
 }
 
-function getQuestionTableValue(blockId: string, rowIndex: number): string {
+function getQuestionTableValue(blockId: string, rowIndex: number | string): string {
   const blockAnswers = answers[blockId]
   if (!blockAnswers || typeof blockAnswers !== 'object') return ''
   return (blockAnswers as Record<string, string>)[String(rowIndex)] ?? ''
 }
 
-function setQuestionTableValue(blockId: string, rowIndex: number, value: string): void {
+function setQuestionTableValue(blockId: string, rowIndex: number | string, value: string): void {
   if (!answers[blockId] || typeof answers[blockId] !== 'object') {
     answers[blockId] = {}
   }
   ;(answers[blockId] as Record<string, string>)[String(rowIndex)] = value
 }
 
-function getCrosswordChar(blockId: string, wordIdx: number, charIdx: number): string {
+function getCrosswordChar(blockId: string, wordIdx: number | string, charIdx: number | string): string {
   const blockAnswers = answers[blockId]
   if (!blockAnswers || typeof blockAnswers !== 'object') return ''
   const val = (blockAnswers as Record<string, string>)[String(wordIdx)] || ''
   return val[charIdx] || ''
 }
 
-function setCrosswordChar(blockId: string, wordIdx: number, charIdx: number, char: string, wordLength: number, event: Event): void {
-  if (!answers[blockId] || typeof answers[blockId] !== 'object') {
-    answers[blockId] = {}
-  }
-  const currentVal = (answers[blockId] as Record<string, string>)[String(wordIdx)] || ''
-  const arr = currentVal.split('')
-  while (arr.length < wordLength) arr.push(' ')
-  arr[charIdx] = (char || ' ').toUpperCase()
+function setCrosswordChar(blockId: string, wordIdx: number | string, charIdx: number | string, char: string, wordLength: number, event: Event): void {
+  const cIdx = Number(charIdx)
+  const key = `cw_${blockId}_${wordIdx}`
+  const existing = typeof answers[key] === 'string' ? answers[key] : ''
+  const arr = existing.padEnd(wordLength, ' ').split('')
+  arr[cIdx] = (char || ' ').toUpperCase()
   const newVal = arr.join('')
   ;(answers[blockId] as Record<string, string>)[String(wordIdx)] = newVal
 
-  if (char && charIdx < wordLength - 1) {
-    const nextInput = document.querySelector(`.crossword-char-input[data-word="${wordIdx}"][data-char="${charIdx + 1}"]`) as HTMLInputElement | null
+  if (char && cIdx < wordLength - 1) {
+    const nextInput = document.querySelector(`.crossword-char-input[data-word="${wordIdx}"][data-char="${cIdx + 1}"]`) as HTMLInputElement | null
     if (nextInput) nextInput.focus()
   }
 }
@@ -1325,12 +1332,10 @@ function removeSentenceWord(blockId: string, wi: number) {
 }
 
 function getOddOneOutSelected(blockId: string): number | null {
-  const blockAnswers = answers[blockId]
-  if (!blockAnswers || typeof blockAnswers !== 'object') return null
-  return typeof blockAnswers.selected === 'number' ? blockAnswers.selected : null
+  const val = (answers as Record<string, unknown>)[`odd_${blockId}`]
+  return val !== undefined ? Number(val) : null
 }
-
-function setOddOneOutSelected(blockId: string, index: number): void {
+function setOddOneOutSelected(blockId: string, index: number | string): void {
   if (!answers[blockId] || typeof answers[blockId] !== 'object') {
     answers[blockId] = { selected: null, reason: '' }
   }
@@ -1618,10 +1623,10 @@ async function loadRemediationHistory() {
   }
 }
 
-function getRemediationExerciseId(ex: Record<string, unknown>, exIdx = 0): string {
+function getRemediationExerciseId(ex: Record<string, unknown>, exIdx: number | string = 0): string {
   const fromEx = ex?.id
   if (typeof fromEx === 'string' && fromEx.trim()) return fromEx
-  return `ex_${exIdx}`
+  return `ex_${String(exIdx)}`
 }
 
 function buildDefaultRoundResponse(ex: Record<string, unknown>): unknown {
@@ -1826,7 +1831,7 @@ async function submitRoundSelfAssessment(round: Record<string, unknown>) {
   }
 }
 
-function getRemediationScrambled(roundId: string, exId: string, wi: number, word: string): string {
+function getRemediationScrambled(roundId: string, exId: string, wi: number | string, word: string): string {
   const key = `${roundId}_${exId}_${wi}`
   if (!remediationScrambleCache[key]) {
     remediationScrambleCache[key] = scrambleWord(String(word || ''))

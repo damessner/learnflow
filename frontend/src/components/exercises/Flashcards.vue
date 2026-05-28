@@ -12,7 +12,7 @@
         cursor: pointer;
         min-height: 80px;
       "
-      @click="flipCard(ci)"
+      @click="flipCard(Number(ci))"
     >
       <div v-if="flipped[ci]">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem">
@@ -25,8 +25,8 @@
           </div>
         </div>
         <div v-if="!readonly" style="margin-top:0.5rem">
-          <button class="btn-sm" style="background:var(--success);color:#fff" @click.stop="markCardCorrect(ci)">✓ Got it</button>
-          <button class="btn-sm" style="background:var(--danger);color:#fff;margin-left:0.25rem" @click.stop="markCardWrong(ci)">✗ Again</button>
+          <button class="btn-sm" style="background:var(--success);color:#fff" @click.stop="markCardCorrect(Number(ci))">✓ Got it</button>
+          <button class="btn-sm" style="background:var(--danger);color:#fff;margin-left:0.25rem" @click.stop="markCardWrong(Number(ci))">✗ Again</button>
         </div>
       </div>
       <div v-else style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem">

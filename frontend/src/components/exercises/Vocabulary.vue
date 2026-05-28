@@ -20,7 +20,7 @@
         :value="(modelValue || {})[pi] || ''"
         :placeholder="direction === 'r2l' ? 'Translate to source' : 'Translate'"
         style="flex: 1"
-        @input="update(pi, $event.target.value)"
+        @input="update(pi, ($event.target as HTMLInputElement).value)"
       />
       <span v-else style="flex: 1">{{ (modelValue || {})[pi] || '___' }}</span>
     </div>

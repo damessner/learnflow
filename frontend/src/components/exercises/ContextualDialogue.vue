@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-for="(msg, mi) in block.messages || []" :key="mi" style="margin-bottom: 0.5rem">
-      <div v-if="!msg.isGap" :style="{ textAlign: mi % 2 === 0 ? 'left' : 'right' }">
+      <div v-if="!msg.isGap" :style="{ textAlign: Number(mi) % 2 === 0 ? 'left' : 'right' }">
         <span
           style="
             background: var(--primary-light);
@@ -20,7 +20,7 @@
           :value="(modelValue || {})[mi] || ''"
           placeholder="Your response..."
           style="margin-top: 0.25rem"
-          @input="update(mi, $event.target.value)"
+          @input="update(mi, ($event.target as HTMLInputElement).value)"
         />
         <span v-else style="color: var(--primary)">{{ (modelValue || {})[mi] || '___' }}</span>
       </div>

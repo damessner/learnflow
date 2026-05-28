@@ -6,7 +6,7 @@
       type="number"
       :value="modelValue || 0"
       placeholder="Score"
-      @input="$emit('update:modelValue', $event.target.value)"
+      @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     />
     <p v-else>{{ modelValue || 0 }}</p>
   </div>

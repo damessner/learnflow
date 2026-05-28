@@ -187,7 +187,7 @@
       <!-- Crossword -->
       <template v-if="block.type === 'crossword'">
         <div v-for="(item, idx) in block.words || []" :key="idx" style="margin-bottom:0.25rem">
-          <strong>{{ idx + 1 }}. {{ item.word }}</strong>: {{ item.description }}
+          <strong>{{ Number(idx) + 1 }}. {{ item.word }}</strong>: {{ item.description }}
         </div>
       </template>
 

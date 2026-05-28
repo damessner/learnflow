@@ -19,13 +19,13 @@
           min-width: 120px;
           text-align: center;
         "
-        >{{ getScrambled(wi) }}</span
+        >{{ getScrambled(Number(wi)) }}</span
       >
       <input
         v-if="!readonly"
         :value="(modelValue || [])[wi] || ''"
         :placeholder="block.sentence_mode ? 'Reorder' : 'Unscramble'"
-        @input="onInput(wi, $event)"
+        @input="onInput(Number(wi), $event)"
         style="flex: 1"
       />
       <span v-else :style="{ flex: 1, fontWeight: 500 }">{{

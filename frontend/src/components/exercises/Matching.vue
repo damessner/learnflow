@@ -10,7 +10,7 @@
         v-if="!readonly"
         :value="(modelValue || {})[pi] || ''"
         style="flex: 1"
-        @input="update(pi, $event.target.value)"
+        @input="update(pi, ($event.target as HTMLInputElement).value)"
       />
       <span v-else style="flex: 1; color: var(--text-muted)">{{
         (modelValue || {})[pi] || '___'

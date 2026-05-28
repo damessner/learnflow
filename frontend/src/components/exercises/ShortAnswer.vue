@@ -11,7 +11,7 @@
       :value="modelValue || ''"
       rows="3"
       placeholder="Your answer..."
-      @input="$emit('update:modelValue', $event.target.value)"
+      @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     ></textarea>
     <p v-else>{{ modelValue || '(no answer)' }}</p>
   </div>

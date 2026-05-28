@@ -126,7 +126,7 @@
             style="display: none"
             @change="onPdfSelected"
           />
-          <button class="btn-primary" :disabled="importingPdf" @click="$refs.pdfInput.click()">
+          <button class="btn-primary" :disabled="importingPdf" @click="($refs.pdfInput as HTMLInputElement)?.click()">
             {{ importingPdf ? 'Importing...' : 'Upload PDF & Import' }}
           </button>
         </div>
@@ -859,7 +859,7 @@
                     'row-pending': !student.submitted && student.completion_pct !== 100,
                   }"
                 >
-                  <td style="color: var(--text-muted); font-size: 0.8rem">{{ idx + 1 }}</td>
+                  <td style="color: var(--text-muted); font-size: 0.8rem">{{ Number(idx) + 1 }}</td>
                   <td>
                     <div style="display: flex; align-items: center; gap: 0.5rem">
                       <span>{{ student.character_emoji }}</span>
@@ -984,7 +984,7 @@
         </thead>
         <tbody>
           <tr v-for="(s, idx) in reportData.students" :key="s.student_id">
-            <td>{{ idx + 1 }}</td>
+            <td>{{ Number(idx) + 1 }}</td>
             <td>{{ s.character_emoji }} {{ s.student_name }}</td>
             <td v-if="selectedReport?.type === 'assignment'">
               {{ s.submitted ? new Date(s.submitted_at).toLocaleDateString() : 'Pending' }}
@@ -1351,7 +1351,7 @@
               <div style="display: flex; justify-content: space-between; align-items: center">
                 <div style="display: flex; align-items: center; gap: 0.5rem">
                   <span style="font-weight: bold; color: var(--text-muted); font-size: 0.9rem"
-                    >#{{ index + 1 }}</span
+                    >#{{ Number(index) + 1 }}</span
                   >
                   <strong style="font-size: 0.95rem">{{ ws.title }}</strong>
                   <span style="color: var(--text-muted); font-size: 0.75rem"

@@ -80,7 +80,7 @@
             </p>
           </div>
           <input ref="pdfInput" type="file" accept=".pdf" style="display:none" @change="onAdminPdfSelected" />
-          <button class="btn-primary" :disabled="adminImporting" @click="$refs.pdfInput.click()">
+          <button class="btn-primary" :disabled="adminImporting" @click="($refs.pdfInput as HTMLInputElement)?.click()">
             {{ adminImporting ? 'Importing...' : 'Upload PDF' }}
           </button>
         </div>
@@ -158,7 +158,7 @@
           <div class="backup-buttons">
             <button
               class="backup-btn backup-all"
-              :disabled="backupLoading"
+              :disabled="!!backupLoading"
               @click="downloadBackup('all')"
             >
               <span class="backup-btn-icon">🗄️</span>
@@ -171,7 +171,7 @@
 
             <button
               class="backup-btn backup-worksheets"
-              :disabled="backupLoading"
+              :disabled="!!backupLoading"
               @click="downloadBackup('worksheets-courses')"
             >
               <span class="backup-btn-icon">📝</span>
@@ -184,7 +184,7 @@
 
             <button
               class="backup-btn backup-users"
-              :disabled="backupLoading"
+              :disabled="!!backupLoading"
               @click="downloadBackup('users')"
             >
               <span class="backup-btn-icon">👥</span>
@@ -402,7 +402,7 @@ async function onAdminPdfSelected(e) {
     adminCredentials.value = data.credentials || []
     if (data.summary?.studentsCreated > 0) {
       uiStore.showToast(`${data.summary.studentsCreated} students imported`, 'success')
-      await fetchClasses()
+      await classesStore.fetchClasses()
     }
   } catch (err) {
     uiStore.showToast(err.message, 'error')
