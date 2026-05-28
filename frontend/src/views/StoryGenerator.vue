@@ -16,7 +16,7 @@
           <label>Grade Level</label>
           <select v-model="form.gradeLevel">
             <option value="">-- Select --</option>
-            <option v-for="g in gradeLevels" :key="g" :value="g">Grade {{ g }}</option>
+            <option v-for="g in gradeLevels" :key="g.value || g" :value="g.value || g">{{ g.label || ('Klasse ' + g) }}</option>
           </select>
         </div>
         <div class="form-group" style="flex: 1">

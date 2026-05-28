@@ -27,7 +27,7 @@
         {{ worksheet.subject }}
       </span>
       <span v-if="worksheet.grade_level" class="badge" style="background: rgba(107, 114, 128, 0.1); color: var(--text-main); padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 600">
-        Grade {{ worksheet.grade_level }}
+        {{ formatGrade(worksheet.grade_level) }}
       </span>
     </div>
 
@@ -553,6 +553,19 @@ const uiStore = useUiStore()
 
 const worksheet = ref(null)
 const blocks = ref<Array<Record<string, any>>>([])
+const GRADE_LABELS: Record<string, string> = {
+  '1': '1. Klasse (5. Schulstufe)',
+  '2': '2. Klasse (6. Schulstufe)',
+  '3': '3. Klasse (7. Schulstufe)',
+  '4': '4. Klasse (8. Schulstufe)',
+  '5': '1. Klasse (5. Schulstufe)',
+  '6': '2. Klasse (6. Schulstufe)',
+  '7': '3. Klasse (7. Schulstufe)',
+  '8': '4. Klasse (8. Schulstufe)',
+}
+function formatGrade(g: string | undefined): string {
+  return g ? (GRADE_LABELS[g] || `Klasse ${g}`) : ''
+}
 const answers = reactive<Record<string, any>>({})
 const showAnswers = ref(false)
 const checked = ref(false)

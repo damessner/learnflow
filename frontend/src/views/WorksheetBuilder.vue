@@ -42,7 +42,7 @@
                   <label>Grade</label>
                   <select v-model="form.grade_level">
                     <option value="">-- Select --</option>
-                    <option v-for="g in gradeLevels" :key="g" :value="g">Klasse {{ g }}</option>
+                    <option v-for="g in gradeLevels" :key="g.value || g" :value="g.value || g">{{ g.label || ('Klasse ' + g) }}</option>
                   </select>
                 </div>
               </div>
@@ -330,7 +330,7 @@
               {{ form.title || 'Untitled Worksheet' }}
             </span>
             <span v-if="form.subject || form.grade_level" style="font-size: 0.75rem; color: var(--text-muted); background: var(--bg-main); padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid var(--border-color); white-space: nowrap">
-              {{ form.subject }} · Klasse {{ form.grade_level }}
+              {{ form.subject }} · {{ formatGrade(form.grade_level) }}
             </span>
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0">
@@ -925,7 +925,7 @@
               <label>Class / Grade</label>
               <select v-model="form.grade_level">
                 <option value="">-- Select Grade --</option>
-                <option v-for="g in gradeLevels" :key="g" :value="g">Klasse {{ g }}</option>
+                <option v-for="g in gradeLevels" :key="g.value || g" :value="g.value || g">{{ g.label || ('Klasse ' + g) }}</option>
               </select>
             </div>
           </div>
@@ -1041,6 +1041,19 @@ const blocks = ref([])
 const form = ref(emptyForm())
 const subjects = ref([])
 const gradeLevels = ref([])
+const GRADE_LABELS = {
+  '1': '1. Klasse (5. Schulstufe)',
+  '2': '2. Klasse (6. Schulstufe)',
+  '3': '3. Klasse (7. Schulstufe)',
+  '4': '4. Klasse (8. Schulstufe)',
+  '5': '1. Klasse (5. Schulstufe)',
+  '6': '2. Klasse (6. Schulstufe)',
+  '7': '3. Klasse (7. Schulstufe)',
+  '8': '4. Klasse (8. Schulstufe)',
+}
+function formatGrade(g) {
+  return g ? (GRADE_LABELS[g] || `Klasse ${g}`) : ''
+}
 const aiPrompt = ref('')
 const aiLernziele = ref('')
 const aiDifficulty = ref('medium')
@@ -1085,7 +1098,7 @@ const estimatedTimeSeconds = computed(() => {
   if (profile === 'slow') multiplier = 1.5
   if (profile === 'fast') multiplier = 0.7
 
-  const grade = parseInt(form.value.grade_level) || 5
+  const grade = parseInt(form.value.grade_level) || 1
   if (grade <= 3) multiplier *= 1.3
   else if (grade >= 7) multiplier *= 0.85
 

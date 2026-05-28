@@ -79,7 +79,7 @@
             :class="['grade-btn', { active: filters.grade_level === g }]"
             @click="selectGrade(g)"
           >
-            Grade {{ g }}
+            {{ GRADE_LABELS[g] || `Klasse ${g}` }}
           </button>
         </div>
       </div>
@@ -112,7 +112,7 @@
             <span :class="['subject-badge', getSubjectClass(ws.subject)]">
               {{ getSubjectEmoji(ws.subject) }} {{ ws.subject }}
             </span>
-            <span class="grade-badge">Grade {{ ws.grade_level }}</span>
+            <span class="grade-badge">{{ GRADE_LABELS[ws.grade_level] || `Klasse ${ws.grade_level}` }}</span>
           </div>
 
           <!-- Card Content -->
@@ -177,7 +177,18 @@ const SUBJECTS = [
   'Physical Education',
 ]
 
-const GRADE_LEVELS = ['1', '2', '3', '4', '5', '6', '7', '8']
+const GRADE_LABELS: Record<string, string> = {
+  '1': '1. Klasse (5. Schulstufe)',
+  '2': '2. Klasse (6. Schulstufe)',
+  '3': '3. Klasse (7. Schulstufe)',
+  '4': '4. Klasse (8. Schulstufe)',
+  '5': '1. Klasse (5. Schulstufe)',
+  '6': '2. Klasse (6. Schulstufe)',
+  '7': '3. Klasse (7. Schulstufe)',
+  '8': '4. Klasse (8. Schulstufe)',
+}
+
+const GRADE_LEVELS = ['1', '2', '3', '4']
 
 const router = useRouter()
 const store = useWorksheetsStore()

@@ -89,7 +89,7 @@ export const SUBJECTS = [
   'Physical Education',
 ] as const
 
-export const GRADE_LEVELS = ['1', '2', '3', '4', '5', '6', '7', '8'] as const
+export const GRADE_LEVELS = ['1', '2', '3', '4'] as const
 
 // Austrian Mittelschule Curriculum (Lehrpläne) integration
 const subjectKeyMap: Record<string, string> = {

@@ -5,6 +5,7 @@ import { getKnex } from '../db/knex'
 import { requireAuth, requireRole } from '../middleware/requireAuth'
 import { validate } from '../middleware/validate'
 import { scoreAnswers } from './scoring'
+import { GRADE_LEVELS } from './ai'
 
 const router = Router()
 const MAX_REMEDIATION_ROUNDS = 3
@@ -84,8 +85,18 @@ router.get('/subjects', requireAuth, (_req, res) => {
 })
 
 router.get('/grade-levels', requireAuth, (_req, res) => {
-  const { GRADE_LEVELS } = require('./ai')
-  res.json({ gradeLevels: GRADE_LEVELS })
+  const gradeLabels: Record<string, string> = {
+    '1': '1. Klasse (5. Schulstufe)',
+    '2': '2. Klasse (6. Schulstufe)',
+    '3': '3. Klasse (7. Schulstufe)',
+    '4': '4. Klasse (8. Schulstufe)',
+  }
+  res.json({
+    gradeLevels: GRADE_LEVELS.map((g: string) => ({
+      value: g,
+      label: gradeLabels[g] || `Klasse ${g}`,
+    })),
+  })
 })
 
 router.get('/', requireAuth, async (req, res, next) => {

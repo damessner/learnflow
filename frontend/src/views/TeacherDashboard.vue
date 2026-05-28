@@ -332,8 +332,9 @@
             <div class="form-group">
               <label>Grade Level</label>
               <select v-model="graderForm.grade_level">
-                <option value="">-- Any --</option>
-                <option v-for="g in ['1','2','3','4','5','6','7','8']" :key="g" :value="g">Grade {{ g }}</option>
+
+                <option value="">-- Any Grade --</option>
+                <option v-for="g in ['1','2','3','4']" :key="g" :value="g">{{ GRADE_LABELS[g] }}</option>
               </select>
             </div>
             <div class="form-group">
@@ -1666,8 +1667,15 @@ const newWorksheetToCourseId = ref('')
 const newStudentToCourseId = ref('')
 const editingCourseWorksheetSettings = ref(null)
 const allStudents = ref([])
-
 // AI Grader state
+
+const GRADE_LABELS: Record<string, string> = {
+  '1': '1. Klasse (5. Schulstufe)',
+  '2': '2. Klasse (6. Schulstufe)',
+  '3': '3. Klasse (7. Schulstufe)',
+  '4': '4. Klasse (8. Schulstufe)',
+}
+
 const graderForm = ref({
   question: '',
   answer: '',
