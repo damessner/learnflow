@@ -122,7 +122,6 @@
                 <select v-model="aiProvider" style="font-size: 0.7rem; padding: 0.25rem">
                   <option value="gemini">Google Gemini 3.5 Flash</option>
                   <option value="opencode">OpenCode AI Client</option>
-                  <option value="ollama">Ollama (Local Server)</option>
                 </select>
               </div>
 
@@ -130,32 +129,32 @@
               <label style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 0.15rem">Quick Suggestions</label>
               <div style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-bottom: 0.5rem">
                 <button
-                  type="button"
-                  style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); cursor: pointer"
-                  @click="applySuggestion('Create a vocabulary quiz matching English to German terms')"
+                   type="button"
+                   style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); cursor: pointer"
+                   @click="applySuggestion('Create a vocabulary quiz matching English to German terms')"
                 >
                   📚 Vocabulary
                 </button>
                 <button
-                  type="button"
-                  style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); cursor: pointer"
-                  @click="applySuggestion('Generate a reading passage about solar system with 3 gap fill items')"
+                   type="button"
+                   style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); cursor: pointer"
+                   @click="applySuggestion('Generate a reading passage about solar system with 3 gap fill items')"
                 >
                   📖 Reading Passage
                 </button>
                 <button
-                  type="button"
-                  style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); cursor: pointer"
-                  @click="applySuggestion('Create math word problems involving basic fraction operations')"
+                   type="button"
+                   style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); cursor: pointer"
+                   @click="applySuggestion('Create a crossword puzzle with terms related to European Geography')"
                 >
-                  🧮 Math Fractions
+                  🧩 Crossword
                 </button>
                 <button
-                  type="button"
-                  style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); cursor: pointer"
-                  @click="applySuggestion('A conversation dialogue at a restaurant with gap fill blanks')"
+                   type="button"
+                   style="font-size: 0.62rem; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-main); cursor: pointer"
+                   @click="applySuggestion('Create a True or False question table with statements about photosynthesis')"
                 >
-                  💬 Dialogue
+                  📊 True/False Table
                 </button>
               </div>
 
@@ -235,7 +234,6 @@
                 <select v-model="aiProvider" style="font-size: 0.7rem; padding: 0.25rem">
                   <option value="gemini">Google Gemini 3.5 Flash</option>
                   <option value="opencode">OpenCode AI Client</option>
-                  <option value="ollama">Ollama (Local Server)</option>
                 </select>
               </div>
 
@@ -287,39 +285,27 @@
             <button class="block-btn" @click="addBlock('single_choice')"><span class="block-btn-icon">☑️</span> Single Choice</button>
             <button class="block-btn" @click="addBlock('short_answer')"><span class="block-btn-icon">📝</span> Short Answer</button>
             <button class="block-btn" @click="addBlock('true_false')"><span class="block-btn-icon">⚖️</span> True/False</button>
-            <button class="block-btn" @click="addBlock('matching')"><span class="block-btn-icon">🔗</span> Matching</button>
             <button class="block-btn" @click="addBlock('ordering')"><span class="block-btn-icon">🔢</span> Ordering</button>
             <button class="block-btn" @click="addBlock('word_scramble')"><span class="block-btn-icon">🔤</span> Scramble</button>
             <button class="block-btn" @click="addBlock('read_aloud')"><span class="block-btn-icon">🔊</span> Read Aloud</button>
+            <button class="block-btn" @click="addBlock('question_table')"><span class="block-btn-icon">📊</span> Tabelle</button>
+            <button class="block-btn" @click="addBlock('sentence_builder')"><span class="block-btn-icon">🧱</span> Satzbau</button>
+            <button class="block-btn" @click="addBlock('odd_one_out')"><span class="block-btn-icon">🦄</span> Odd One</button>
           </div>
         </div>
 
         <div class="sidebar-section">
           <h3 class="sidebar-heading">🗣️ Language</h3>
           <div class="block-grid">
-            <button class="block-btn" @click="addBlock('vocabulary')"><span class="block-btn-icon">📚</span> Vocabulary</button>
-            <button class="block-btn" @click="addBlock('contextual_dialogue')"><span class="block-btn-icon">💬</span> Dialogue</button>
+            <button class="block-btn" @click="addBlock('vocabulary')"><span class="block-btn-icon">📚</span> Vocab</button>
             <button class="block-btn" @click="addBlock('semantic_sorter')"><span class="block-btn-icon">🗂️</span> Sorter</button>
-            <button class="block-btn" @click="addBlock('flashcards')"><span class="block-btn-icon">🃏</span> Flashcards</button>
-            <button class="block-btn" @click="addBlock('memory_match')"><span class="block-btn-icon">🧩</span> Memory</button>
-            <button class="block-btn" @click="addBlock('drag_drop')"><span class="block-btn-icon">↔️</span> Drag&amp;Drop</button>
-          </div>
-        </div>
-
-        <div class="sidebar-section">
-          <h3 class="sidebar-heading">Mathematik</h3>
-          <div class="block-grid">
-            <button class="block-btn" @click="addBlock('fraction_input')"><span class="block-btn-icon">🧮</span> Bruch</button>
-            <button class="block-btn" @click="addBlock('fraction_model')"><span class="block-btn-icon">🍕</span> Bruchbild</button>
-            <button class="block-btn" @click="addBlock('percentage')"><span class="block-btn-icon">💯</span> Prozent</button>
-            <button class="block-btn" @click="addBlock('equation_entry')"><span class="block-btn-icon">=️⃣</span> Gleichung</button>
-            <button class="block-btn" @click="addBlock('unit_conversion')"><span class="block-btn-icon">🔄</span> Einheiten</button>
-            <button class="block-btn" @click="addBlock('number_line')"><span class="block-btn-icon">📏</span> Zahlenstrahl</button>
-            <button class="block-btn" @click="addBlock('angle')"><span class="block-btn-icon">📐</span> Winkel</button>
-            <button class="block-btn" @click="addBlock('arithmetic_grid')"><span class="block-btn-icon">➕</span> Grundrechnung</button>
-            <button class="block-btn" @click="addBlock('word_problem')"><span class="block-btn-icon">📖</span> Textaufgabe</button>
-            <button class="block-btn" @click="addBlock('graph_plot')"><span class="block-btn-icon">📊</span> Diagramm</button>
-            <button class="block-btn" @click="addBlock('geometry_shape')"><span class="block-btn-icon">🔷</span> Geometrie</button>
+            <button class="block-btn" @click="addBlock('flashcards')"><span class="block-btn-icon">🃏</span> Cards</button>
+            <button class="block-btn" @click="addBlock('drag_words')"><span class="block-btn-icon">👉</span> Drag Words</button>
+            <button class="block-btn" @click="addBlock('correct_words')"><span class="block-btn-icon">✏️</span> Correct Words</button>
+            <button class="block-btn" @click="addBlock('crossword')"><span class="block-btn-icon">🧩</span> Crossword</button>
+            <button class="block-btn" @click="addBlock('audio_match')"><span class="block-btn-icon">🎧</span> Audio Match</button>
+            <button class="block-btn" @click="addBlock('dictation')"><span class="block-btn-icon">🎤</span> Diktat</button>
+            <button class="block-btn" @click="addBlock('word_search')"><span class="block-btn-icon">🔍</span> Search</button>
           </div>
         </div>
 
@@ -394,12 +380,6 @@
             </div>
           </div>
 
-          <!-- AI Regenerate toolbar -->
-          <div v-if="canAiRegenerate(block.type)" class="block-ai-toolbar">
-            <button class="btn-sm" style="font-size:0.65rem;padding:0.15rem 0.4rem" @click="regenerateBlock(idx)" :disabled="aiLoading" title="Regenerate this block with AI">🔄 AI Regenerate</button>
-            <button class="btn-sm" style="font-size:0.65rem;padding:0.15rem 0.4rem" @click="regenerateBlockWithInstruction(idx, 'easier')" :disabled="aiLoading" title="Make this easier">🔽 Easier</button>
-            <button class="btn-sm" style="font-size:0.65rem;padding:0.15rem 0.4rem" @click="regenerateBlockWithInstruction(idx, 'harder')" :disabled="aiLoading" title="Make this harder">🔼 Harder</button>
-          </div>
 
           <!-- Block fields -->
           <div class="block-card-body">
@@ -577,237 +557,77 @@
                 <input v-model="block.words[wi].word" :placeholder="block.sentence_mode ? 'Sentence' : 'Word'" style="flex:1" />
                 <button class="btn-sm btn-danger" @click="block.words.splice(wi, 1)">×</button>
               </div>
-              <button class="btn-sm" @click="block.words = [...(block.words || []), { word: '' }]">
-                + {{ block.sentence_mode ? 'Sentence' : 'Word' }}
-              </button>
+              <button class="btn-sm btn-secondary" style="margin-top:0.35rem;margin-bottom:0.75rem;display:block" @click="block.words.push({ word: '' })">+ Add Scramble Item</button>
             </template>
 
-            <!-- Number Line -->
-            <template v-if="block.type === 'number_line'">
-              <div style="display:flex;gap:0.5rem">
-                <div class="form-group" style="flex:1">
-                  <label>Min</label>
-                  <input v-model.number="block.min_value" type="number" />
-                </div>
-                <div class="form-group" style="flex:1">
-                  <label>Max</label>
-                  <input v-model.number="block.max_value" type="number" />
-                </div>
-                <div class="form-group" style="flex:1">
-                  <label>Markierung</label>
-                  <input v-model="block.markers[0]" type="number" placeholder="Markierung" />
-                </div>
-              </div>
-            </template>
-
-            <!-- Equation Entry -->
-            <template v-if="block.type === 'equation_entry'">
+            <!-- Drag Words -->
+            <template v-if="block.type === 'drag_words'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Drag Words:</strong> Enter text. Put words to be dragged in double parentheses, e.g. <code>Learning ((flow)) is ((fun)).</code>
+              </p>
               <div class="form-group">
-                <label>Gleichung</label>
-                <input v-model="block.equation" placeholder="Gleichung (z.B. 3*x + 5 = 14)" />
-              </div>
-              <div class="form-group" style="margin-bottom:0">
-                <label>Lösung</label>
-                <input v-model="block.final_answer" placeholder="Lösung" />
-              </div>
-            </template>
-
-            <!-- Fraction Input -->
-            <template v-if="block.type === 'fraction_input'">
-              <div style="display:flex;gap:0.5rem;align-items:center">
-                <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Zähler</label>
-                  <input v-model.number="block.numerator" type="number" placeholder="Zähler" />
-                </div>
-                <span style="font-size:1.2rem;margin-top:1.2rem">/</span>
-                <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Nenner</label>
-                  <input v-model.number="block.denominator" type="number" placeholder="Nenner" />
-                </div>
-              </div>
-            </template>
-
-            <!-- Fraction Model (Visualizer) -->
-            <template v-if="block.type === 'fraction_model'">
-              <div class="form-group">
-                <textarea v-model="block.text" rows="2" placeholder="Frage oder Anweisung (optional)..." @input="autoExpand($event)"></textarea>
-              </div>
-              <div style="display:flex;gap:0.75rem;align-items:flex-start;flex-wrap:wrap">
-                <div style="display:flex;gap:0.5rem;align-items:center">
-                  <div class="form-group" style="width:70px;margin-bottom:0">
-                    <label>Zähler</label>
-                    <input v-model.number="block.numerator" type="number" min="0" />
-                  </div>
-                  <span style="font-size:1.2rem;margin-top:1.2rem">/</span>
-                  <div class="form-group" style="width:70px;margin-bottom:0">
-                    <label>Nenner</label>
-                    <input v-model.number="block.denominator" type="number" min="1" />
-                  </div>
-                </div>
-                <div class="form-group" style="width:100px;margin-bottom:0">
-                  <label>Darstellung</label>
-                  <select v-model="block.model_type">
-                    <option value="circle">Kreis</option>
-                    <option value="bar">Streifen</option>
-                  </select>
-                </div>
-                <div class="form-group" style="margin-bottom:0;padding-top:1.2rem">
-                  <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.8rem">
-                    <input type="checkbox" v-model="block.show_labels" /> Beschriftung
-                  </label>
-                </div>
-              </div>
-              <!-- SVG preview -->
-              <div style="margin-top:0.75rem;display:flex;justify-content:center;background:var(--bg-card);border-radius:8px;padding:0.75rem;border:1px solid var(--border-color)">
-                <svg :viewBox="fractionViewBox(block)" :width="fractionSvgWidth(block)" :height="fractionSvgHeight(block)" style="max-width:100%">
-                  <template v-if="block.model_type === 'circle'">
-                    <g v-for="i in fractionIndices(block)" :key="i">
-                      <path :d="fractionSlicePath(i, block)" :fill="i < (block.numerator || 0) ? '#3b82f6' : '#f3f4f6'" stroke="#94a3b8" stroke-width="1" />
-                    </g>
-                    <circle cx="100" cy="100" r="98" fill="none" stroke="#64748b" stroke-width="1.5" />
-                    <text v-if="block.show_labels" x="100" y="105" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">
-                      {{ block.numerator || 0 }}/{{ block.denominator || 1 }}
-                    </text>
-                  </template>
-                  <template v-else>
-                    <g v-for="i in fractionIndices(block)" :key="i">
-                      <rect :x="i * (240 / Math.max(1, block.denominator || 1))" y="0"
-                        :width="Math.max(0, (240 / Math.max(1, block.denominator || 1)) - 1)" height="60"
-                        :fill="i < (block.numerator || 0) ? '#3b82f6' : '#f3f4f6'" stroke="#94a3b8" stroke-width="1" rx="2" />
-                    </g>
-                    <text v-if="block.show_labels" x="120" y="82" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">
-                      {{ block.numerator || 0 }}/{{ block.denominator || 1 }}
-                    </text>
-                  </template>
-                </svg>
-              </div>
-            </template>
-
-            <!-- Arithmetic Grid -->
-            <template v-if="block.type === 'arithmetic_grid'">
-              <div style="display:flex;gap:0.5rem;align-items:center">
-                <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Operand A</label>
-                  <input v-model.number="block.operand1" type="number" placeholder="A" />
-                </div>
-                <div class="form-group" style="width:70px;margin-bottom:0">
-                  <label>Op</label>
-                  <select v-model="block.operation">
-                    <option value="add">Plus</option>
-                    <option value="subtract">Minus</option>
-                    <option value="multiply">Mal</option>
-                    <option value="divide">Geteilt</option>
-                  </select>
-                </div>
-                <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Operand B</label>
-                  <input v-model.number="block.operand2" type="number" placeholder="B" />
-                </div>
-              </div>
-            </template>
-
-            <!-- Graph Plot -->
-            <template v-if="block.type === 'graph_plot'">
-              <div class="form-group">
-                <label>Points to plot (JSON array)</label>
+                <label>Template text</label>
                 <textarea
-                  v-model="block.pointsStr"
-                  rows="2"
-                  placeholder="[[x,y],[x,y]]"
-                  @blur="tryParsePoints(block)"
-                  @input="autoExpand($event)"
+                  v-model="block.template"
+                  rows="3"
+                  placeholder="E.g. Learning ((flow)) is ((fun))."
+                  @input="updateBlockPoints(block); autoExpand($event)"
                 ></textarea>
               </div>
             </template>
 
-            <!-- Geometry Shape -->
-            <template v-if="block.type === 'geometry_shape'">
+            <!-- Correct Words -->
+            <template v-if="block.type === 'correct_words'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Correct Words:</strong> Put wrong and correct words inside double parentheses separated by a slash, e.g. <code>He ((go/goes)) to school and ((play/plays)) soccer.</code> The wrong word will be displayed to the student, and they must type the correct word.
+              </p>
               <div class="form-group">
-                <label>Shape Type</label>
-                <select v-model="block.shape_type">
-                  <option value="triangle">Dreieck</option>
-                  <option value="square">Quadrat</option>
-                  <option value="rectangle">Rechteck</option>
-                  <option value="circle">Kreis</option>
-                </select>
+                <label>Template text with ((wrong/correct))</label>
+                <textarea
+                  v-model="block.template"
+                  rows="3"
+                  placeholder="E.g. She ((go/goes)) home."
+                  @input="updateBlockPoints(block); autoExpand($event)"
+                ></textarea>
               </div>
             </template>
 
-            <!-- Percentage -->
-            <template v-if="block.type === 'percentage'">
-              <div style="display:flex;gap:0.5rem">
-                <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Prozent %</label>
-                  <input v-model.number="block.percentage_value" type="number" placeholder="Prozent" />
-                </div>
-                <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Anteil</label>
-                  <input v-model.number="block.part_value" type="number" placeholder="Anteil" />
-                </div>
-                <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Grundwert</label>
-                  <input v-model.number="block.whole_value" type="number" placeholder="Grundwert" />
-                </div>
-              </div>
-            </template>
-
-            <!-- Unit Conversion -->
-            <template v-if="block.type === 'unit_conversion'">
-              <div style="display:flex;gap:0.5rem;align-items:flex-end">
-                <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Wert</label>
-                  <input v-model.number="block.value" type="number" placeholder="Wert" />
-                </div>
-                <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Von</label>
-                  <input v-model="block.from_unit" placeholder="z.B. cm, kg, min" />
-                </div>
-                <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Nach</label>
-                  <input v-model="block.to_unit" placeholder="z.B. m, g, h" />
-                </div>
-              </div>
-            </template>
-
-            <!-- Angle -->
-            <template v-if="block.type === 'angle'">
-              <div style="display:flex;gap:0.5rem;align-items:flex-end">
-                <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Grad</label>
-                  <input v-model.number="block.expected_degrees" type="number" placeholder="Grad" />
-                </div>
-                <div class="form-group" style="flex:1;margin-bottom:0">
-                  <label>Typ</label>
-                  <select v-model="block.angle_type">
-                    <option value="measure">Messen</option>
-                    <option value="draw">Zeichnen</option>
-                    <option value="calculate">Berechnen</option>
-                    <option value="identify">Erkennen</option>
-                  </select>
-                </div>
-              </div>
-            </template>
-
-            <!-- Word Problem -->
-            <template v-if="block.type === 'word_problem'">
+            <!-- Question Table -->
+            <template v-if="block.type === 'question_table'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Question Table:</strong> Define the columns (possible answer choices) one per line. Enter rows (statements/questions) with their correct column answer appended after two pound signs <code>##</code>, e.g. <code>The sun is a star##True</code>.
+              </p>
               <div class="form-group">
-                <label>Problem</label>
-                <textarea v-model="block.problem_text" rows="2" placeholder="Problem description..." @input="autoExpand($event)"></textarea>
+                <label>Columns (one per line, e.g., True / False)</label>
+                <textarea
+                  v-model="block.columnsStr"
+                  rows="2"
+                  placeholder="True&#10;False"
+                  @input="block.columns = ($event.target.value || '').split('\n').map(s => s.trim()).filter(Boolean); updateBlockPoints(block)"
+                ></textarea>
               </div>
-              <div
-                v-for="(step, si) in block.steps || []"
-                :key="si"
-                style="display:flex;gap:0.25rem;margin-top:0.25rem"
-              >
-                <input v-model="step.description" placeholder="Step" style="flex:1" />
-                <input v-model="step.expected" placeholder="Expected" style="flex:1" />
-                <button class="btn-sm btn-danger" @click="block.steps.splice(si, 1)">×</button>
+              <div class="form-group">
+                <label>Rows (Question##CorrectAnswer, one per line)</label>
+                <textarea
+                  v-model="block.rowsStr"
+                  rows="4"
+                  placeholder="The sun is a star##True&#10;The moon is cheese##False"
+                  @input="block.rows = ($event.target.value || '').split('\n').map(s => s.trim()).filter(Boolean); updateBlockPoints(block)"
+                ></textarea>
               </div>
-              <button class="btn-sm" @click="block.steps = [...(block.steps || []), { description: '', expected: '' }]" style="margin-top:0.25rem">+ Step</button>
-              <div class="form-group" style="margin-top:0.35rem">
-                <label>Final Answer</label>
-                <input v-model="block.final_answer" placeholder="Final answer" />
+            </template>
+
+            <!-- Crossword -->
+            <template v-if="block.type === 'crossword'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Crossword:</strong> Enter words and their descriptions/clues.
+              </p>
+              <div v-for="(item, idx) in block.words || []" :key="idx" style="display:flex;gap:0.5rem;margin-bottom:0.25rem">
+                <input v-model="item.word" placeholder="Word (e.g. HELLO)" style="flex: 1" @input="updateBlockPoints(block)" />
+                <input v-model="item.description" placeholder="Description/Clue (e.g. A greeting)" style="flex: 2" @input="updateBlockPoints(block)" />
+                <button class="btn-sm btn-danger" @click="block.words.splice(idx, 1); updateBlockPoints(block)">×</button>
               </div>
+              <button class="btn-sm" @click="block.words = [...(block.words || []), { word: '', description: '' }]; updateBlockPoints(block)">+ Add Clue/Word</button>
             </template>
 
             <!-- Media / Audio / Video -->
@@ -894,30 +714,68 @@
               <button class="btn-sm" @click="block.vocabulary.pairs = [...(block.vocabulary.pairs || []), { l: '', r: '' }]; updateBlockPoints(block)">+ Add Word Pair</button>
             </template>
 
-            <!-- Contextual Dialogue -->
-            <template v-if="block.type === 'contextual_dialogue'">
-              <label style="display:block;font-size:0.75rem;font-weight:600;margin-bottom:0.25rem">Dialogue Messages</label>
-              <div
-                v-for="(msg, mi) in block.messages || []"
-                :key="mi"
-                style="padding:0.5rem;border:1px solid var(--border-color);border-radius:4px;margin-bottom:0.5rem;background:var(--bg-main)"
-              >
-                <div class="form-group" style="margin-bottom:0.25rem">
-                  <label style="font-size:0.7rem">Line {{ mi + 1 }} Text</label>
-                  <input v-model="msg.text" placeholder="Line of dialogue (e.g. 'My name is ((Peter))')" />
-                </div>
-                <div style="display:flex;gap:1rem;align-items:center;margin-top:0.25rem">
-                  <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.75rem;cursor:pointer">
-                    <input type="checkbox" v-model="msg.isGap" @change="updateBlockPoints(block)" /> Is Gap (Student fills this line)
-                  </label>
-                  <div v-if="msg.isGap" style="flex:1;display:flex;align-items:center;gap:0.25rem">
-                    <label style="font-size:0.7rem;white-space:nowrap">Correct Answer:</label>
-                    <input v-model="msg.answer" placeholder="Expected answer" style="font-size:0.75rem;padding:0.2rem" />
-                  </div>
-                  <button class="btn-sm btn-danger" style="margin-left:auto" @click="block.messages.splice(mi, 1); updateBlockPoints(block)">Remove</button>
-                </div>
+            <!-- Audio Match -->
+            <template v-if="block.type === 'audio_match'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Audio Match:</strong> Enter text to be spoken (Left) and its matching text (Right). Choose a voice and generate audios.
+              </p>
+              <div class="form-group">
+                <label>Voice Accent / Gender</label>
+                <select v-model="block.voice" style="font-size: 0.8rem">
+                  <option value="en-US-JennyNeural">English (US) - Female (Jenny)</option>
+                  <option value="en-US-GuyNeural">English (US) - Male (Guy)</option>
+                  <option value="de-DE-KatjaNeural">German - Female (Katja)</option>
+                  <option value="de-DE-ConradNeural">German - Male (Conrad)</option>
+                </select>
               </div>
-              <button class="btn-sm" @click="block.messages = [...(block.messages || []), { text: '', isGap: false, answer: '' }]; updateBlockPoints(block)">+ Add Line</button>
+              <div v-for="(pair, pi) in block.pairs || []" :key="pi" style="display:flex;gap:0.5rem;margin-bottom:0.25rem;align-items:center">
+                <input v-model="pair[0]" placeholder="Spoken Text (Left)" style="flex:1" @input="updateBlockPoints(block)" />
+                <span style="color:var(--text-muted)">→</span>
+                <input v-model="pair[1]" placeholder="Matching Text (Right)" style="flex:1" @input="updateBlockPoints(block)" />
+                <button class="btn-sm btn-danger" @click="block.pairs.splice(pi, 1); if(block.audioUrls) block.audioUrls.splice(pi, 1); updateBlockPoints(block)">×</button>
+              </div>
+              <div style="display:flex;gap:0.5rem;margin-top:0.4rem">
+                <button class="btn-sm" @click="block.pairs = [...(block.pairs || []), ['', '']]; updateBlockPoints(block)">+ Add Pair</button>
+                <button class="btn-sm btn-primary" :disabled="block.audioLoading" @click="generateAudioMatchAudios(block)">
+                  {{ block.audioLoading ? 'Generating...' : '🔊 Generate All Audios' }}
+                </button>
+              </div>
+              <div v-if="block.audioUrls && block.audioUrls.length" style="margin-top:0.5rem;font-size:0.75rem;color:var(--text-muted)">
+                Generated audios: {{ block.audioUrls.filter(Boolean).length }} / {{ block.pairs.length }}
+              </div>
+            </template>
+
+            <!-- Dictation -->
+            <template v-if="block.type === 'dictation'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Dictation:</strong> Enter the text that the student should type. Select a voice and click "Generate Audio".
+              </p>
+              <div class="form-group">
+                <label>Text to be spoken</label>
+                <textarea
+                  v-model="block.audioText"
+                  rows="2"
+                  placeholder="Welcome to learnflow."
+                  @input="updateBlockPoints(block)"
+                ></textarea>
+              </div>
+              <div style="display:flex;gap:0.5rem;align-items:flex-end">
+                <div class="form-group" style="flex:1;margin-bottom:0">
+                  <label>Voice Accent / Gender</label>
+                  <select v-model="block.voice" style="font-size: 0.8rem">
+                    <option value="en-US-JennyNeural">English (US) - Female (Jenny)</option>
+                    <option value="en-US-GuyNeural">English (US) - Male (Guy)</option>
+                    <option value="de-DE-KatjaNeural">German - Female (Katja)</option>
+                    <option value="de-DE-ConradNeural">German - Male (Conrad)</option>
+                  </select>
+                </div>
+                <button class="btn-sm btn-primary" style="height:38px" :disabled="block.audioLoading" @click="generateBlockAudio(block, block.audioText, 'audioUrl')">
+                  {{ block.audioLoading ? 'Generating...' : '🔊 Generate Audio' }}
+                </button>
+              </div>
+              <div v-if="block.audioUrl" style="margin-top:0.75rem">
+                <audio controls :src="block.audioUrl" style="width:100%"></audio>
+              </div>
             </template>
 
             <!-- Semantic Sorter -->
@@ -969,41 +827,56 @@
               <button class="btn-sm" @click="block.cards = [...(block.cards || []), { front: '', back: '', image_url: '', audio_url: '' }]; updateBlockPoints(block)">+ Add Card</button>
             </template>
 
-            <!-- Memory Match -->
-            <template v-if="block.type === 'memory_match'">
-              <label style="display:block;font-size:0.75rem;font-weight:600;margin-bottom:0.25rem">Memory Match Pairs</label>
-              <div
-                v-for="(pair, pi) in block.pairs || []"
-                :key="pi"
-                style="display:flex;gap:0.5rem;margin-bottom:0.25rem"
-              >
-                <input v-model="pair[0]" placeholder="Card A" style="flex:1" />
-                <span style="color:var(--text-muted)">⇄</span>
-                <input v-model="pair[1]" placeholder="Card B" style="flex:1" />
-                <button class="btn-sm btn-danger" @click="block.pairs.splice(pi, 1); updateBlockPoints(block)">×</button>
+            <!-- Word Search -->
+            <template v-if="block.type === 'word_search'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Word Search:</strong> Enter the words that students must find, separated by commas.
+              </p>
+              <div class="form-group">
+                <label>Words (comma-separated)</label>
+                <input
+                  v-model="block.wordsStr"
+                  placeholder="e.g. APPLE, BANANA, ORANGE"
+                  @input="block.words = ($event.target.value || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean); updateBlockPoints(block)"
+                />
               </div>
-              <button class="btn-sm" @click="block.pairs = [...(block.pairs || []), ['', '']]; updateBlockPoints(block)">+ Add Memory Pair</button>
             </template>
 
-            <!-- Drag & Drop -->
-            <template v-if="block.type === 'drag_drop'">
-              <label style="display:block;font-size:0.75rem;font-weight:600;margin-bottom:0.25rem">Drag & Drop Slots</label>
-              <div
-                v-for="key in Object.keys(block.answers || {})"
-                :key="key"
-                style="display:flex;gap:0.5rem;margin-bottom:0.25rem;align-items:center"
-              >
-                <input :value="key" @change="e => renameAnswerKey(block, key, e.target.value)" placeholder="Slot Name (e.g. 'Noun')" style="flex:1" />
-                <span style="color:var(--text-muted)">→</span>
+            <!-- Sentence Builder -->
+            <template v-if="block.type === 'sentence_builder'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Sentence Builder:</strong> Enter the target sentence in the correct word order. The player shuffles the words for the student.
+              </p>
+              <div class="form-group">
+                <label>Correct Sentence</label>
                 <input
-                  v-model="block.answers[key]"
-                  placeholder="Draggable Item Value (e.g. 'table')"
-                  style="flex:1"
-                  @input="block.items = Object.values(block.answers).filter(Boolean)"
+                  v-model="block.sentence"
+                  placeholder="e.g. The quick brown fox jumps."
+                  @input="updateBlockPoints(block)"
                 />
-                <button class="btn-sm btn-danger" @click="deleteAnswerKey(block, key)">×</button>
               </div>
-              <button class="btn-sm" @click="addAnswerKey(block)">+ Add Slot</button>
+            </template>
+
+            <!-- Odd One Out -->
+            <template v-if="block.type === 'odd_one_out'">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem">
+                💡 <strong>Odd One Out:</strong> Enter a list of items. Mark the correct item index as the odd one out, and provide the explanation.
+              </p>
+              <div v-for="(item, idx) in block.items || []" :key="idx" style="display:flex;gap:0.5rem;margin-bottom:0.25rem;align-items:center">
+                <input type="radio" v-model="block.correct" :value="idx" name="odd_one_out_correct" />
+                <input v-model="block.items[idx]" :placeholder="`Item ${idx + 1}`" style="flex:1" />
+                <button class="btn-sm btn-danger" @click="block.items.splice(idx, 1); updateBlockPoints(block)">×</button>
+              </div>
+              <button class="btn-sm" style="margin-top:0.25rem;margin-bottom:0.5rem" @click="block.items = [...(block.items || []), '']; updateBlockPoints(block)">+ Add Item</button>
+              <div class="form-group">
+                <label>Explanation of why this item is the odd one</label>
+                <textarea
+                  v-model="block.reason"
+                  rows="2"
+                  placeholder="e.g. Carrot is a vegetable, while the others are fruits."
+                  @input="updateBlockPoints(block)"
+                ></textarea>
+              </div>
             </template>
 
             <!-- Mermaid (common to all blocks) -->
@@ -1020,6 +893,45 @@
           </div>
         </div>
       </main>
+    </div>
+
+    <!-- Greeting Setup Dialog Overlay -->
+    <div v-if="showSetupModal" class="modal-overlay">
+      <div class="modal-container card">
+        <div class="modal-header">
+          <h3>👋 Worksheet Configuration</h3>
+          <p>Please configure the details below to start editing the worksheet.</p>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Worksheet Title</label>
+            <input v-model="form.title" placeholder="Enter title (e.g. Photosynthesis Intro)" />
+          </div>
+          <div style="display:flex;gap:0.75rem;margin-top:0.75rem">
+            <div class="form-group" style="flex:1">
+              <label>Subject</label>
+              <select v-model="form.subject">
+                <option value="">-- Select Subject --</option>
+                <option v-for="s in subjects" :key="s" :value="s">{{ s }}</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1">
+              <label>Class / Grade</label>
+              <select v-model="form.grade_level">
+                <option value="">-- Select Grade --</option>
+                <option v-for="g in gradeLevels" :key="g" :value="g">Klasse {{ g }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:0.75rem">
+            <label>Description (Optional)</label>
+            <textarea v-model="form.description" rows="2" placeholder="Describe the focus or instructions..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;margin-top:1.25rem">
+          <button class="btn-primary" @click="submitSetup">Save & Start Editing</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -1059,6 +971,7 @@ const aiPanelOpen = ref(false)
 const aiTab = ref('generate')
 const titlePanelOpen = ref(false)
 const versionPanelOpen = ref(true)
+const showSetupModal = ref(false)
 
 function applySuggestion(text) {
   aiPrompt.value = text
@@ -1195,16 +1108,6 @@ const blockIcons = {
   short_answer: '📝',
   matching: '🔗',
   word_scramble: '🔤',
-  arithmetic_grid: '➕',
-  equation_entry: '=️⃣',
-  fraction_input: '🧮',
-  number_line: '📏',
-  word_problem: '📖',
-  graph_plot: '📊',
-  geometry_shape: '🔷',
-  percentage: '💯',
-  unit_conversion: '🔄',
-  angle: '📐',
   media: '🖼️',
   audio: '🎵',
   video: '🎬',
@@ -1213,21 +1116,33 @@ const blockIcons = {
   true_false: '⚖️',
   ordering: '🔢',
   drawing: '🎨',
-  fraction_model: '🍕',
+  vocabulary: '📚',
+  semantic_sorter: '🗂️',
+  flashcards: '🃏',
+  drag_words: '👉',
+  correct_words: '✏️',
+  question_table: '📊',
+  crossword: '🧩',
+  audio_match: '🎧',
+  dictation: '🎤',
+  word_search: '🔍',
+  sentence_builder: '🧱',
+  odd_one_out: '🦄',
 }
 
 const germanBlockLabel = {
-  arithmetic_grid: 'Grundrechnung',
-  equation_entry: 'Gleichung',
-  fraction_input: 'Bruch',
-  number_line: 'Zahlenstrahl',
-  word_problem: 'Textaufgabe',
-  graph_plot: 'Diagramm',
-  geometry_shape: 'Geometrie',
-  percentage: 'Prozent',
-  unit_conversion: 'Einheiten',
-  angle: 'Winkel',
-  fraction_model: 'Bruchbild',
+  vocabulary: 'Wortschatz',
+  semantic_sorter: 'Kategoriensortierung',
+  flashcards: 'Karteikarten',
+  drag_words: 'Wörter ziehen',
+  correct_words: 'Fehler korrigieren',
+  question_table: 'Fragentabelle',
+  crossword: 'Kreuzworträtsel',
+  audio_match: 'Hören & Zuordnen',
+  dictation: 'Diktat',
+  word_search: 'Suchrätsel',
+  sentence_builder: 'Satzbaumeister',
+  odd_one_out: 'Ungerades Wort',
 }
 
 const differentiateTemplates = computed(() => {
@@ -1372,21 +1287,43 @@ function mapLoadedBlocks(rawBlocks) {
       }
       loaded.vocabulary.pairs = loaded.vocabulary.pairs || []
     }
-    if (loaded.type === 'contextual_dialogue') {
-      loaded.messages = loaded.messages || []
-    }
     if (loaded.type === 'semantic_sorter') {
       loaded.categories = loaded.categories || []
     }
     if (loaded.type === 'flashcards') {
       loaded.cards = loaded.cards || []
     }
-    if (loaded.type === 'memory_match') {
-      loaded.pairs = loaded.pairs || []
+    if (loaded.type === 'drag_words' || loaded.type === 'correct_words') {
+      loaded.template = loaded.template || ''
     }
-    if (loaded.type === 'drag_drop') {
+    if (loaded.type === 'question_table') {
+      loaded.columns = loaded.columns || []
+      loaded.rows = loaded.rows || []
+      loaded.columnsStr = loaded.columns.join('\n')
+      loaded.rowsStr = loaded.rows.join('\n')
+    }
+    if (loaded.type === 'crossword' || loaded.type === 'word_search') {
+      loaded.words = loaded.words || []
+      if (loaded.type === 'word_search') {
+        loaded.wordsStr = loaded.words.join(', ')
+      }
+    }
+    if (loaded.type === 'audio_match') {
+      loaded.pairs = loaded.pairs || []
+      loaded.voice = loaded.voice || ''
+    }
+    if (loaded.type === 'dictation') {
+      loaded.audioText = loaded.audioText || ''
+      loaded.voice = loaded.voice || ''
+      loaded.audioUrl = loaded.audioUrl || ''
+    }
+    if (loaded.type === 'sentence_builder') {
+      loaded.sentence = loaded.sentence || ''
+    }
+    if (loaded.type === 'odd_one_out') {
       loaded.items = loaded.items || []
-      loaded.answers = loaded.answers || {}
+      loaded.correct = typeof loaded.correct === 'number' ? loaded.correct : 0
+      loaded.reason = loaded.reason || ''
     }
     return loaded
   })
@@ -1399,6 +1336,7 @@ async function syncBuilderToRoute() {
     form.value = emptyForm()
     blocks.value = []
     versionHistory.value = []
+    showSetupModal.value = true
     return
   }
   isEditing.value = true
@@ -1423,6 +1361,7 @@ async function syncBuilderToRoute() {
       blocks.value = []
     }
     await loadVersions()
+    showSetupModal.value = true
   } catch {
     uiStore.showToast('Failed to load worksheet', 'error')
     resetBuilder()
@@ -1464,11 +1403,11 @@ function tryParsePoints(block) {
 
 function updateBlockPoints(block) {
   let count = 0
-  if (block.type === 'gap_fill') {
+  if (block.type === 'gap_fill' || block.type === 'drag_words' || block.type === 'correct_words') {
     count = (block.template?.match(/\(\(.*?\)\)/g) || []).length
   } else if (block.type === 'multiple_choice' || block.type === 'single_choice') {
     count = (block.options || []).filter(Boolean).length
-  } else if (block.type === 'matching') {
+  } else if (block.type === 'matching' || block.type === 'audio_match') {
     count = (block.pairs || []).filter((p) => p[0] || p[1]).length
   } else if (block.type === 'word_scramble') {
     count = (block.words || []).filter((w) => w.word).length
@@ -1477,24 +1416,23 @@ function updateBlockPoints(block) {
       ? block.vocabulary
       : (block.vocabulary?.pairs || [])
     count = pairs.filter((p) => p.l || p.r).length
-  } else if (block.type === 'contextual_dialogue') {
-    count = (block.messages || []).filter((m) => m.isGap).length
   } else if (block.type === 'semantic_sorter') {
     count = (block.categories || []).reduce(
       (sum, cat) => sum + (cat.words || []).filter(Boolean).length,
       0,
     )
-  } else if (block.type === 'memory_match') {
-    count = (block.pairs || []).filter((p) => {
-      if (Array.isArray(p)) return p[0] || p[1]
-      return p.a || p.b
-    }).length
-  } else if (block.type === 'drag_drop') {
-    count = (block.items || []).filter(Boolean).length
   } else if (block.type === 'flashcards') {
     count = (block.cards || []).filter((c) => c.front || c.back).length
-  } else if (block.type === 'word_problem') {
-    count = (block.steps || []).length + 1
+  } else if (block.type === 'question_table') {
+    count = (block.rows || []).filter(Boolean).length
+  } else if (block.type === 'crossword' || block.type === 'word_search') {
+    count = (block.words || []).filter((w) => typeof w === 'string' ? w : w.word).length
+  } else if (block.type === 'dictation') {
+    block.points = 8
+    return
+  } else if (block.type === 'sentence_builder' || block.type === 'odd_one_out') {
+    block.points = 6
+    return
   } else if (block.type === 'short_answer') {
     count = (block.keywordsStr || '')
       .split(',')
@@ -1626,61 +1564,10 @@ function addBlock(type) {
     block.keywordsStr = ''
   }
   if (type === 'word_scramble') block.words = [{ word: '' }, { word: '' }]
-  if (type === 'number_line') {
-    block.min_value = 0
-    block.max_value = 100
-    block.markers = [50]
-  }
-  if (type === 'equation_entry') {
-    block.equation = ''
-    block.final_answer = ''
-  }
-  if (type === 'fraction_input') {
-    block.numerator = 1
-    block.denominator = 2
-  }
-  if (type === 'fraction_model') {
-    block.points = 0
-    block.numerator = 3
-    block.denominator = 4
-    block.model_type = 'circle'
-    block.show_labels = true
-  }
-  if (type === 'arithmetic_grid') {
-    block.operand1 = 23
-    block.operand2 = 15
-    block.operation = 'add'
-  }
-  if (type === 'graph_plot') {
-    block.points_to_plot = [[0, 0]]
-    block.pointsStr = '[[0,0]]'
-  }
-  if (type === 'percentage') {
-    block.percentage_value = 20
-    block.part_value = 10
-    block.whole_value = 50
-  }
-  if (type === 'unit_conversion') {
-    block.points = 6
-    block.value = 150
-    block.from_unit = 'cm'
-    block.to_unit = 'm'
-  }
-  if (type === 'angle') {
-    block.points = 6
-    block.expected_degrees = 90
-    block.angle_type = 'identify'
-  }
-  if (type === 'geometry_shape') block.shape_type = 'triangle'
-  if (type === 'word_problem') {
-    block.problem_text = ''
-    block.steps = [{ description: '', expected: '' }]
-    block.final_answer = ''
-  }
   if (type === 'info_box') {
     block.points = 0
-    block.title = 'Click to learn more'
-    block.text = 'Your explanation here...'
+    block.title = 'Did you know?'
+    block.text = 'Explanation content here...'
     block.mermaid = ''
     block.alt_text = ''
   }
@@ -1698,10 +1585,6 @@ function addBlock(type) {
     block.points = 10
     block.vocabulary = { pairs: [{ l: '', r: '' }, { l: '', r: '' }], direction: 'l2r' }
   }
-  if (type === 'contextual_dialogue') {
-    block.points = 8
-    block.messages = [{ text: 'Hello!', isGap: false }, { text: 'My name is ((name)).', isGap: true, answer: '' }]
-  }
   if (type === 'semantic_sorter') {
     block.points = 6
     block.categories = [{ name: 'Category 1', words: ['item1', 'item2'] }, { name: 'Category 2', words: ['item3'] }]
@@ -1710,14 +1593,47 @@ function addBlock(type) {
     block.points = 0
     block.cards = [{ front: '', back: '', image_url: '', audio_url: '' }, { front: '', back: '', image_url: '', audio_url: '' }]
   }
-  if (type === 'memory_match') {
+  if (type === 'drag_words') {
     block.points = 6
-    block.pairs = [['', ''], ['', ''], ['', '']]
+    block.template = 'Learning ((flow)) is ((fun)).'
   }
-  if (type === 'drag_drop') {
+  if (type === 'correct_words') {
     block.points = 6
-    block.items = ['item1', 'item2']
-    block.answers = { slot1: 'item1', slot2: 'item2' }
+    block.template = 'She ((go/goes)) to school and ((play/plays)) soccer.'
+  }
+  if (type === 'question_table') {
+    block.points = 6
+    block.columns = ['True', 'False']
+    block.rows = ['The sun is a star##True', 'The moon is made of cheese##False']
+  }
+  if (type === 'crossword') {
+    block.points = 6
+    block.words = [{ word: 'HELLO', description: 'A greeting' }, { word: 'WORLD', description: 'Our planet' }]
+  }
+  if (type === 'audio_match') {
+    block.points = 6
+    block.pairs = [['Good morning', 'Guten Morgen'], ['Hello', 'Hallo']]
+    block.voice = 'de-DE-KatjaNeural'
+  }
+  if (type === 'dictation') {
+    block.points = 8
+    block.audioText = 'Welcome to learnflow.'
+    block.voice = 'en-US-JennyNeural'
+    block.audioUrl = ''
+  }
+  if (type === 'word_search') {
+    block.points = 6
+    block.words = ['APPLE', 'BANANA', 'ORANGE']
+  }
+  if (type === 'sentence_builder') {
+    block.points = 6
+    block.sentence = 'The quick brown fox jumps.'
+  }
+  if (type === 'odd_one_out') {
+    block.points = 6
+    block.items = ['Apple', 'Banana', 'Carrot']
+    block.correct = 2
+    block.reason = 'Carrot is a vegetable, others are fruits.'
   }
   if (type === 'drawing') {
     block.canvas_width = 600
@@ -1845,6 +1761,66 @@ async function save() {
     uiStore.showToast('Saved', 'success')
   } catch (e) {
     uiStore.showToast(e.message, 'error')
+  }
+}
+
+async function submitSetup() {
+  if (!form.value.title?.trim()) {
+    uiStore.showToast('Please enter a worksheet title', 'error')
+    return
+  }
+  if (!form.value.subject) {
+    uiStore.showToast('Please select a subject', 'error')
+    return
+  }
+  if (!form.value.grade_level) {
+    uiStore.showToast('Please select a class/grade level', 'error')
+    return
+  }
+  try {
+    await save()
+    showSetupModal.value = false
+  } catch (e) {
+    uiStore.showToast(e.message || 'Failed to save worksheet details', 'error')
+  }
+}
+
+async function generateBlockAudio(block, text, targetField = 'audioUrl') {
+  if (!text) {
+    uiStore.showToast('Please enter text to generate audio for', 'error')
+    return
+  }
+  try {
+    block.audioLoading = true
+    const res = await store.generateTTS(text, block.voice || 'en-US-JennyNeural')
+    block[targetField] = res.url
+    uiStore.showToast('Audio generated successfully', 'success')
+  } catch (e) {
+    uiStore.showToast(e.message || 'Failed to generate TTS audio', 'error')
+  } finally {
+    block.audioLoading = false
+  }
+}
+
+async function generateAudioMatchAudios(block) {
+  try {
+    block.audioLoading = true
+    const urls = []
+    for (let i = 0; i < (block.pairs || []).length; i++) {
+      const text = block.pairs[i][0]
+      if (text) {
+        const res = await store.generateTTS(text, block.voice || 'en-US-JennyNeural')
+        urls.push(res.url)
+      } else {
+        urls.push('')
+      }
+    }
+    block.audioUrls = urls
+    uiStore.showToast('All audios generated successfully', 'success')
+  } catch (e) {
+    uiStore.showToast(e.message || 'Failed to generate audios', 'error')
+  } finally {
+    block.audioLoading = false
   }
 }
 
@@ -2310,6 +2286,56 @@ async function uploadFile(event, block) {
     min-width: 100%;
     position: static;
     max-height: none;
+  }
+}
+
+/* ===== Setup Modal Styles ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-container {
+  width: 100%;
+  max-width: 500px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-xl);
+  padding: 2rem;
+  border-radius: 16px;
+  animation: modal-fadeIn 0.3s ease-out;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.modal-header p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0.35rem 0 1.25rem;
+}
+
+@keyframes modal-fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 </style>

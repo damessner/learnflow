@@ -512,68 +512,207 @@
         </div>
       </template>
 
-      <template v-if="block.type === 'number_line'">
-        <NumberLine v-if="!readonly" :block="block" v-model="answers[block.id]" />
-      </template>
-
-      <template v-if="block.type === 'equation_entry'">
-        <EquationInput v-if="!readonly" :block="block" v-model="answers[block.id]" />
-      </template>
-
-      <template v-if="block.type === 'fraction_input'">
-        <FractionInput v-if="!readonly" :block="block" v-model="answers[block.id]" />
-      </template>
-
-      <!-- Fraction Model (visual aid — always shown) -->
-      <template v-if="block.type === 'fraction_model'">
-        <div style="margin-bottom:0.5rem" v-if="block.text">{{ block.text }}</div>
-        <div style="display:flex;justify-content:center;padding:0.75rem">
-          <svg :viewBox="playerFractionViewBox(block)" width="220" height="auto" style="max-width:100%">
-            <template v-if="block.model_type === 'circle'">
-              <g v-for="i in playerFractionIndices(block)" :key="i">
-                <path :d="playerFractionSlicePath(i, block)" :fill="i < (block.numerator || 0) ? '#3b82f6' : '#f3f4f6'" stroke="#94a3b8" stroke-width="1" />
-              </g>
-              <circle cx="100" cy="100" r="98" fill="none" stroke="#64748b" stroke-width="1.5" />
-              <text v-if="block.show_labels" x="100" y="105" text-anchor="middle" font-size="16" font-weight="600" fill="#1e293b">
-                {{ block.numerator || 0 }}/{{ block.denominator || 1 }}
-              </text>
+      <!-- Drag Words -->
+      <template v-if="block.type === 'drag_words'">
+        <div style="margin-bottom: 0.75rem">
+          {{ initDragWords(block) }}
+          <div style="line-height: 2; font-size: 1rem">
+            <template v-for="seg in getGapSegments(block.template)" :key="seg.key">
+              <span v-if="seg.type === 'text'" style="white-space: pre-wrap">{{ seg.text }}</span>
+              <span
+                v-else-if="seg.type === 'gap'"
+                @click="readonly ? null : setActiveGap(block.id, seg.index)"
+                :style="{
+                  display: 'inline-block',
+                  minWidth: '90px',
+                  height: '28px',
+                  padding: '0.1rem 0.6rem',
+                  margin: '0 0.25rem',
+                  border: activeGap?.blockId === block.id && activeGap?.index === seg.index ? '2px solid var(--primary)' : '1px dashed var(--text-muted)',
+                  borderRadius: '6px',
+                  background: getGapValue(block.id, seg.index) ? 'var(--primary-light)' : 'var(--bg-main)',
+                  color: 'var(--text-main)',
+                  textAlign: 'center',
+                  cursor: readonly ? 'default' : 'pointer',
+                  fontWeight: '600',
+                  verticalAlign: 'middle',
+                  transition: 'all 0.2s'
+                }"
+              >
+                {{ getGapValue(block.id, seg.index) || 'Drop here' }}
+                <span v-if="getGapValue(block.id, seg.index) && !readonly" @click.stop="setGapValue(block.id, seg.index, '')" style="color:red;margin-left:4px;font-weight:bold;font-size:0.8rem">×</span>
+              </span>
             </template>
-            <template v-else>
-              <g v-for="i in playerFractionIndices(block)" :key="i">
-                <rect :x="i * (240 / Math.max(1, block.denominator || 1))" y="0"
-                  :width="Math.max(0, (240 / Math.max(1, block.denominator || 1)) - 1)" height="60"
-                  :fill="i < (block.numerator || 0) ? '#3b82f6' : '#f3f4f6'" stroke="#94a3b8" stroke-width="1" rx="2" />
-              </g>
-              <text v-if="block.show_labels" x="120" y="82" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">
-                {{ block.numerator || 0 }}/{{ block.denominator || 1 }}
-              </text>
-            </template>
-          </svg>
+          </div>
+          <!-- Options list -->
+          <div v-if="!readonly" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.75rem;background:var(--bg-card);padding:0.5rem;border-radius:8px;border:1px solid var(--border-color)">
+            <button
+              v-for="word in dragWordsOptions[block.id] || []"
+              :key="word"
+              @click="onSelectDragWord(block.id, word)"
+              class="btn-sm"
+              :style="{
+                background: isDragWordUsed(block.id, word) ? 'var(--border-color)' : 'var(--primary)',
+                color: isDragWordUsed(block.id, word) ? 'var(--text-muted)' : '#fff',
+                cursor: isDragWordUsed(block.id, word) ? 'not-allowed' : 'pointer',
+                opacity: isDragWordUsed(block.id, word) ? 0.6 : 1,
+                border: 'none',
+                fontWeight: '600',
+                borderRadius: '6px'
+              }"
+              :disabled="isDragWordUsed(block.id, word)"
+            >
+              {{ word }}
+            </button>
+          </div>
         </div>
       </template>
 
-      <template v-if="block.type === 'arithmetic_grid'">
-        <ArithmeticGrid v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      <!-- Correct Words -->
+      <template v-if="block.type === 'correct_words'">
+        <div style="line-height: 2; font-size: 1.05rem">
+            <template v-for="(seg, si) in getCorrectWordsSegments(block.template)" :key="si">
+              <span v-if="seg.type === 'text'" style="white-space: pre-wrap">{{ seg.text }}</span>
+              <span v-else-if="seg.type === 'word'" style="position:relative;display:inline-block;margin:0 0.25rem">
+                <span
+                  @click="readonly ? null : toggleCorrectWordsInput(block.id, seg.index)"
+                  style="text-decoration: underline dashed red; cursor: pointer; color: #dc2626; font-weight:600"
+                >
+                  {{ seg.wrong }}
+                </span>
+                <!-- Inline edit bubble -->
+                <div
+                  v-if="activeCorrectWordsInput?.blockId === block.id && activeCorrectWordsInput?.index === seg.index && !readonly"
+                  style="position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:0.5rem;box-shadow:var(--shadow-lg);z-index:100;display:flex;gap:0.25rem;align-items:center;min-width:180px"
+                >
+                  <input
+                    :value="getCorrectWordsValue(block.id, seg.index)"
+                    @input="setCorrectWordsValue(block.id, seg.index, ($event.target as HTMLInputElement).value)"
+                    placeholder="Enter correction..."
+                    style="font-size:0.8rem;padding:0.2rem 0.4rem;flex:1"
+                    @keyup.enter="activeCorrectWordsInput = null"
+                    autofocus
+                  />
+                  <button class="btn-sm btn-primary" style="font-size:0.75rem;padding:0.2rem 0.4rem" @click="activeCorrectWordsInput = null">✓</button>
+                </div>
+                <!-- Display typed correction below if filled -->
+                <span v-if="getCorrectWordsValue(block.id, seg.index)" style="font-size:0.75rem;color:var(--primary);display:block;text-align:center;line-height:1;margin-top:-2px">
+                  ({{ getCorrectWordsValue(block.id, seg.index) }})
+                </span>
+              </span>
+            </template>
+          </div>
       </template>
 
-      <template v-if="block.type === 'graph_plot'">
-        <GraphPlot v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      <!-- Question Table -->
+      <template v-if="block.type === 'question_table'">
+        <div style="overflow-x:auto;margin-top:0.5rem">
+          <table style="width:100%;border-collapse:collapse;border:1px solid var(--border-color)">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border-color)">
+                <th style="text-align:left;padding:0.5rem">Statement / Question</th>
+                <th v-for="col in block.columns || []" :key="col" style="text-align:center;padding:0.5rem">
+                  {{ col }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row, ri) in block.rows || []" :key="ri" style="border-bottom:1px solid var(--border-color)">
+                <td style="padding:0.5rem;color:var(--text-main)">
+                  {{ row.split('##')[0] }}
+                </td>
+                <td v-for="col in block.columns || []" :key="col" style="text-align:center;padding:0.5rem">
+                  <input
+                    type="radio"
+                    :name="`${block.id}_row_${ri}`"
+                    :value="col"
+                    :disabled="readonly"
+                    :checked="getQuestionTableValue(block.id, ri) === col"
+                    @change="setQuestionTableValue(block.id, ri, col)"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </template>
 
-      <template v-if="block.type === 'geometry_shape'">
-        <GeometryShape v-if="!readonly" :block="block" v-model="answers[block.id]" />
-      </template>
-
-      <template v-if="block.type === 'word_problem'">
-        <WordProblem v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      <!-- Crossword -->
+      <template v-if="block.type === 'crossword'">
+        <div style="display:flex;flex-direction:column;gap:0.75rem;margin-top:0.5rem">
+          <div v-for="(item, idx) in block.words || []" :key="idx" style="background:var(--bg-main);padding:0.75rem;border-radius:8px;border:1px solid var(--border-color)">
+            <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.4rem">
+              {{ idx + 1 }}. {{ item.description }} <span style="font-size:0.8rem;color:var(--text-muted)">({{ (item.word || '').length }} letters)</span>
+            </div>
+            <!-- Letter Boxes -->
+            <div style="display:flex;gap:0.25rem">
+              <input
+                v-for="charIdx in (item.word || '').length"
+                :key="charIdx"
+                maxlength="1"
+                :disabled="readonly"
+                :value="getCrosswordChar(block.id, idx, charIdx - 1)"
+                @input="setCrosswordChar(block.id, idx, charIdx - 1, ($event.target as HTMLInputElement).value, item.word.length, $event)"
+                style="width:32px;height:32px;text-align:center;font-size:1.1rem;font-weight:bold;text-transform:uppercase;padding:0;border:1px solid var(--border-color);border-radius:4px"
+                class="crossword-char-input"
+                :data-word="idx"
+                :data-char="charIdx - 1"
+              />
+            </div>
+          </div>
+        </div>
       </template>
 
       <template v-if="block.type === 'vocabulary'">
         <Vocabulary v-if="!readonly" :block="block" v-model="answers[block.id]" />
       </template>
 
-      <template v-if="block.type === 'contextual_dialogue'">
-        <ContextualDialogue v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      <!-- Audio Match -->
+      <template v-if="block.type === 'audio_match'">
+        <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem">
+          <div v-for="(pair, pi) in block.pairs || []" :key="pi" style="display:flex;align-items:center;gap:0.75rem;background:var(--bg-main);padding:0.5rem 0.75rem;border-radius:8px;border:1px solid var(--border-color)">
+            <button
+              class="btn-sm"
+              style="padding:0.25rem 0.5rem;font-size:0.9rem;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center"
+              @click="playAudioUrl(block.audioUrls?.[pi] || '')"
+              :disabled="!block.audioUrls?.[pi]"
+            >
+              🔊
+            </button>
+            <span style="font-size:0.85rem;color:var(--text-muted)">Audio #{{ pi + 1 }}</span>
+            <span style="color:var(--text-muted)">→</span>
+            <input
+              v-model="answers[block.id][pi]"
+              :disabled="readonly"
+              placeholder="Enter matching text..."
+              style="flex:1"
+            />
+          </div>
+        </div>
+      </template>
+
+      <!-- Dictation -->
+      <template v-if="block.type === 'dictation'">
+        <div style="background:var(--bg-main);padding:1rem;border-radius:8px;border:1px solid var(--border-color);margin-top:0.5rem">
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.75rem">
+            <button
+              class="btn-primary"
+              style="padding:0.4rem 0.8rem;display:flex;align-items:center;gap:0.4rem;border-radius:24px"
+              @click="playAudioUrl(block.audioUrl || '')"
+              :disabled="!block.audioUrl"
+            >
+              <span>🔊 Play Dictation</span>
+            </button>
+            <span style="font-size:0.8rem;color:var(--text-muted)">Listen to the speaker and type what you hear.</span>
+          </div>
+          <textarea
+            v-model="answers[block.id]"
+            :disabled="readonly"
+            rows="2"
+            placeholder="Type your transcription here..."
+            style="width:100%"
+          ></textarea>
+        </div>
       </template>
 
       <template v-if="block.type === 'semantic_sorter'">
@@ -584,12 +723,119 @@
         <Flashcards :block="block" v-model="answers[block.id]" :readonly="readonly" />
       </template>
 
-      <template v-if="block.type === 'memory_match'">
-        <MemoryMatch v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      <!-- Word Search -->
+      <template v-if="block.type === 'word_search'">
+        <div style="margin-top:0.5rem">
+          {{ initWordSearch(block) }}
+          <!-- Grid display -->
+          <div style="display:grid;grid-template-columns:repeat(12, 1fr);gap:2px;max-width:360px;margin:0.5rem auto;background:var(--border-color);padding:4px;border-radius:8px">
+              <template v-for="(row, r) in wordSearchGrids[block.id] || []" :key="r">
+                <div
+                  v-for="(char, c) in row"
+                  :key="c"
+                  style="background:var(--bg-card);aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.9rem;border-radius:4px"
+                >
+                  {{ char }}
+                </div>
+              </template>
+          </div>
+          <!-- Entry form -->
+          <div v-if="!readonly" style="display:flex;gap:0.5rem;margin-top:0.75rem">
+            <input
+              v-model="wordSearchInputs[block.id]"
+              placeholder="Type a word you found..."
+              @keyup.enter="addFoundWord(block.id)"
+              style="flex:1"
+            />
+            <button class="btn-primary" @click="addFoundWord(block.id)">Add Word</button>
+          </div>
+          <!-- Found words list -->
+          <div style="margin-top:0.5rem">
+            <label style="font-size:0.8rem;color:var(--text-muted);display:block">Words Found:</label>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.25rem">
+              <span
+                v-for="(w, wi) in (answers[block.id] || [])"
+                :key="wi"
+                style="padding:0.2rem 0.5rem;background:var(--primary-light);border:1px solid var(--primary-soft);color:var(--primary);border-radius:12px;font-size:0.8rem;font-weight:600"
+              >
+                {{ w }}
+                <span v-if="!readonly" @click="removeFoundWord(block.id, wi)" style="color:red;cursor:pointer;margin-left:4px;font-weight:bold">×</span>
+              </span>
+              <span v-if="!(answers[block.id] || []).length" style="font-size:0.8rem;color:var(--text-muted);font-style:italic">
+                No words added yet.
+              </span>
+            </div>
+          </div>
+        </div>
       </template>
 
-      <template v-if="block.type === 'drag_drop'">
-        <DragDrop v-if="!readonly" :block="block" v-model="answers[block.id]" />
+      <!-- Sentence Builder -->
+      <template v-if="block.type === 'sentence_builder'">
+        <div style="margin-top:0.5rem">
+          {{ initSentenceBuilder(block) }}
+          <!-- Built sentence display -->
+          <div style="min-height:45px;background:var(--bg-main);border:1px dashed var(--border-color);border-radius:8px;padding:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;margin-bottom:0.75rem">
+              <span
+                v-for="(w, wi) in (answers[block.id] || [])"
+                :key="wi"
+                @click="readonly ? null : removeSentenceWord(block.id, wi)"
+                style="padding:0.25rem 0.5rem;background:var(--primary-light);border:1px solid var(--primary-soft);color:var(--primary);border-radius:6px;font-size:0.9rem;font-weight:600;cursor:pointer"
+              >
+                {{ w }}
+              </span>
+              <span v-if="!(answers[block.id] || []).length" style="font-size:0.8rem;color:var(--text-muted);font-style:italic">
+                Click words below to build the sentence.
+              </span>
+          </div>
+          <!-- Scrambled source words list -->
+          <div v-if="!readonly" style="display:flex;gap:0.4rem;flex-wrap:wrap;background:var(--bg-card);padding:0.5rem;border-radius:8px;border:1px solid var(--border-color)">
+            <button
+              v-for="(word, wIndex) in getSentenceBuilderOptions(block.id)"
+              :key="wIndex"
+              @click="addSentenceWord(block.id, word, wIndex)"
+              class="btn-sm"
+              style="font-weight:600;border-radius:6px"
+            >
+              {{ word }}
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <!-- Odd One Out -->
+      <template v-if="block.type === 'odd_one_out'">
+        <div style="margin-top:0.5rem">
+          <label style="font-size:0.85rem;color:var(--text-muted);display:block;margin-bottom:0.4rem">Select the odd item:</label>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+            <button
+              v-for="(item, idx) in block.items || []"
+              :key="idx"
+              @click="readonly ? null : setOddOneOutSelected(block.id, idx)"
+              class="btn-sm"
+              :style="{
+                background: getOddOneOutSelected(block.id) === idx ? 'var(--primary)' : 'var(--bg-main)',
+                color: getOddOneOutSelected(block.id) === idx ? '#fff' : 'var(--text-main)',
+                border: '1px solid var(--border-color)',
+                fontWeight: '600',
+                borderRadius: '8px',
+                padding: '0.4rem 0.8rem'
+              }"
+            >
+              {{ item }}
+            </button>
+          </div>
+          <div class="form-group" style="margin-top:0.75rem">
+            <label style="font-size:0.8rem;color:var(--text-muted)">Explain why this item is the odd one:</label>
+            <textarea
+              :value="getOddOneOutReason(block.id)"
+              @input="setOddOneOutReason(block.id, ($event.target as HTMLInputElement).value)"
+              :disabled="readonly"
+              rows="2"
+              placeholder="e.g. Carrot is a vegetable, while the others are fruits..."
+              style="width:100%"
+            ></textarea>
+          </div>
+        </div>
       </template>
 
       <div
@@ -802,6 +1048,249 @@ const remediationSelfAssessments = reactive({})
 const remediationSelfAssessmentSaving = reactive({})
 const remediationRoundStartedAt = reactive({})
 const remediationScrambleCache = reactive({})
+
+// ===== Interactive Question Types State & Helpers =====
+const activeGap = ref<{ blockId: string; index: number } | null>(null)
+function setActiveGap(blockId: string, index: number) {
+  activeGap.value = { blockId, index }
+}
+
+const dragWordsOptions = reactive<Record<string, string[]>>({})
+function initDragWords(block: any) {
+  if (dragWordsOptions[block.id]) return
+  const matches = block.template?.match(/\(\(.*?\)\)/g) || []
+  const words = matches.map((m: string) => m.slice(2, -2).trim())
+  const shuffled = [...words].sort(() => Math.random() - 0.5)
+  dragWordsOptions[block.id] = shuffled
+}
+
+function isDragWordUsed(blockId: string, word: string): boolean {
+  const blockAnswers = answers[blockId]
+  if (!blockAnswers || typeof blockAnswers !== 'object') return false
+  return Object.values(blockAnswers).includes(word)
+}
+
+function onSelectDragWord(blockId: string, word: string) {
+  if (!activeGap.value || activeGap.value.blockId !== blockId) return
+  setGapValue(blockId, activeGap.value.index, word)
+  activeGap.value = null
+}
+
+const activeCorrectWordsInput = ref<{ blockId: string; index: number } | null>(null)
+function toggleCorrectWordsInput(blockId: string, index: number) {
+  if (activeCorrectWordsInput.value?.blockId === blockId && activeCorrectWordsInput.value?.index === index) {
+    activeCorrectWordsInput.value = null
+  } else {
+    activeCorrectWordsInput.value = { blockId, index }
+  }
+}
+
+function getCorrectWordsSegments(template: string) {
+  const segments: Array<{ type: 'text'; text: string } | { type: 'word'; index: number; wrong: string; correct: string }> = []
+  if (!template) return segments
+  let lastIndex = 0
+  let wordIndex = 0
+  const regex = /\(\((.*?)\)\)/g
+  let match: RegExpExecArray | null
+  while ((match = regex.exec(template)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({
+        type: 'text',
+        text: template.slice(lastIndex, match.index),
+      })
+    }
+    const parts = match[1].split('/')
+    segments.push({
+      type: 'word',
+      index: wordIndex++,
+      wrong: parts[0] || '',
+      correct: parts[1] || parts[0] || '',
+    })
+    lastIndex = regex.lastIndex
+  }
+  if (lastIndex < template.length) {
+    segments.push({
+      type: 'text',
+      text: template.slice(lastIndex),
+    })
+  }
+  return segments
+}
+
+function getCorrectWordsValue(blockId: string, index: number): string {
+  const blockAnswers = answers[blockId]
+  if (!blockAnswers || typeof blockAnswers !== 'object') return ''
+  return (blockAnswers as Record<string, string>)[String(index)] ?? ''
+}
+
+function setCorrectWordsValue(blockId: string, index: number, value: string): void {
+  if (!answers[blockId] || typeof answers[blockId] !== 'object') {
+    answers[blockId] = {}
+  }
+  ;(answers[blockId] as Record<string, string>)[String(index)] = value
+}
+
+function getQuestionTableValue(blockId: string, rowIndex: number): string {
+  const blockAnswers = answers[blockId]
+  if (!blockAnswers || typeof blockAnswers !== 'object') return ''
+  return (blockAnswers as Record<string, string>)[String(rowIndex)] ?? ''
+}
+
+function setQuestionTableValue(blockId: string, rowIndex: number, value: string): void {
+  if (!answers[blockId] || typeof answers[blockId] !== 'object') {
+    answers[blockId] = {}
+  }
+  ;(answers[blockId] as Record<string, string>)[String(rowIndex)] = value
+}
+
+function getCrosswordChar(blockId: string, wordIdx: number, charIdx: number): string {
+  const blockAnswers = answers[blockId]
+  if (!blockAnswers || typeof blockAnswers !== 'object') return ''
+  const val = (blockAnswers as Record<string, string>)[String(wordIdx)] || ''
+  return val[charIdx] || ''
+}
+
+function setCrosswordChar(blockId: string, wordIdx: number, charIdx: number, char: string, wordLength: number, event: Event): void {
+  if (!answers[blockId] || typeof answers[blockId] !== 'object') {
+    answers[blockId] = {}
+  }
+  const currentVal = (answers[blockId] as Record<string, string>)[String(wordIdx)] || ''
+  const arr = currentVal.split('')
+  while (arr.length < wordLength) arr.push(' ')
+  arr[charIdx] = (char || ' ').toUpperCase()
+  const newVal = arr.join('')
+  ;(answers[blockId] as Record<string, string>)[String(wordIdx)] = newVal
+
+  if (char && charIdx < wordLength - 1) {
+    const nextInput = document.querySelector(`.crossword-char-input[data-word="${wordIdx}"][data-char="${charIdx + 1}"]`) as HTMLInputElement | null
+    if (nextInput) nextInput.focus()
+  }
+}
+
+function playAudioUrl(url: string) {
+  if (!url) return
+  const audio = new Audio(url)
+  audio.play().catch(e => console.warn('Audio play failed:', e))
+}
+
+const wordSearchGrids = reactive<Record<string, string[][]>>({})
+const wordSearchInputs = reactive<Record<string, string>>({})
+function initWordSearch(block: any) {
+  if (wordSearchGrids[block.id]) return
+  const size = 12
+  const grid = Array(size).fill(null).map(() => Array(size).fill(''))
+  const words = (block.words || []).map((w: any) => String(w).toUpperCase().replace(/[^A-Z]/g, '')).filter(Boolean)
+  for (const word of words) {
+    let placed = false
+    let attempts = 0
+    while (!placed && attempts < 100) {
+      attempts++
+      const dir = Math.random() > 0.5 ? { r: 0, c: 1 } : { r: 1, c: 0 }
+      const row = Math.floor(Math.random() * (size - (dir.r ? word.length : 0)))
+      const col = Math.floor(Math.random() * (size - (dir.c ? word.length : 0)))
+      let fit = true
+      for (let i = 0; i < word.length; i++) {
+        const curr = grid[row + i * dir.r][col + i * dir.c]
+        if (curr && curr !== word[i]) {
+          fit = false
+          break
+        }
+      }
+      if (fit) {
+        for (let i = 0; i < word.length; i++) {
+          grid[row + i * dir.r][col + i * dir.c] = word[i]
+        }
+        placed = true
+      }
+    }
+  }
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (!grid[r][c]) {
+        grid[r][c] = String.fromCharCode(65 + Math.floor(Math.random() * 26))
+      }
+    }
+  }
+  wordSearchGrids[block.id] = grid
+  wordSearchInputs[block.id] = ''
+}
+
+function addFoundWord(blockId: string) {
+  const val = (wordSearchInputs[blockId] || '').trim().toUpperCase()
+  if (!val) return
+  if (!answers[blockId] || !Array.isArray(answers[blockId])) {
+    answers[blockId] = []
+  }
+  if (!answers[blockId].includes(val)) {
+    answers[blockId].push(val)
+  }
+  wordSearchInputs[blockId] = ''
+}
+
+function removeFoundWord(blockId: string, idx: number) {
+  if (Array.isArray(answers[blockId])) {
+    answers[blockId].splice(idx, 1)
+  }
+}
+
+const sentenceBuilderScrambled = reactive<Record<string, string[]>>({})
+function initSentenceBuilder(block: any) {
+  if (sentenceBuilderScrambled[block.id]) return
+  const words = (block.sentence || '').split(/\s+/).filter(Boolean)
+  const scrambled = [...words].sort(() => Math.random() - 0.5)
+  sentenceBuilderScrambled[block.id] = scrambled
+  if (!answers[block.id] || !Array.isArray(answers[block.id])) {
+    answers[block.id] = []
+  }
+}
+
+function getSentenceBuilderOptions(blockId: string): string[] {
+  const scrambled = sentenceBuilderScrambled[blockId] || []
+  const current = answers[blockId] || []
+  const remaining = [...scrambled]
+  for (const w of current) {
+    const idx = remaining.indexOf(w)
+    if (idx !== -1) remaining.splice(idx, 1)
+  }
+  return remaining
+}
+
+function addSentenceWord(blockId: string, word: string, wIndex: number) {
+  if (!answers[blockId] || !Array.isArray(answers[blockId])) {
+    answers[blockId] = []
+  }
+  answers[blockId].push(word)
+}
+
+function removeSentenceWord(blockId: string, wi: number) {
+  answers[blockId].splice(wi, 1)
+}
+
+function getOddOneOutSelected(blockId: string): number | null {
+  const blockAnswers = answers[blockId]
+  if (!blockAnswers || typeof blockAnswers !== 'object') return null
+  return typeof blockAnswers.selected === 'number' ? blockAnswers.selected : null
+}
+
+function setOddOneOutSelected(blockId: string, index: number): void {
+  if (!answers[blockId] || typeof answers[blockId] !== 'object') {
+    answers[blockId] = { selected: null, reason: '' }
+  }
+  answers[blockId].selected = index
+}
+
+function getOddOneOutReason(blockId: string): string {
+  const blockAnswers = answers[blockId]
+  if (!blockAnswers || typeof blockAnswers !== 'object') return ''
+  return blockAnswers.reason || ''
+}
+
+function setOddOneOutReason(blockId: string, reason: string): void {
+  if (!answers[blockId] || typeof answers[blockId] !== 'object') {
+    answers[blockId] = { selected: null, reason: '' }
+  }
+  answers[blockId].reason = reason
+}
 
 const initialized = ref(false)
 let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -1080,14 +1569,14 @@ function getRemediationExerciseId(ex: Record<string, unknown>, exIdx = 0): strin
 function buildDefaultRoundResponse(ex: Record<string, unknown>): unknown {
   const type = String(ex?.type || '')
 
-  if (type === 'multiple_choice') return []
-  if (type === 'matching') {
+  if (type === 'multiple_choice' || type === 'word_search' || type === 'sentence_builder') return []
+  if (type === 'matching' || type === 'audio_match') {
     const initial: Record<string, string> = {}
     const pairs = Array.isArray(ex?.pairs) ? ex.pairs : []
     for (let i = 0; i < pairs.length; i++) initial[String(i)] = ''
     return initial
   }
-  if (type === 'gap_fill') {
+  if (type === 'gap_fill' || type === 'drag_words' || type === 'correct_words') {
     const initial: Record<string, string> = {}
     const template = String(ex?.template || '')
     const gapCount = (template.match(/\(\(.*?\)\)/g) || []).length
@@ -1098,15 +1587,22 @@ function buildDefaultRoundResponse(ex: Record<string, unknown>): unknown {
     const words = Array.isArray(ex?.words) ? ex.words : []
     return Array.from({ length: words.length }, () => '')
   }
-  if (type === 'word_problem') {
-    const initial: Record<string, string> = { final_answer: '' }
-    const steps = Array.isArray(ex?.steps) ? ex.steps : []
-    for (let i = 0; i < steps.length; i++) initial[String(i)] = ''
+  if (type === 'question_table') {
+    const initial: Record<string, string> = {}
+    const rows = Array.isArray(ex?.rows) ? ex.rows : []
+    for (let i = 0; i < rows.length; i++) initial[String(i)] = ''
     return initial
   }
-  if (type === 'fraction_input') return { numerator: '', denominator: '' }
-  if (type === 'geometry_shape') return { shape_name: '' }
-  if (type === 'graph_plot') return ''
+  if (type === 'crossword') {
+    const initial: Record<string, string> = {}
+    const words = Array.isArray(ex?.words) ? ex.words : []
+    for (let i = 0; i < words.length; i++) initial[String(i)] = ''
+    return initial
+  }
+  if (type === 'odd_one_out') {
+    return { selected: null, reason: '' }
+  }
+  if (type === 'dictation') return ''
   return ''
 }
 

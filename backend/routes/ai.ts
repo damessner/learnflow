@@ -100,27 +100,22 @@ const BlockSchema = z.object({
     'matching',
     'word_scramble',
     'short_answer',
-    'number_line',
-    'equation_entry',
-    'fraction_input',
-    'arithmetic_grid',
-    'graph_plot',
-    'geometry_shape',
-    'word_problem',
     'info_box',
     'true_false',
     'ordering',
     'drawing',
-    'percentage',
-    'unit_conversion',
-    'angle',
-    'fraction_model',
     'vocabulary',
-    'contextual_dialogue',
     'semantic_sorter',
     'flashcards',
-    'memory_match',
-    'drag_drop',
+    'drag_words',
+    'correct_words',
+    'question_table',
+    'crossword',
+    'audio_match',
+    'dictation',
+    'word_search',
+    'sentence_builder',
+    'odd_one_out',
   ]),
   points: z.number().optional().default(1),
   title: z.string().optional(),
@@ -131,7 +126,7 @@ const BlockSchema = z.object({
   correctIndices: z.array(z.number()).optional(),
   correctIndex: z.number().optional(),
   pairs: z.array(z.tuple([z.string(), z.string()])).optional(),
-  words: z.array(z.object({ word: z.string() })).optional(),
+  words: z.array(z.object({ word: z.string(), description: z.string().optional() })).optional(),
   expected: z.array(z.string()).optional(),
   keywords: z.array(z.string()).optional(),
   sample_answer: z.string().optional(),
@@ -177,6 +172,13 @@ const BlockSchema = z.object({
   answers: z.record(z.string(), z.string()).optional(),
   source_lang: z.string().optional(),
   target_lang: z.string().optional(),
+  columns: z.array(z.string()).optional(),
+  rows: z.array(z.string()).optional(),
+  sentence: z.string().optional(),
+  audioText: z.string().optional(),
+  voice: z.string().optional(),
+  audioUrl: z.string().optional(),
+  reason: z.string().optional(),
 })
 
 const GenerationSchema = z.object({
@@ -289,20 +291,19 @@ function buildWorksheetPrompt({
   parts.push(``)
   parts.push(`SUBJECT-SPECIFIC GUIDANCE:`)
   if (subject === 'Mathematics') {
-    parts.push(`- Use real numbers, word problems, and step-by-step reasoning. Include diagrams via geometry_shape or graph_plot where relevant.`)
-    parts.push(`- Prefer equation_entry, fraction_input, arithmetic_grid, number_line, graph_plot, word_problem, geometry_shape blocks.`)
+    parts.push(`- Note: The mathematics-specific grids are deprecated. Generate standard worksheets using gap_fill, single_choice, multiple_choice, short_answer, matching, true_false, ordering, and question_table blocks.`)
     parts.push(`- Ensure answers are unambiguous numeric values or matching pairs.`)
     parts.push(`- For grade 1-3: focus on basic operations, simple word problems, number sense.`)
     parts.push(`- For grade 4-6: include fractions, decimals, area/perimeter, multi-step problems.`)
-    parts.push(`- For grade 7-8: include algebra, proportional reasoning, probability, geometry proofs.`)
+    parts.push(`- For grade 7-8: include algebra, proportional reasoning, probability.`)
   } else if (subject === 'German' || subject === 'English') {
     parts.push(`- ALL content in ${subject === 'German' ? 'German' : 'English'}.`)
-    parts.push(`- Prefer gap_fill, multiple_choice, short_answer, matching, word_scramble, read_aloud blocks. For language learning, also use vocabulary, contextual_dialogue, semantic_sorter, flashcards, memory_match, drag_drop.`)
+    parts.push(`- Prefer gap_fill, multiple_choice, single_choice, short_answer, matching, true_false, ordering, word_scramble, read_aloud blocks. For language learning, also use vocabulary, semantic_sorter, flashcards, drag_words, correct_words, question_table, crossword, audio_match, dictation, word_search, sentence_builder, odd_one_out.`)
     parts.push(`- Include reading comprehension passages (read_aloud) with follow-up questions.`)
     parts.push(`- For grade 1-3: basic vocabulary, simple sentences, phonics/reading basics.`)
     parts.push(`- For grade 4-6: grammar exercises, text comprehension, vocabulary building, short writing.`)
     parts.push(`- For grade 7-8: literary analysis, complex grammar, argumentative writing, text interpretation.`)
-    parts.push(`- For language worksheets (German as foreign language, English as foreign language): include vocabulary, contextual_dialogue, semantic_sorter, flashcards, memory_match, drag_drop blocks.`)
+    parts.push(`- For language worksheets (German as foreign language, English as foreign language): include vocabulary, semantic_sorter, flashcards, drag_words, correct_words, question_table, crossword, audio_match, dictation, word_search, sentence_builder, odd_one_out blocks.`)
     parts.push(`- If language_pair is set (e.g. source_lang="de", target_lang="en"), ALL exercises and instructions should use the target language for output, with source language for vocabulary pairs. Vocabulary pair direction: source→target.`)
     parts.push(`- If cefr_level is set (A1/A2/B1/B2/C1/C2), calibrate vocabulary complexity, sentence length, and grammar accordingly.`)
   } else if (subject === 'Science') {
@@ -348,21 +349,20 @@ function buildWorksheetPrompt({
   parts.push(`- "matching": { id, type: "matching", points: N, pairs: [["left1","right1"],["left2","right2"]] }`)
   parts.push(`- "word_scramble": { id, type: "word_scramble", points: N, words: [{word:"example"},{word:"another"}] }`)
   parts.push(`- "short_answer": { id, type: "short_answer", points: N, text: "question", keywords: ["key1","key2"] }`)
-  parts.push(`- "number_line": { id, type: "number_line", points: N, min_value: 0, max_value: 100, markers: [25,50,75] }`)
-  parts.push(`- "equation_entry": { id, type: "equation_entry", points: N, equation: "2x + 3 = 7", final_answer: "2" }`)
-  parts.push(`- "fraction_input": { id, type: "fraction_input", points: N, numerator: 1, denominator: 2 }`)
-  parts.push(`- "arithmetic_grid": { id, type: "arithmetic_grid", points: N, operand1: 12, operand2: 5, operation: "add" }`)
-  parts.push(`- "graph_plot": { id, type: "graph_plot", points: N, points_to_plot: [[1,2],[3,4]] }`)
-  parts.push(`- "geometry_shape": { id, type: "geometry_shape", points: N, shape_type: "triangle" }`)
-  parts.push(`- "word_problem": { id, type: "word_problem", points: N, problem_text: "...", steps: [{description:"Step 1",expected:"val1"}], final_answer: "answer" }`)
   parts.push(`- "read_aloud": { id, type: "read_aloud", points: 0, text: "short passage or source text" }`)
   parts.push(`- "info_box": { id, type: "info_box", points: 0, title: "Did you know?", text: "explanation", mermaid: "optional diagram code", alt_text: "diagram description" }`)
   parts.push(`- "vocabulary": { id, type: "vocabulary", points: N, vocabulary: { pairs: [{l:"source_word",r:"translation"}], direction: "l2r" } }`)
-  parts.push(`- "contextual_dialogue": { id, type: "contextual_dialogue", points: N, messages: [{text:"Hi!", isGap:false},{text:"My name is ((name))", isGap:true, answer:"Peter"}] }`)
   parts.push(`- "semantic_sorter": { id, type: "semantic_sorter", points: N, categories: [{name:"Nouns", words:["table","chair"]},{name:"Verbs",words:["run","eat"]}] }`)
   parts.push(`- "flashcards": { id, type: "flashcards", points: N, cards: [{front:"Hund",back:"dog"},{front:"Katze",back:"cat"}] }`)
-  parts.push(`- "memory_match": { id, type: "memory_match", points: N, pairs: [["Hund","dog"],["Katze","cat"]] }`)
-  parts.push(`- "drag_drop": { id, type: "drag_drop", points: N, items: ["apple","banana"], answers: { "fruit":"apple", "yellow":"banana" } }`)
+  parts.push(`- "drag_words": { id, type: "drag_words", points: N, template: "This is a ((sentence)) with ((gaps))." }`)
+  parts.push(`- "correct_words": { id, type: "correct_words", points: N, template: "Wrong words should be marked ((wrong/correct)) this way." }`)
+  parts.push(`- "question_table": { id, type: "question_table", points: N, columns: ["True", "False"], rows: ["The sun is a star##True", "The moon is a planet##False"] }`)
+  parts.push(`- "crossword": { id, type: "crossword", points: N, words: [{"word":"HELLO","description":"A greeting"},{"word":"WORLD","description":"Our planet"}] }`)
+  parts.push(`- "audio_match": { id, type: "audio_match", points: N, pairs: [["Hund","dog"],["Katze","cat"]], voice: "de-DE" }`)
+  parts.push(`- "dictation": { id, type: "dictation", points: N, audioText: "Diktattext hier eintragen", voice: "de-DE" }`)
+  parts.push(`- "word_search": { id, type: "word_search", points: N, words: [{"word":"HUND"},{"word":"KATZE"}] }`)
+  parts.push(`- "sentence_builder": { id, type: "sentence_builder", points: N, sentence: "Das ist ein ganzer Satz." }`)
+  parts.push(`- "odd_one_out": { id, type: "odd_one_out", points: N, items: ["Hund", "Katze", "Tisch"], correct: 2, reason: "Tisch ist kein Tier" }`)
   parts.push(``)
   parts.push(`RULES:`)
   parts.push(`- Every block MUST have a unique "id" field (uuid format)`)
@@ -380,7 +380,7 @@ function buildWorksheetPrompt({
   parts.push(`- Do not use unsupported block types`)
   parts.push(``)
   parts.push(`GOOD EXAMPLE:`)
-  parts.push(`{"blocks":[{"id":"11111111-1111-4111-8111-111111111111","type":"info_box","points":0,"title":"Merksatz","text":"Eine Bruchzahl beschreibt einen Teil eines Ganzen."},{"id":"22222222-2222-4222-8222-222222222222","type":"fraction_input","points":6,"text":"Schreibe den markierten Anteil als Bruch.","numerator":3,"denominator":4},{"id":"33333333-3333-4333-8333-333333333333","type":"single_choice","points":6,"text":"Welcher Bruch ist größer als 1/2?","options":["1/4","2/3","2/5"],"correct":1},{"id":"44444444-4444-4444-8444-444444444444","type":"short_answer","points":8,"text":"Erkläre in einem Satz, woran man erkennt, dass 3/4 größer ist als 2/4.","keywords":["gleicher Nenner","größerer Zähler"],"sample_answer":"Bei gleichem Nenner ist der Bruch mit dem größeren Zähler größer."}]}`)
+  parts.push(`{"blocks":[{"id":"11111111-1111-4111-8111-111111111111","type":"info_box","points":0,"title":"Merksatz","text":"Im Englischen verwenden wir 'simple past' für abgeschlossene Handlungen in der Vergangenheit."},{"id":"22222222-2222-4222-8222-222222222222","type":"gap_fill","points":6,"template":"Yesterday, I ((went)) to the cinema."},{"id":"33333333-3333-4333-8333-333333333333","type":"single_choice","points":6,"text":"Was ist das Simple Past von 'run'?","options":["runned","ran","runs"],"correct":1}]}`)
 
   return parts.join('\n')
 }
@@ -484,144 +484,32 @@ function normalizeGeneratedBlock(raw: unknown): GeneratedBlock | null {
         sample_answer: typeof candidate.sample_answer === 'string' ? candidate.sample_answer.trim() : '',
       }
     }
-    case 'number_line': {
-      const min = typeof candidate.min_value === 'number' ? candidate.min_value : 0
-      const max = typeof candidate.max_value === 'number' ? candidate.max_value : 100
-      const markers = Array.isArray(candidate.markers)
-        ? candidate.markers.filter((n): n is number => typeof n === 'number' && n >= min && n <= max)
+        case 'drag_words': {
+      const template = typeof candidate.template === 'string' ? candidate.template.trim() : ''
+      if (!template || !/\(\(.+?\)\)/.test(template)) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, template }
+    }
+    case 'correct_words': {
+      const template = typeof candidate.template === 'string' ? candidate.template.trim() : ''
+      if (!template || !/\(\(.+?\)\)/.test(template)) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, template }
+    }
+    case 'question_table': {
+      const columns = asStringArray(candidate.columns)
+      const rows = asStringArray(candidate.rows)
+      if (columns.length === 0 || rows.length === 0) return null
+      return { id, type, points: clampPoints(candidate.points, 10), text, columns, rows }
+    }
+    case 'crossword': {
+      const words = Array.isArray(candidate.words)
+        ? candidate.words
+            .filter((w: any) => w && typeof w === 'object' && typeof w.word === 'string' && typeof w.description === 'string')
+            .map((w: any) => ({ word: w.word.trim().toUpperCase(), description: w.description.trim() }))
         : []
-      if (max <= min || markers.length === 0) return null
-      return { id, type, points: clampPoints(candidate.points, 8), text, min_value: min, max_value: max, markers }
+      if (words.length < 2) return null
+      return { id, type, points: clampPoints(candidate.points, 10), text, words }
     }
-    case 'equation_entry': {
-      const equation = typeof candidate.equation === 'string' ? candidate.equation.trim() : ''
-      const final_answer = typeof candidate.final_answer === 'string' ? candidate.final_answer.trim() : ''
-      if (!equation || !final_answer) return null
-      return { id, type, points: clampPoints(candidate.points, 10), text, equation, final_answer }
-    }
-    case 'fraction_input': {
-      const numerator = typeof candidate.numerator === 'number' ? candidate.numerator : NaN
-      const denominator = typeof candidate.denominator === 'number' ? candidate.denominator : NaN
-      if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return null
-      return { id, type, points: clampPoints(candidate.points, 6), text, numerator, denominator }
-    }
-    case 'arithmetic_grid': {
-      const operand1 = typeof candidate.operand1 === 'number' ? candidate.operand1 : NaN
-      const operand2 = typeof candidate.operand2 === 'number' ? candidate.operand2 : NaN
-      const operation = typeof candidate.operation === 'string' ? candidate.operation.trim() : 'add'
-      if (!Number.isFinite(operand1) || !Number.isFinite(operand2)) return null
-      return { id, type, points: clampPoints(candidate.points, 8), text, operand1, operand2, operation }
-    }
-    case 'graph_plot': {
-      const points = Array.isArray(candidate.points_to_plot)
-        ? candidate.points_to_plot
-            .filter((point): point is [number, number] =>
-              Array.isArray(point) && point.length === 2 && typeof point[0] === 'number' && typeof point[1] === 'number',
-            )
-            .map((point) => [point[0], point[1]] as [number, number])
-        : []
-      if (points.length === 0) return null
-      return { id, type, points: clampPoints(candidate.points, 10), text, points_to_plot: points }
-    }
-    case 'geometry_shape': {
-      const shape_type = typeof candidate.shape_type === 'string' ? candidate.shape_type.trim() : ''
-      if (!shape_type) return null
-      return { id, type, points: clampPoints(candidate.points, 7), text, shape_type }
-    }
-    case 'word_problem': {
-      const problem_text = typeof candidate.problem_text === 'string' ? candidate.problem_text.trim() : text
-      const steps = Array.isArray(candidate.steps)
-        ? candidate.steps
-            .filter((step): step is { description: string; expected: string } =>
-              !!step &&
-              typeof step === 'object' &&
-              typeof (step as { description?: unknown }).description === 'string' &&
-              typeof (step as { expected?: unknown }).expected === 'string',
-            )
-            .map((step) => ({
-              description: step.description.trim(),
-              expected: step.expected.trim(),
-            }))
-            .filter((step) => step.description && step.expected)
-        : []
-      const final_answer = typeof candidate.final_answer === 'string' ? candidate.final_answer.trim() : ''
-      if (!problem_text || steps.length === 0 || !final_answer) return null
-      return { id, type, points: clampPoints(candidate.points, 12), problem_text, steps, final_answer }
-    }
-    case 'true_false': {
-      const correct_answer = typeof candidate.correct_answer === 'boolean' ? candidate.correct_answer : true
-      if (!text) return null
-      return { id, type, points: clampPoints(candidate.points, 6), text, correct_answer }
-    }
-    case 'ordering': {
-      const items = asStringArray(candidate.items)
-      if (items.length < 2) return null
-      return { id, type, points: clampPoints(candidate.points, 8), text, items }
-    }
-    case 'drawing': {
-      const canvas_width = typeof candidate.canvas_width === 'number' ? candidate.canvas_width : 600
-      const canvas_height = typeof candidate.canvas_height === 'number' ? candidate.canvas_height : 400
-      const background_image = typeof candidate.background_image === 'string' ? candidate.background_image.trim() : ''
-      return { id, type, points: 0, text, canvas_width, canvas_height, background_image }
-    }
-    case 'percentage': {
-      const percentage_value = typeof candidate.percentage_value === 'number' ? candidate.percentage_value : NaN
-      const part_value = typeof candidate.part_value === 'number' ? candidate.part_value : NaN
-      const whole_value = typeof candidate.whole_value === 'number' ? candidate.whole_value : NaN
-      if (!text) return null
-      return { id, type, points: clampPoints(candidate.points, 8), text, percentage_value, part_value, whole_value }
-    }
-    case 'unit_conversion': {
-      const value = typeof candidate.value === 'number' ? candidate.value : NaN
-      const from_unit = typeof candidate.from_unit === 'string' ? candidate.from_unit.trim() : ''
-      const to_unit = typeof candidate.to_unit === 'string' ? candidate.to_unit.trim() : ''
-      if (!Number.isFinite(value) || !from_unit || !to_unit) return null
-      return { id, type, points: clampPoints(candidate.points, 6), text, value, from_unit, to_unit }
-    }
-    case 'angle': {
-      const expected_degrees = typeof candidate.expected_degrees === 'number' ? candidate.expected_degrees : NaN
-      const angle_type = typeof candidate.angle_type === 'string' ? candidate.angle_type.trim() : 'measure'
-      if (!text) return null
-      return { id, type, points: clampPoints(candidate.points, 6), text, expected_degrees, angle_type }
-    }
-    case 'fraction_model': {
-      const numerator = typeof candidate.numerator === 'number' ? candidate.numerator : NaN
-      const denominator = typeof candidate.denominator === 'number' ? candidate.denominator : NaN
-      const model_type = typeof candidate.model_type === 'string' ? candidate.model_type.trim() : 'circle'
-      const show_labels = typeof candidate.show_labels === 'boolean' ? candidate.show_labels : true
-      if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return null
-      return { id, type, points: 0, text, numerator, denominator, model_type, show_labels }
-    }
-    case 'vocabulary': {
-      const vocabulary = candidate.vocabulary as { pairs?: { l: string; r: string }[]; direction?: string } | undefined
-      if (!vocabulary || !Array.isArray(vocabulary.pairs) || vocabulary.pairs.length === 0) return null
-      return { id, type, points: clampPoints(candidate.points, vocabulary.pairs.length), vocabulary: { pairs: vocabulary.pairs, direction: vocabulary.direction || 'l2r' } }
-    }
-    case 'contextual_dialogue': {
-      const messages = Array.isArray(candidate.messages)
-        ? candidate.messages.filter((m): m is { text: string; isGap?: boolean; answer?: string } =>
-            !!m && typeof m === 'object' && typeof (m as { text?: unknown }).text === 'string')
-        : []
-      if (messages.length === 0) return null
-      return { id, type, points: clampPoints(candidate.points, messages.length), messages }
-    }
-    case 'semantic_sorter': {
-      const categories = Array.isArray(candidate.categories)
-        ? candidate.categories.filter((c): c is { name: string; words: string[] } =>
-            !!c && typeof c === 'object' && typeof (c as { name?: unknown }).name === 'string' && Array.isArray((c as { words?: unknown }).words))
-        : []
-      if (categories.length < 2) return null
-      return { id, type, points: clampPoints(candidate.points, 10), categories }
-    }
-    case 'flashcards': {
-      const cards = Array.isArray(candidate.cards)
-        ? candidate.cards.filter((c): c is { front: string; back: string; image_url?: string; audio_url?: string } =>
-            !!c && typeof c === 'object' && typeof (c as { front?: unknown }).front === 'string' && typeof (c as { back?: unknown }).back === 'string')
-        : []
-      if (cards.length === 0) return null
-      return { id, type, points: clampPoints(candidate.points, cards.length), cards }
-    }
-    case 'memory_match': {
+    case 'audio_match': {
       const pairs = Array.isArray(candidate.pairs)
         ? candidate.pairs
             .filter((pair): pair is [string, string] => Array.isArray(pair) && pair.length === 2)
@@ -629,13 +517,28 @@ function normalizeGeneratedBlock(raw: unknown): GeneratedBlock | null {
             .filter(([left, right]) => left && right)
         : []
       if (pairs.length < 2) return null
-      return { id, type, points: clampPoints(candidate.points, pairs.length), pairs }
+      return { id, type, points: clampPoints(candidate.points, 8), text, pairs, voice: typeof candidate.voice === 'string' ? candidate.voice.trim() : '' }
     }
-    case 'drag_drop': {
+    case 'dictation': {
+      const audioText = typeof candidate.audioText === 'string' ? candidate.audioText.trim() : ''
+      if (!audioText) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, audioText, voice: typeof candidate.voice === 'string' ? candidate.voice.trim() : '' }
+    }
+    case 'word_search': {
+      const words = asStringArray(candidate.words).map(w => ({ word: w.toUpperCase() }))
+      if (words.length === 0) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, words }
+    }
+    case 'sentence_builder': {
+      const sentence = typeof candidate.sentence === 'string' ? candidate.sentence.trim() : ''
+      if (!sentence) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, sentence }
+    }
+    case 'odd_one_out': {
       const items = asStringArray(candidate.items)
-      const answers = candidate.answers as Record<string, string> | undefined
-      if (items.length === 0 || !answers) return null
-      return { id, type, points: clampPoints(candidate.points, items.length), items, answers }
+      const correct = typeof candidate.correct === 'number' ? candidate.correct : 0
+      if (items.length < 3) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, items, correct, reason: typeof candidate.reason === 'string' ? candidate.reason.trim() : '' }
     }
     default:
       return null

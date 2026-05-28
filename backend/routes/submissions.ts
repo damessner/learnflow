@@ -16,7 +16,7 @@ import {
 
 const router = Router()
 
-const MAX_REMEDIATION_ROUNDS = 2
+const MAX_REMEDIATION_ROUNDS = 3
 const REMEDIATION_TIMEOUT_MS = 60_000
 
 const RemediationExerciseSchema = z.object({
@@ -55,6 +55,13 @@ const RemediationExerciseSchema = z.object({
   to_unit: z.string().optional(),
   angle_value: z.number().optional(),
   angle_type: z.string().optional(),
+  columns: z.array(z.string()).optional(),
+  rows: z.array(z.string()).optional(),
+  sentence: z.string().optional(),
+  audioText: z.string().optional(),
+  voice: z.string().optional(),
+  audioUrl: z.string().optional(),
+  reason: z.string().optional(),
 }).passthrough()
 
 const RemediationResultSchema = z.object({
@@ -80,13 +87,13 @@ function normalizeBlockText(block: Record<string, unknown>): string {
 
 const SUPPORTED_EXERCISE_TYPES = new Set([
   'gap_fill', 'matching', 'multiple_choice', 'single_choice', 'short_answer',
-  'word_scramble', 'number_line', 'equation_entry', 'fraction_input',
-  'arithmetic_grid', 'graph_plot', 'geometry_shape', 'word_problem',
-  'true_false', 'ordering', 'percentage', 'unit_conversion', 'angle',
-  'info', 'text', 'read_aloud', 'drawing', 'fraction_model',
+  'word_scramble', 'true_false', 'ordering', 'info', 'text', 'read_aloud', 'drawing',
+  'vocabulary', 'semantic_sorter', 'flashcards',
+  'drag_words', 'correct_words', 'question_table', 'crossword', 'audio_match',
+  'dictation', 'word_search', 'sentence_builder', 'odd_one_out'
 ])
 
-const FREE_TEXT_EXERCISE_TYPES = new Set(['short_answer', 'equation_entry', 'word_problem'])
+const FREE_TEXT_EXERCISE_TYPES = new Set(['short_answer', 'dictation', 'odd_one_out'])
 
 function inferExercisePoints(exercise: Record<string, unknown>): number {
   const type = String(exercise.type || '')
@@ -94,50 +101,58 @@ function inferExercisePoints(exercise: Record<string, unknown>): number {
   if (Number.isFinite(explicitPoints) && explicitPoints > 0) return Math.round(explicitPoints)
 
   switch (type) {
-    case 'gap_fill': {
+    case 'gap_fill':
+    case 'drag_words':
+    case 'correct_words': {
       const template = String(exercise.template || '')
-      return Math.max(1, (template.match(/\(\(.*?\)\)/g) || []).length)
+      return Math.max(1, (template.match(/\(\(.*?\)\)/g) || []).length * 2)
     }
-    case 'matching': {
+    case 'matching':
+    case 'audio_match': {
       const pairs = (exercise.pairs || []) as unknown[]
-      return Math.max(1, pairs.length)
+      return Math.max(1, pairs.length * 2)
     }
     case 'word_scramble': {
       const words = (exercise.words || []) as unknown[]
-      return Math.max(1, words.length)
+      return Math.max(1, words.length * 2)
     }
     case 'ordering': {
       const items = (exercise.items || []) as unknown[]
-      return Math.max(1, items.length)
+      return Math.max(1, items.length * 2)
     }
-    case 'graph_plot': {
-      const pts = (exercise.points_to_plot || []) as unknown[]
-      return Math.max(1, pts.length)
+    case 'vocabulary': {
+      const pairs = ((exercise.vocabulary as any)?.pairs || []) as unknown[]
+      return Math.max(1, pairs.length * 2)
     }
-    case 'word_problem': {
-      const steps = (exercise.steps || []) as unknown[]
-      return Math.max(1, steps.length + 1)
+    case 'semantic_sorter': {
+      const categories = (exercise.categories || []) as any[]
+      let totalItems = 0
+      for (const cat of categories) {
+        totalItems += (cat.words || []).length
+      }
+      return Math.max(1, totalItems * 2)
     }
-    case 'number_line': return 1
-    case 'equation_entry': return 1
-    case 'fraction_input': return 1
-    case 'arithmetic_grid': return 1
-    case 'geometry_shape': return 1
-    case 'true_false': return 1
-    case 'percentage': return 1
-    case 'unit_conversion': return 1
-    case 'angle': return 1
+    case 'question_table': {
+      const rows = (exercise.rows || []) as unknown[]
+      return Math.max(1, rows.length * 2)
+    }
+    case 'crossword': {
+      const words = (exercise.words || []) as unknown[]
+      return Math.max(1, words.length * 2)
+    }
+    case 'word_search': {
+      const words = (exercise.words || []) as unknown[]
+      return Math.max(1, words.length * 2)
+    }
+    case 'dictation': return 8
+    case 'sentence_builder': return 6
+    case 'odd_one_out': return 6
     case 'multiple_choice': {
       const opts = (exercise.options || []) as unknown[]
       return Math.max(1, opts.length > 4 ? 2 : 1)
     }
     case 'single_choice': return 1
-    case 'info':
-    case 'text':
-    case 'read_aloud':
-    case 'drawing':
-    case 'fraction_model':
-      return 0
+    case 'true_false': return 1
     default:
       return 1
   }
@@ -559,37 +574,30 @@ router.post('/assignment/:id/remediation/generate', requireAuth, async (req, res
       '',
       'Return remediation JSON with this exact schema:',
       JSON.stringify({
-        summary: 'Brief summary of student issues',
+        summary: 'Brief summary of student issues and mistakes, explaining the errors clearly.',
         misconceptions: ['list of misconceptions found'],
         custom_instructions: ['practical next steps for this student'],
         mermaid: 'optional mermaid diagram code',
         exercises: [
           {
             title: 'Exercise title',
-            type: 'gap_fill|matching|multiple_choice|single_choice|short_answer|word_scramble|number_line|equation_entry|fraction_input|arithmetic_grid|graph_plot|geometry_shape|word_problem|true_false|ordering|percentage|unit_conversion|angle',
+            type: 'gap_fill|matching|multiple_choice|single_choice|short_answer|word_scramble|true_false|ordering|vocabulary|semantic_sorter|flashcards|drag_words|correct_words|question_table|crossword|audio_match|dictation|word_search|sentence_builder|odd_one_out',
             // Type-specific fields (see rules below):
-            template: 'Text with ((gap)) placeholders',       // for gap_fill
-            pairs: [['left', 'right']],                       // for matching
+            template: 'Text with ((gap)) placeholders or ((wrong/correct)) placeholders', // for gap_fill, drag_words, correct_words
+            pairs: [['left', 'right']],                       // for matching, audio_match
             options: ['A', 'B', 'C', 'D'],                    // for multiple_choice / single_choice
-            correct: 0,                                       // for single_choice (index), true_false (0/1)
+            correct: 0,                                       // for single_choice (index), true_false (0/1), odd_one_out (index)
             keywords: ['kw1', 'kw2'],                         // for short_answer
             sampleAnswer: 'expected answer',                  // for short_answer
-            words: [{ word: 'scrambled' }],                   // for word_scramble
-            markers: [0, 1, 2],                               // for number_line
-            equation: 'x + 2 = 5',                            // for equation_entry
-            final_answer: '3',                                // for equation_entry, word_problem, percentage, unit_conversion
-            numerator: 1, denominator: 2,                     // for fraction_input
-            operand1: 5, operand2: 3, operation: 'add',       // for arithmetic_grid (add/subtract/multiply/divide)
-            points_to_plot: [[1, 2], [3, 4]],                 // for graph_plot
-            shape_type: 'triangle',                           // for geometry_shape
-            problem_text: 'word problem text',                // for word_problem
-            steps: [{ description: 'Step 1', expected: 'answer1' }], // for word_problem
-            statement: 'True or false statement',             // for true_false
-            items: ['first', 'second', 'third'],              // for ordering
-            correct_order: [2, 0, 1],                         // for ordering
-            value: 75, total: 100,                            // for percentage
-            from_value: 12, from_unit: 'inches', to_unit: 'cm', // for unit_conversion
-            angle_value: 90, angle_type: 'right',             // for angle
+            words: [{ word: 'scrambled' }],                   // for word_scramble, word_search (list of words), crossword (with description field below)
+            // For crossword: words should be [{ word: 'HELLO', description: 'A greeting' }]
+            columns: ['True', 'False'],                       // for question_table (possible answer columns)
+            rows: ['The sun is a star##True'],                // for question_table (statements with ##Answer suffix)
+            sentence: 'The sky is blue.',                     // for sentence_builder
+            audioText: 'Sentence to be spoken',               // for dictation, audio_match
+            voice: 'de-DE-KatjaNeural|en-US-JennyNeural',     // for dictation, audio_match (German/English voice selection)
+            items: ['first', 'second', 'third'],              // for ordering, odd_one_out
+            reason: 'reason why this item is odd',            // for odd_one_out
             kc_ids: ['kc-id-1'],                              // optional knowledge component IDs
           },
         ],
@@ -601,6 +609,7 @@ router.post('/assignment/:id/remediation/generate', requireAuth, async (req, res
       '- Create 2 to 4 targeted exercises based on these mistakes.',
       '- Each exercise MUST have a valid type from the list above.',
       '- Include type-specific fields matching the chosen type (see schema).',
+      `- CRITICAL: The student is now on remediation round ${rounds.length + 1}. Carefully analyze their previous mistakes and prior explanations. Provide a new, comprehensive and detailed explanation of their mistakes and misconceptions in the 'summary' field, explaining the errors clearly, and generate a new set of worksheets to address these.`,
       '- Each exercise can optionally include a kc_ids array of knowledge component IDs.',
       '- Mermaid diagram should be present when useful (flow/steps/concept map).',
       '- Return only valid JSON, no markdown, no code fences.',

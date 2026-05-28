@@ -7,7 +7,7 @@ import { validate } from '../middleware/validate'
 import { scoreAnswers } from './scoring'
 
 const router = Router()
-const MAX_REMEDIATION_ROUNDS = 2
+const MAX_REMEDIATION_ROUNDS = 3
 
 function normalizeDueDateInput(value: unknown): string | null {
   if (typeof value !== 'string') return null

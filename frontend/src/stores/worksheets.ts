@@ -105,6 +105,10 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     return api.post('/ai/differentiate', payload)
   }
 
+  async function generateTTS(text, voice) {
+    return api.post('/worksheets/tts', { text, voice })
+  }
+
   return {
     worksheets,
     templates,
@@ -131,5 +135,6 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     aiRegenerateBlock,
     aiCheckAnswer,
     aiDifferentiateConcept,
+    generateTTS,
   }
 })

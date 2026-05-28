@@ -72,10 +72,6 @@
         <Vocabulary :block="block" :readonly="true" />
       </template>
 
-      <template v-if="block.type === 'contextual_dialogue'">
-        <ContextualDialogue :block="block" :readonly="true" />
-      </template>
-
       <template v-if="block.type === 'semantic_sorter'">
         <SemanticSorter :block="block" :readonly="true" />
       </template>
@@ -84,15 +80,83 @@
         <Flashcards :block="block" :readonly="true" />
       </template>
 
-      <template v-if="block.type === 'memory_match'">
-        <div v-for="(pair, pi) in block.pairs" :key="pi">
-          🧩 {{ pair[0] }} ↔ {{ pair[1] }}
+      <!-- Drag Words -->
+      <template v-if="block.type === 'drag_words'">
+        <div>
+          <template v-for="seg in getGapPreviewSegments(block.template)" :key="seg.key">
+            <span v-if="seg.type === 'text'" style="white-space: pre-wrap">{{ seg.text }}</span>
+            <u v-else-if="seg.type === 'gap'" style="color: var(--primary)">{{ seg.answer }}</u>
+          </template>
         </div>
       </template>
 
-      <template v-if="block.type === 'drag_drop'">
-        <div v-for="(item, ii) in block.items" :key="ii">
-          📦 {{ item }} → {{ Object.entries(block.answers || {}).find(([,v]) => v === item)?.[0] || '?' }}
+      <!-- Correct Words -->
+      <template v-if="block.type === 'correct_words'">
+        <div>
+          <template v-for="(seg, si) in getCorrectWordsSegments(block.template)" :key="si">
+            <span v-if="seg.type === 'text'">{{ seg.text }}</span>
+            <span v-else-if="seg.type === 'word'" style="color:var(--text-muted)">
+              <del style="color:red">{{ seg.wrong }}</del> (<ins style="color:green;text-decoration:none">{{ seg.correct }}</ins>)
+            </span>
+          </template>
+        </div>
+      </template>
+
+      <!-- Question Table -->
+      <template v-if="block.type === 'question_table'">
+        <table style="width:100%;border-collapse:collapse;margin-top:0.25rem;border:1px solid var(--border-color)">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-color);background:var(--bg-main)">
+              <th style="text-align:left;padding:0.25rem 0.5rem">Statement</th>
+              <th style="text-align:center;padding:0.25rem 0.5rem;width:120px">Answer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, ri) in block.rows || []" :key="ri" style="border-bottom:1px solid var(--border-color)">
+              <td style="padding:0.25rem 0.5rem">{{ row.split('##')[0] }}</td>
+              <td style="text-align:center;padding:0.25rem 0.5rem;font-weight:600;color:var(--primary)">{{ row.split('##')[1] }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </template>
+
+      <!-- Crossword -->
+      <template v-if="block.type === 'crossword'">
+        <div v-for="(item, idx) in block.words || []" :key="idx" style="margin-bottom:0.25rem">
+          <strong>{{ idx + 1 }}. {{ item.word }}</strong>: {{ item.description }}
+        </div>
+      </template>
+
+      <!-- Audio Match -->
+      <template v-if="block.type === 'audio_match'">
+        <div v-for="(pair, pi) in block.pairs || []" :key="pi" style="margin-bottom:0.25rem">
+          🔊 {{ pair[0] }} → {{ pair[1] }}
+        </div>
+      </template>
+
+      <!-- Dictation -->
+      <template v-if="block.type === 'dictation'">
+        <div><strong>Spoken Transcript:</strong> {{ block.audioText }}</div>
+      </template>
+
+      <!-- Word Search -->
+      <template v-if="block.type === 'word_search'">
+        <div><strong>Words to Find:</strong> {{ (block.words || []).join(', ') }}</div>
+      </template>
+
+      <!-- Sentence Builder -->
+      <template v-if="block.type === 'sentence_builder'">
+        <div><strong>Sentence:</strong> {{ block.sentence }}</div>
+      </template>
+
+      <!-- Odd One Out -->
+      <template v-if="block.type === 'odd_one_out'">
+        <div>
+          <span v-for="(item, idx) in block.items || []" :key="idx" style="margin-right:0.75rem">
+            <span v-if="block.correct === idx" style="color:green;font-weight:bold">✓ {{ item }}</span>
+            <span v-else>{{ item }}</span>
+          </span>
+          <div style="margin-top:0.25rem;font-size:0.85rem;color:var(--text-muted)">Reason: {{ block.reason }}</div>
         </div>
       </template>
     </div>
@@ -109,11 +173,8 @@ import { useRoute } from 'vue-router'
 import { useWorksheetsStore } from '../stores/worksheets'
 import MermaidDiagram from '../components/exercises/MermaidDiagram.vue'
 import Vocabulary from '../components/exercises/Vocabulary.vue'
-import ContextualDialogue from '../components/exercises/ContextualDialogue.vue'
 import SemanticSorter from '../components/exercises/SemanticSorter.vue'
 import Flashcards from '../components/exercises/Flashcards.vue'
-import MemoryMatch from '../components/exercises/MemoryMatch.vue'
-import DragDrop from '../components/exercises/DragDrop.vue'
 
 const route = useRoute()
 const store = useWorksheetsStore()
@@ -174,5 +235,37 @@ function parseGapPreviewTemplate(template: string): Array<
 
 function getGapPreviewSegments(template: string) {
   return parseGapPreviewTemplate(template)
+}
+
+function getCorrectWordsSegments(template: string) {
+  const segments: Array<{ type: 'text'; text: string } | { type: 'word'; index: number; wrong: string; correct: string }> = []
+  if (!template) return segments
+  let lastIndex = 0
+  let wordIndex = 0
+  const regex = /\(\((.*?)\)\)/g
+  let match: RegExpExecArray | null
+  while ((match = regex.exec(template)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({
+        type: 'text',
+        text: template.slice(lastIndex, match.index),
+      })
+    }
+    const parts = match[1].split('/')
+    segments.push({
+      type: 'word',
+      index: wordIndex++,
+      wrong: parts[0] || '',
+      correct: parts[1] || parts[0] || '',
+    })
+    lastIndex = regex.lastIndex
+  }
+  if (lastIndex < template.length) {
+    segments.push({
+      type: 'text',
+      text: template.slice(lastIndex),
+    })
+  }
+  return segments
 }
 </script>

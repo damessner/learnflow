@@ -59,7 +59,7 @@ interface Block {
   answers?: Record<string, string>
   keywords?: string[]
   cards?: { front: string; back: string }[]
-  words?: { word: string }[]
+  words?: { word: string; description?: string }[]
   categories?: { name: string; words: string[] }[]
   messages?: { text: string; isGap?: boolean; answer?: string }[]
   vocabulary?: { l: string; r: string }[] | { pairs: { l: string; r: string }[]; direction: string }
@@ -76,6 +76,12 @@ interface Block {
   problem_text?: string
   points_to_plot?: [number, number][]
   shape_type?: string
+  columns?: string[]
+  rows?: string[]
+  sentence?: string
+  audioText?: string
+  voice?: string
+  audioUrl?: string
 }
 
 interface ScoreResult {
@@ -127,10 +133,11 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
     try {
       let earned = 0
       switch (block.type) {
-        case 'gap_fill': {
+        case 'gap_fill':
+        case 'drag_words': {
           const r = scoreGapFill(block, (userAnswer || {}) as Record<string, string>)
           earned = r.score
-          feedback.push(`Gap fill: ${r.feedback}`)
+          feedback.push(`${block.type}: ${r.feedback}`)
           break
         }
         case 'multiple_choice': {
@@ -152,7 +159,8 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           }
           break
         }
-        case 'matching': {
+        case 'matching':
+        case 'audio_match': {
           const pairs = block.pairs || []
           const ans = (userAnswer as Record<string, string>) || {}
           let matchCount = 0
@@ -163,19 +171,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
             }
           }
           earned = pairs.length > 0 ? Math.round((matchCount / pairs.length) * block.points) : 0
-          feedback.push(`Matching: ${matchCount}/${pairs.length}`)
-          break
-        }
-        case 'drag_drop': {
-          const ans = (userAnswer as Record<string, string>) || {}
-          const expected = block.answers || {}
-          const slots = Object.keys(expected)
-          let correct = 0
-          for (const slot of slots) {
-            if (ans[slot]?.trim().toLowerCase() === expected[slot]?.trim().toLowerCase()) correct++
-          }
-          earned = slots.length > 0 ? Math.round((correct / slots.length) * block.points) : 0
-          feedback.push(`Drag-drop: ${correct}/${slots.length}`)
+          feedback.push(`${block.type}: ${matchCount}/${pairs.length}`)
           break
         }
         case 'short_answer': {
@@ -190,8 +186,7 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           feedback.push(pass ? 'Short answer: correct' : 'Short answer: incorrect')
           break
         }
-        case 'flashcards':
-        case 'memory_match': {
+        case 'flashcards': {
           if (userAnswer === 'completed' || (userAnswer as Record<string, unknown>)?.completed) {
             earned = block.points
             feedback.push(`${block.type}: completed`)
@@ -235,28 +230,6 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           feedback.push(`Semantic sorter: ${correct}/${totalItems}`)
           break
         }
-        case 'contextual_dialogue': {
-          const messages = block.messages || []
-          const ans = (userAnswer as Record<string, string>) || {}
-          let correct = 0
-          let gapCount = 0
-          for (let mi = 0; mi < messages.length; mi++) {
-            if (messages[mi].isGap) {
-              gapCount++
-              const expected = messages[mi].answer || ''
-              const userVal = (ans[String(mi)] || '').trim()
-              if (
-                userVal.toLowerCase() === expected.toLowerCase() ||
-                isAcceptableVariant(userVal, expected)
-              ) {
-                correct++
-              }
-            }
-          }
-          earned = gapCount > 0 ? Math.round((correct / gapCount) * block.points) : 0
-          feedback.push(`Dialogue: ${correct}/${gapCount}`)
-          break
-        }
         case 'vocabulary': {
           let pairs: { l: string; r: string }[]
           let direction = 'l2r'
@@ -298,104 +271,91 @@ export function scoreAnswers(blocks: Block[], answers: Record<string, unknown>):
           feedback.push(`${block.type}: auto`)
           break
         }
-        case 'number_line': {
-          const ans = Number(userAnswer)
-          const markers = block.markers || []
-          if (markers.length > 0 && !isNaN(ans)) {
-            const closest = markers.reduce((prev, curr) =>
-              Math.abs(curr - ans) < Math.abs(prev - ans) ? curr : prev,
-            )
-            earned = Math.abs(ans - closest) < 0.5 ? block.points : 0
-            feedback.push(`Number line: ${earned > 0 ? 'correct' : 'incorrect'}`)
-          }
-          break
-        }
-        case 'equation_entry': {
-          const ans = String(userAnswer || '')
-            .replace(/\s/g, '')
-            .toLowerCase()
-          const expected = String(block.final_answer || block.equation || '')
-            .replace(/\s/g, '')
-            .toLowerCase()
-          earned = ans === expected ? block.points : 0
-          feedback.push(`Equation: ${earned > 0 ? 'correct' : 'incorrect'}`)
-          break
-        }
-        case 'fraction_input': {
-          const userNum = (userAnswer as Record<string, number>)?.numerator
-          const userDen = (userAnswer as Record<string, number>)?.denominator
-          if (userNum === block.numerator && userDen === block.denominator) {
-            earned = block.points
-            feedback.push('Fraction: correct')
-          } else {
-            feedback.push('Fraction: incorrect')
-          }
-          break
-        }
-        case 'arithmetic_grid': {
-          const ans = String(userAnswer || '').replace(/\s/g, '')
-          const a = block.operand1 || 0
-          const b = block.operand2 || 0
-          const op = block.operation || 'add'
-          let expectedResult = 0
-          if (op === 'add') expectedResult = a + b
-          else if (op === 'subtract') expectedResult = a - b
-          else if (op === 'multiply') expectedResult = a * b
-          else if (op === 'divide') expectedResult = b !== 0 ? a / b : 0
-          earned = Number(ans) === expectedResult ? block.points : 0
-          feedback.push(`Arithmetic: ${earned > 0 ? 'correct' : 'incorrect'}`)
-          break
-        }
-        case 'graph_plot': {
-          const userPoints = (userAnswer as [number, number][]) || []
-          const expectedPoints = block.points_to_plot || []
-          let correct = 0
-          for (const ep of expectedPoints) {
-            for (const up of userPoints) {
-              if (Math.abs(up[0] - ep[0]) < 0.5 && Math.abs(up[1] - ep[1]) < 0.5) {
-                correct++
-                break
-              }
+        case 'correct_words': {
+          const template = block.template || ''
+          const matches = template.match(/\(\(.*?\)\)/g) || []
+          const ans = (userAnswer as Record<string, string>) || {}
+          let correctCount = 0
+          for (let i = 0; i < matches.length; i++) {
+            const inner = matches[i].slice(2, -2)
+            const parts = inner.split('/')
+            const expected = (parts[1] || parts[0] || '').trim().toLowerCase()
+            const userVal = String(ans[String(i)] || ans[i] || '').trim().toLowerCase()
+            if (userVal === expected || isAcceptableVariant(userVal, expected)) {
+              correctCount++
             }
           }
-          earned =
-            expectedPoints.length > 0
-              ? Math.round((correct / expectedPoints.length) * block.points)
-              : 0
-          feedback.push(`Graph: ${correct}/${expectedPoints.length} points`)
+          earned = matches.length > 0 ? Math.round((correctCount / matches.length) * block.points) : 0
+          feedback.push(`Correct words: ${correctCount}/${matches.length}`)
           break
         }
-        case 'geometry_shape': {
-          const ans = (userAnswer as Record<string, unknown>) || {}
-          const nameMatch =
-            String(ans.shape_name || '').toLowerCase() ===
-            String(block.shape_type || '').toLowerCase()
-          earned = nameMatch ? block.points : 0
-          feedback.push(`Geometry: ${earned > 0 ? 'correct' : 'incorrect'}`)
-          break
-        }
-        case 'word_problem': {
-          const steps = block.steps || []
-          const userSteps = (userAnswer as Record<string, string>) || {}
-          let correct = 0
-          for (let i = 0; i < steps.length; i++) {
-            const userVal = String(userSteps[i] || userSteps[String(i)] || '')
-              .trim()
-              .toLowerCase()
-            const expVal = (steps[i].expected || '').trim().toLowerCase()
-            if (userVal === expVal || checkSTEMMatch(userVal, expVal)) correct++
+        case 'question_table': {
+          const rows = block.rows || []
+          const ans = (userAnswer as Record<string, string>) || {}
+          let correctCount = 0
+          for (let i = 0; i < rows.length; i++) {
+            const parts = rows[i].split('##')
+            const expected = (parts[1] || '').trim().toLowerCase()
+            const userVal = String(ans[String(i)] || ans[i] || '').trim().toLowerCase()
+            if (userVal === expected) correctCount++
           }
-          const finalAnsMatch =
-            String(userSteps.final_answer || '')
-              .trim()
-              .toLowerCase() ===
-            String(block.final_answer || '')
-              .trim()
-              .toLowerCase()
-          if (finalAnsMatch) correct++
-          const totalItems = steps.length + 1
-          earned = totalItems > 0 ? Math.round((correct / totalItems) * block.points) : 0
-          feedback.push(`Word problem: ${correct}/${totalItems}`)
+          earned = rows.length > 0 ? Math.round((correctCount / rows.length) * block.points) : 0
+          feedback.push(`Question table: ${correctCount}/${rows.length}`)
+          break
+        }
+        case 'crossword': {
+          const words = block.words || []
+          const ans = (userAnswer as Record<string, string>) || {}
+          let correctCount = 0
+          for (let i = 0; i < words.length; i++) {
+            const expected = (words[i].word || '').trim().toLowerCase()
+            const userVal = String(ans[String(i)] || ans[i] || '').trim().toLowerCase()
+            if (userVal === expected) correctCount++
+          }
+          earned = words.length > 0 ? Math.round((correctCount / words.length) * block.points) : 0
+          feedback.push(`Crossword: ${correctCount}/${words.length}`)
+          break
+        }
+        case 'dictation': {
+          const expected = (block.audioText || '').trim().toLowerCase()
+          const userVal = String(userAnswer || '').trim().toLowerCase()
+          const pass = userVal === expected || isAcceptableVariant(userVal, expected)
+          earned = pass ? block.points : 0
+          feedback.push(`Dictation: ${pass ? 'correct' : 'incorrect'}`)
+          break
+        }
+        case 'word_search': {
+          const expectedWords = (block.words || []).map((w) => (w.word || '').trim().toLowerCase())
+          const userWords = (Array.isArray(userAnswer) ? userAnswer : []).map((w) => String(w).trim().toLowerCase())
+          let correctCount = 0
+          for (const w of expectedWords) {
+            if (userWords.includes(w)) correctCount++
+          }
+          earned = expectedWords.length > 0 ? Math.round((correctCount / expectedWords.length) * block.points) : 0
+          feedback.push(`Word search: ${correctCount}/${expectedWords.length}`)
+          break
+        }
+        case 'sentence_builder': {
+          const expected = (block.sentence || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "")
+          const rawVal = Array.isArray(userAnswer) ? userAnswer.join(' ') : String(userAnswer || '')
+          const userVal = rawVal.replace(/\s+/g, ' ').trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "")
+          const pass = userVal === expected || isAcceptableVariant(userVal, expected)
+          earned = pass ? block.points : 0
+          feedback.push(`Sentence builder: ${pass ? 'correct' : 'incorrect'}`)
+          break
+        }
+        case 'odd_one_out': {
+          const selected = userAnswer && typeof userAnswer === 'object' && 'selected' in userAnswer ? Number((userAnswer as any).selected) : Number(userAnswer)
+          const reason = userAnswer && typeof userAnswer === 'object' && 'reason' in userAnswer ? String((userAnswer as any).reason).trim() : ''
+          const isCorrect = selected === block.correct
+          if (isCorrect) {
+            const hasReason = reason.length >= 3
+            earned = hasReason ? block.points : Math.round(block.points * 0.7)
+            feedback.push(`Odd one out: correct selection${hasReason ? ' and reason' : ''}`)
+          } else {
+            earned = 0
+            feedback.push('Odd one out: incorrect selection')
+          }
           break
         }
       }
