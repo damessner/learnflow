@@ -11,6 +11,7 @@ import {
   getModelConfig,
   isOpenCodeAvailable,
 } from '../services/opencode'
+import { getProviderService } from '../services/ProviderService'
 
 const ZEN_API_URL = 'https://opencode.ai/zen/v1/chat/completions'
 const DEFAULT_FETCH_TIMEOUT_MS = 60_000
@@ -813,6 +814,16 @@ function buildDifferentiatePrompt({ concept, subject, grade_level, language }: z
   return promptParts.filter(Boolean).join('\n')
 }
 
+router.get('/providers', requireAuth, async (_req, res, next) => {
+  try {
+    const service = getProviderService()
+    const providers = await service.getAvailableProviders()
+    res.json({ providers })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
   try {
     const request = GenerateRequestSchema.parse(req.body)
@@ -858,140 +869,30 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
 
       let candidateBlocks: GeneratedBlock[] = []
 
-      if (provider === 'opencode' && getZenApiKey()) {
-        try {
-          const response = await callZenChat('Create the worksheet now and return only valid JSON.', attemptPrompt, false, {
-            response_format: { type: 'json_object' },
-          })
-          const data = await response.json()
-          if (response.ok) {
-            const text = data.choices?.[0]?.message?.content || '{}'
-            const parsed = JSON.parse(text)
-            candidateBlocks = normalizeGeneratedBlocks(parsed.blocks, length)
-          } else {
-            throw new Error(data.error?.message || `OpenCode Zen API returned status ${response.status}`)
-          }
-        } catch (e: any) {
-          console.error('OpenCode Zen generation failed:', e)
-          lastError = e
-        }
-      } else if (provider === 'opencode' && (await isOpenCodeAvailable())) {
-        try {
-          const sessionId = await createSession('Worksheet Generation')
-          const result = await sendPromptStructured(sessionId, prompt, GenerationSchema as unknown as Record<string, unknown>, {
-            system: attemptPrompt,
-            model: await getModelConfig(),
-          })
-          candidateBlocks = normalizeGeneratedBlocks((result as { blocks?: unknown }).blocks, length)
-        } catch (e: any) {
-          console.error('OpenCode generation failed:', e)
-          lastError = e
-        }
-      } else if (provider === 'ollama' && process.env.OLLAMA_URL) {
-        try {
-          const response = await fetchWithTimeout(`${process.env.OLLAMA_URL}/api/generate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model: process.env.OLLAMA_MODEL || 'llama3',
-              prompt: attemptPrompt,
-              stream: false,
-              format: 'json',
-            }),
-          })
-          const data = await response.json()
-          if (response.ok) {
-            const parsed = JSON.parse(data.response)
-            candidateBlocks = normalizeGeneratedBlocks(parsed.blocks, length)
-          } else {
-            throw new Error(`Ollama returned status ${response.status}`)
-          }
-        } catch (e: any) {
-          console.error('Validation failed for Ollama:', e)
-          lastError = e
-        }
-      } else if ((provider === 'gemini' || !['opencode', 'ollama'].includes(provider)) && process.env.GEMINI_API_KEY) {
-        let geminiResult: GeneratedBlock[] = []
-        let geminiError: any = null
-        try {
-          const response = await fetchWithTimeout(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Goog-Api-Key': process.env.GEMINI_API_KEY,
-              },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [
-                      {
-                        text: attemptPrompt,
-                      },
-                    ],
-                  },
-                ],
-                generationConfig: {
-                  responseMimeType: 'application/json',
-                },
-              }),
-            },
-          )
-          const data = await response.json()
-          if (response.ok) {
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
-            const parsed = JSON.parse(text)
-            geminiResult = normalizeGeneratedBlocks(parsed.blocks, length)
-          } else {
-            throw new Error(`Gemini API error (${response.status}): ${data.error?.message || 'unknown error'}`)
-          }
-        } catch (e: any) {
-          console.error('Gemini generation failed:', e.message || e)
-          geminiError = e
-        }
+      const providerService = getProviderService()
+      const genResult = await providerService.generateWithFallback(
+        attemptPrompt,
+        provider === 'opencode' ? 'zen' : provider,
+        {
+          system: 'You are an expert worksheet generator. Return ONLY valid JSON matching the requested format.',
+          extraBody: { response_format: { type: 'json_object' } },
+          onFallback(from, to, error) {
+            console.warn(`Provider "${from}" failed (${error}), falling back to "${to}"...`)
+          },
+        },
+      )
 
-        if (geminiResult.length > 0) {
-          candidateBlocks = geminiResult
-        } else {
-          // Fallback: if Gemini failed and OpenCode Zen is configured, try it
-          console.warn('Gemini returned no valid blocks, falling back to OpenCode Zen...')
-          lastError = geminiError
-          if (getZenApiKey()) {
-            try {
-              const zenResponse = await callZenChat('Create the worksheet now and return only valid JSON.', attemptPrompt, false, {
-                response_format: { type: 'json_object' },
-              })
-              const zenData = await zenResponse.json()
-              if (zenResponse.ok) {
-                const zenText = zenData.choices?.[0]?.message?.content || '{}'
-                const zenParsed = JSON.parse(zenText)
-                candidateBlocks = normalizeGeneratedBlocks(zenParsed.blocks, length)
-              } else {
-                throw new Error(`OpenCode Zen fallback API error (${zenResponse.status}): ${zenData.error?.message || 'unknown error'}`)
-              }
-            } catch (fallbackErr: any) {
-              console.error('OpenCode Zen fallback also failed:', fallbackErr.message || fallbackErr)
-              lastError = new Error(`Gemini: ${geminiError?.message || 'failed'}; Zen fallback: ${fallbackErr.message || 'also failed'}`)
-            }
-          } else {
-            lastError = geminiError || new Error('Gemini failed and no OpenCode Zen fallback configured')
-          }
+      if (genResult.success && genResult.data) {
+        const parsed = genResult.data as Record<string, unknown>
+        candidateBlocks = normalizeGeneratedBlocks(parsed.blocks, length)
+        console.log(`Generation succeeded via ${genResult.providerUsed}`)
+      } else {
+        console.error('All providers failed:', genResult.error)
+        lastError = new Error(genResult.error || 'All AI providers failed')
+        // Log individual attempt details
+        for (const attempt of genResult.attempts) {
+          if (attempt.error) console.error(`  ${attempt.provider}: ${attempt.error}`)
         }
-      }
-
-      // Catch-all: if no provider branch was taken (e.g. wrong provider name, or its key is missing)
-      if (candidateBlocks.length === 0 && !lastError) {
-        const keyStatus: string[] = []
-        if (getZenApiKey()) keyStatus.push('OpenCode Zen (key set)')
-        else keyStatus.push('OpenCode Zen (no key)')
-        if (process.env.GEMINI_API_KEY) keyStatus.push('Gemini (key set)')
-        else keyStatus.push('Gemini (no key)')
-        if (process.env.OLLAMA_URL) keyStatus.push('Ollama (configured)')
-        else keyStatus.push('Ollama (not configured)')
-        const msg = `No AI provider was reachable for provider="${provider}". Available: ${keyStatus.join(', ')}. Check the .env file.`
-        console.error(msg)
-        lastError = new Error(msg)
       }
 
       if (candidateBlocks.length > blocks.length) {

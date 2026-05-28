@@ -279,11 +279,78 @@ LearnFlow is a Progressive Web App — install it on your phone without any app 
 
 ---
 
+---
+
+## 🗺️ Roadmap & Future Features
+
+This is a live document — these are the features I'm actively thinking about, building toward, or dreaming of. Prioritization is driven by real classroom needs at Mittelschule Telfs, not by what's trendy.
+
+### 🟢 Phase 1 — Polish & Consolidation (Now — Summer 2026)
+
+| Priority | Feature | Why |
+|----------|---------|-----|
+| 🥇 | **AI Provider Health Checks** | Auto-detect which AI providers work, fallback chains without silent failure — *you're already seeing this get built* |
+| 🥇 | **Fraction/Decimal Exercise Expansion** | More visual fraction models, mixed-number operations, decimal ↔ fraction conversion |
+| 🥇 | **Performance Optimisation** | Faster worksheet loading for classes with 25+ students, paginated results, lazy-loaded exercise components |
+| 🥈 | **Exercise Type: Cloze Text** | Longer reading passages with strategic word deletion — *essential for German and English reading comprehension* |
+| 🥈 | **Exercise Type: Timeline** | Drag-and-drop chronological ordering with visual date markers — *for history and science timelines* |
+| 🥈 | **Worksheet Templates** | Save any worksheet as a reusable template structure (empty the content, keep the exercise framework) |
+| 🥉 | **Better Offline Support** | Queue student answers when offline, sync when connection returns — *PWA that actually works on the bus* |
+| 🥉 | **Bulk Operations** | Assign worksheets to multiple classes at once. Archive/unarchive. Copy across grade levels. |
+
+### 🔵 Phase 2 — Student & Parent Experience (Autumn 2026 — Spring 2027)
+
+| Priority | Feature | Why |
+|----------|---------|-----|
+| 🥇 | **Student Progress Dashboard** | *"Show me what I've learned this month."* Visual mastery heatmap, XP history, weakness alerts — tailored for kids, not data analysts |
+| 🥇 | **Parent Access (Read-Only)** | A simple view: *"Here's what your child worked on, here's how they're doing, here's what they need help with."* No login hassle — timed access codes |
+| 🥈 | **Self-Paced Learning Mode** | Students progress through a course at their own speed. The system unlocks the next worksheet only when mastery thresholds are met. *No more "I'm done, what now?"* |
+| 🥈 | **Goal Setting & Reflection** | Before a worksheet: *"I want to get X right."* After: *"I actually need help with…"* The act of setting a goal alone improves outcomes (Latham & Locke, 2007) |
+| 🥉 | **Weekly Parent Email Summary** | Auto-generated: worksheets completed, scores, streaks, teacher notes. No extra work for the teacher. |
+| 🥉 | **Student-Friendly Search** | *Badge browser*, *"worksheets I haven't finished"*, *"topics I keep getting wrong"* — designed for kids' mental models |
+
+### 🟣 Phase 3 — Teacher Tooling & Workflow (Spring 2027 — Winter 2027)
+
+| Priority | Feature | Why |
+|----------|---------|-----|
+| 🥇 | **AI Lesson Planner** | *"I need three 45-minute lessons on the water cycle for grade 2."* → Full lesson sequence with objectives, activities, and linked worksheets. The AI knows your curriculum constraints |
+| 🥇 | **Competency-Based Report Card Export** | Map every exercise to **Bildungsstandards** / competence matrices. Export a per-student standards checklist. *No more manual "trifft zu / trifft überwiegend zu" grid-filling* |
+| 🥈 | **Collaborative Worksheet Editing** | Two teachers editing the same worksheet. Real-time. Like Google Docs, but for worksheet builders. (Simple first version: share link → co-edit → merge) |
+| 🥈 | **Question Bank** | A searchable repository of individual exercises, tagged by subject, grade, difficulty, and competency. Reuse across worksheets. *Build once, remix forever.* |
+| 🥉 | **Rubric Builder** | Define scoring criteria for open-ended questions. AI-assisted rubric generation from sample answers. |
+| 🥉 | **Scheduled Assignments** | *"Release worksheet X to class Y on Monday at 8:00, due Friday 23:59."* Auto-reminders for students who haven't submitted. |
+
+### 🟡 Phase 4 — Ecosystem & Scale (2028+)
+
+| Priority | Feature | Why |
+|----------|---------|-----|
+| 🥇 | **Cross-School Library** | Share worksheets across schools. Curated collections by subject/grade. *Community ratings + usage analytics = find the best resources* |
+| 🥇 | **Adaptive Learning Paths** | The system watches what each student gets wrong and dynamically adjusts the next worksheet's difficulty and topic mix. *Not "one size fits all" — "one size fits one."* |
+| 🥈 | **LMS Integration (SchoolFox, WebUntis, Moodle)** | Push grades, sync class rosters, embed worksheets. Meet teachers where they already are. |
+| 🥈 | **Learning Analytics Dashboard (School-Level)** | For the school administration: aggregate trends, at-risk identification, intervention effectiveness. *Anonymized, privacy-preserving.* |
+| 🥉 | **Worksheet Marketplace** | Teachers publish worksheets (paid/free). Top creators earn recognition (and optionally, revenue). Quality-vetted by the community. |
+| 🥉 | **AI-Generated Feedback for Everything** | Not just short-answer grading — personalised feedback on *every* wrong answer: *"You got this wrong because… here's a hint… try this similar problem."* |
+
+### 🌟 The Vision Board (stretch goals, no timeline)
+
+> *These are the ideas that wake me up at 3 AM. They might be crazy. They might be brilliant. They're definitely a lot of work.*
+
+- 🧑‍🏫 **AI Co-Teacher** — The AI watches student progress in real-time during class and whispers suggestions to the teacher: *"3 students are stuck on fraction division — pull them into a small group."*
+- 🌍 **Multi-Lingual UI** — The entire interface in Turkish, Bosnian, Romanian, Arabic — the languages your students actually speak at home. *Because "parent involvement" starts with a screen they can read.*
+- 🎮 **Classroom Multiplayer Mode** — Real-time quiz battles, team challenges, board races — using the existing exercise engine, projected on the board. *Turn worksheets into moments.*
+- 📊 **Cognitive Load Monitor** — Track time-per-exercise, abandonment patterns, and error clustering to detect when students are overloaded. *The system adjusts pacing automatically.*
+- 🤝 **Peer Tutoring Matching** — *"Sarah is great at fractions. Tom needs help with fractions."* The system suggests a peer tutoring session with a structured prompt. *The best tutor is the student who just figured it out.*
+- 🏫 **Open School Network** — A federation of LearnFlow instances sharing anonymized learning data to improve AI models across schools. *Privacy-first, opt-in, GDPR-compliant.*
+
+---
+
 ## 🤝 Why Open Source?
 
 Because education shouldn't be locked behind enterprise licenses. Because a teacher in a small school should have access to the same cognitive science tools as a well-funded district. Because when you love what you build, you want to share it.
 
-PRs, issues, and ideas are always welcome. 🙌
+PRs, issues, ideas, and "hey, I actually need this" are always welcome. 🙌
+
+Every item on this roadmap started with someone saying *"I wish the tool could…"* or *"It would really help if…"* — so if something's missing, **tell me**. That's how this whole thing got built.
 
 ---
 

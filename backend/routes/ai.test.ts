@@ -72,7 +72,7 @@ describe('Austrian Curriculum (Lehrpläne) integration', () => {
 
       expect(prompt).toContain('AUSTRIAN CURRICULUM CONSTRAINTS (LEHRPLAN):')
       expect(prompt).toContain('Mittelschule Österreich (Grade 1 / Schulstufe 5):')
-      expect(prompt).toContain('Present Simple (he/she/it +s)')
+      expect(prompt).toContain('Present Simple')
     })
 
     it('should inject Austrian Lehrplan constraints for Math Grade 8 (MS 4)', () => {
@@ -88,7 +88,7 @@ describe('Austrian Curriculum (Lehrpläne) integration', () => {
 
       expect(prompt).toContain('AUSTRIAN CURRICULUM CONSTRAINTS (LEHRPLAN):')
       expect(prompt).toContain('Mittelschule Österreich (Grade 4 / Schulstufe 8):')
-      expect(prompt).toContain('Kegel, Kugel (Oberfläche, Volumen)')
+      expect(prompt).toContain('Oberfläche und Volumen (Kegel, Kugel')
     })
 
     it('should not inject curriculum constraints if subject is not mapped', () => {

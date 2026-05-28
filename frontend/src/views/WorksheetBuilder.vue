@@ -135,8 +135,9 @@
               <div class="form-group" style="margin-bottom: 0.5rem">
                 <label style="font-size: 0.65rem">AI Provider</label>
                 <select v-model="aiProvider" style="font-size: 0.7rem; padding: 0.25rem">
-                  <option value="gemini">Google Gemini 2.0 Flash</option>
-                  <option value="opencode">OpenCode AI Client</option>
+                  <option v-for="p in availableProviders" :key="p.name" :value="p.name" :disabled="!p.available">
+                    {{ providerLabel(p) }}
+                  </option>
                 </select>
               </div>
 
@@ -1041,6 +1042,8 @@ const blocks = ref([])
 const form = ref(emptyForm())
 const subjects = ref([])
 const gradeLevels = ref([])
+const availableProviders = ref([])
+const providerStatuses = ref({})
 const GRADE_LABELS = {
   '1': '1. Klasse (5. Schulstufe)',
   '2': '2. Klasse (6. Schulstufe)',
@@ -1053,6 +1056,30 @@ const GRADE_LABELS = {
 }
 function formatGrade(g) {
   return g ? (GRADE_LABELS[g] || `Klasse ${g}`) : ''
+}
+
+// Fetch available AI providers on mount
+async function fetchProviders() {
+  try {
+    const data = await api.get('/ai/providers')
+    availableProviders.value = data.providers || []
+    const statuses = {}
+    for (const p of data.providers || []) {
+      statuses[p.name] = p.available
+    }
+    providerStatuses.value = statuses
+  } catch {
+    // Fallback: assume gemini is available
+    availableProviders.value = [{ name: 'gemini', displayName: 'Google Gemini 2.0 Flash', available: true }]
+    providerStatuses.value = { gemini: true }
+  }
+}
+
+// Provider label helper
+function providerLabel(p) {
+  const status = providerStatuses.value[p.name || p] ? '✅' : '❌'
+  const name = p.displayName || p.name || p
+  return `${status} ${name}`
 }
 const aiPrompt = ref('')
 const aiLernziele = ref('')
@@ -1642,6 +1669,7 @@ onMounted(async () => {
   } catch {
     /* */
   }
+  await fetchProviders()
   await syncBuilderToRoute()
 })
 
