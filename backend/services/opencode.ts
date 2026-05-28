@@ -76,8 +76,8 @@ async function getClient(): Promise<OpenCodeClient> {
       baseUrl: url,
     })
     logger.info({ url }, 'OpenCode client initialized')
-    clientPromise = Promise.resolve(c)
-    return c as OpenCodeClient
+    clientPromise = Promise.resolve(c as unknown as OpenCodeClient)
+    return c as unknown as OpenCodeClient
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     // Detect common SDK installation / compatibility issues
@@ -105,7 +105,7 @@ export async function createSession(title?: string): Promise<string> {
   })
   if (result.error)
     throw new Error(`OpenCode session create failed: ${JSON.stringify(result.error)}`)
-  return result.data!.id
+  return result.data?.id ?? ''
 }
 
 export async function sendPrompt(

@@ -8,33 +8,21 @@
         </router-link>
         <nav class="header-nav">
           <template v-if="authStore.isAuthenticated">
-            <router-link
-              v-if="authStore.role === 'student' && !authStore.isGuest"
-              to="/student"
-              class="nav-link"
-            >
-              Dashboard
-            </router-link>
-            <router-link
-              v-if="authStore.role === 'teacher' || authStore.role === 'admin'"
-              to="/teacher"
-              class="nav-link"
-            >
-              Dashboard
-            </router-link>
-            <router-link
-              v-if="authStore.role === 'teacher' || authStore.role === 'admin'"
-              to="/teacher/workspace"
-              class="nav-link"
-            >
-              Workspace
-            </router-link>
-            <router-link v-if="authStore.role === 'admin'" to="/admin" class="nav-link">
-              Admin
-            </router-link>
-            <router-link to="/writing-coach" class="nav-link">
-              Writing Coach
-            </router-link>
+            <!-- Student Navigation -->
+            <template v-if="authStore.role === 'student'">
+              <router-link to="/student" class="nav-link">Dashboard</router-link>
+              <router-link to="/writing-coach" class="nav-link">Writing Coach</router-link>
+              <router-link to="/grammar-academy" class="nav-link">Grammar Academy 🏆</router-link>
+            </template>
+
+            <!-- Teacher / Admin Navigation -->
+            <template v-if="authStore.role === 'teacher' || authStore.role === 'admin'">
+              <router-link to="/teacher" class="nav-link">Dashboard</router-link>
+              <router-link to="/teacher/builder" class="nav-link">Create Worksheet</router-link>
+              <router-link to="/teacher/bank" class="nav-link">LearnFlow Bank</router-link>
+              <router-link to="/teacher/stories" class="nav-link">Stories</router-link>
+              <router-link v-if="authStore.role === 'admin'" to="/admin" class="nav-link">Admin</router-link>
+            </template>
           </template>
           <div class="nav-actions">
             <template v-if="authStore.isAuthenticated">

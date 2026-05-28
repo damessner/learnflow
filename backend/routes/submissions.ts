@@ -141,7 +141,7 @@ function inferExercisePoints(exercise: Record<string, unknown>): number {
       return Math.max(1, pairs.length * 2)
     }
     case 'semantic_sorter': {
-      const categories = (exercise.categories || []) as Record<string, unknown>[]
+      const categories = (exercise.categories || []) as any[]
       let totalItems = 0
       for (const cat of categories) {
         totalItems += (cat.words || []).length

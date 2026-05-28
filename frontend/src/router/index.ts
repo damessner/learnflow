@@ -9,9 +9,9 @@ import CourseView from '../views/CourseView.vue'
 import TeacherRegistration from '../views/TeacherRegistration.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import StoryGenerator from '../views/StoryGenerator.vue'
-import ClassWorkspace from '../views/ClassWorkspace.vue'
 import LearnFlowBank from '../views/LearnFlowBank.vue'
 import WritingCoach from '../views/WritingCoach.vue'
+import GrammarAcademy from '../views/GrammarAcademy.vue'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
@@ -37,11 +37,7 @@ const routes: RouteRecordRaw[] = [
     component: TeacherDashboard,
     meta: { requiresAuth: true, role: ['teacher', 'admin'] },
   },
-  {
-    path: '/teacher/workspace',
-    component: ClassWorkspace,
-    meta: { requiresAuth: true, role: ['teacher', 'admin'] },
-  },
+
   {
     path: '/teacher/builder',
     name: 'worksheet-builder-new',
@@ -73,6 +69,11 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/writing-coach',
     component: WritingCoach,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/grammar-academy',
+    component: GrammarAcademy,
     meta: { requiresAuth: true },
   },
 ]
