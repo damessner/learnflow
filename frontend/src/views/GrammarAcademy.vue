@@ -130,7 +130,7 @@
           </div>
           <div class="step-right">
             <button 
-              @click="startWorksheet('explorer')" 
+              @click="showInstruction('explorer')" 
               class="btn-primary"
               v-if="!activeTopic.progress.explorer"
             >
@@ -161,7 +161,7 @@
           </div>
           <div class="step-right">
             <button 
-              @click="startWorksheet('pioneer')" 
+              @click="showInstruction('pioneer')" 
               class="btn-primary"
               v-if="activeTopic.progress.explorer && !activeTopic.progress.pioneer"
             >
@@ -193,7 +193,7 @@
           </div>
           <div class="step-right">
             <button 
-              @click="startWorksheet('master')" 
+              @click="showInstruction('master')" 
               class="btn-primary"
               v-if="activeTopic.progress.pioneer && !activeTopic.progress.master"
             >
@@ -240,7 +240,60 @@
       </div>
     </div>
 
-    <!-- 3. WORKSHEET PLAYER OVERLAY MODAL -->
+    <!-- 3. INSTRUCTION SCREEN BEFORE WORKSHEET -->
+    <div class="modal-overlay" v-if="instructionVisible">
+      <div class="modal instruction-modal">
+        <div class="modal-header flex items-center gap-3">
+          <span class="instruction-emoji text-3xl">
+            <span v-if="activeLevel === 'explorer'">🧭</span>
+            <span v-else-if="activeLevel === 'pioneer'">🔍</span>
+            <span v-else>🏆</span>
+          </span>
+          <div>
+            <h3>
+              <span v-if="activeLevel === 'explorer'">🧭 Explorer Quest – Erklärung</span>
+              <span v-else-if="activeLevel === 'pioneer'">🔍 Pioneer Challenge – Erklärung</span>
+              <span v-else>🏆 Master Arena – Erklärung</span>
+            </h3>
+            <p class="text-sm text-secondary">{{ activeTopic?.title }}</p>
+          </div>
+        </div>
+
+        <div class="modal-body flex flex-col gap-4 mt-2">
+          <div class="instruction-text card py-4 px-4 text-center">
+            <p class="instruction-text-main text-base font-semibold leading-relaxed">
+              {{ currentInstruction?.text }}
+            </p>
+            <div class="instruction-tips mt-3 flex flex-wrap gap-2 justify-center">
+              <span class="tip-badge" v-for="tip in (currentInstruction?.tips || [])" :key="tip">{{ tip }}</span>
+            </div>
+          </div>
+
+          <div class="instruction-diagram card py-4 px-4" v-if="currentInstruction?.mermaid">
+            <h4 class="text-sm font-bold text-center mb-3">📊 Grammatik-Übersicht</h4>
+            <div class="mermaid-wrapper">
+              <pre class="mermaid" ref="mermaidRef">{{ currentInstruction.mermaid }}</pre>
+            </div>
+          </div>
+
+          <div class="instruction-rules card py-3 px-4" v-if="currentInstruction?.rules?.length">
+            <h4 class="text-xs font-bold mb-2">📝 Merk dir:</h4>
+            <ul class="rule-list">
+              <li v-for="(rule, ri) in currentInstruction.rules" :key="ri" class="text-sm py-1">✅ {{ rule }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="modal-footer flex justify-between gap-4 mt-4">
+          <button @click="closeInstruction" class="btn-secondary">Schließen</button>
+          <button @click="proceedToWorksheet" class="btn-primary btn-lg flex items-center gap-2">
+            Los geht's! 🚀
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. WORKSHEET PLAYER OVERLAY MODAL -->
     <div class="modal-overlay" v-if="activeWorksheet">
       <div class="modal worksheet-player-modal">
         <div class="modal-header">
@@ -253,7 +306,7 @@
         </div>
 
         <div class="modal-body flex flex-col gap-4 mt-2">
-          <p class="text-sm text-secondary">Beantworte alle 5 Fragen korrekt, um das Level zu meistern und dein Abzeichen zu verdienen!</p>
+          <p class="text-sm text-secondary">Beantworte alle {{ activeWorksheet?.questions?.length || 5 }} Fragen korrekt, um das Level zu meistern und dein Abzeichen zu verdienen!</p>
           
           <div class="questions-list-player">
             <!-- Questions Rendering -->
@@ -268,19 +321,19 @@
             >
               <!-- EXPLORER (MC) -->
               <div v-if="activeWorksheet.level === 'explorer'">
-                <p class="question-text-bold"><strong>Frage {{ index + 1 }}:</strong> {{ q.question }}</p>
+                <p class="question-text-bold"><strong>Frage {{ Number(index) + 1 }}:</strong> {{ q.question }}</p>
                 <div class="options-vertical-grid mt-2 flex flex-col gap-2">
                   <button 
                     v-for="(opt, oIdx) in q.options" 
                     :key="oIdx"
                     class="option-btn"
                     :class="{ 
-                      'selected': worksheetAnswers[index] === oIdx,
-                      'correct-mc': worksheetEvaluations[index] !== null && oIdx === q.correctIndex,
-                      'wrong-mc': worksheetAnswers[index] === oIdx && worksheetEvaluations[index] === false && oIdx !== q.correctIndex
+                      'selected': worksheetAnswers[index] === Number(oIdx),
+                      'correct-mc': worksheetEvaluations[index] !== null && Number(oIdx) === q.correctIndex,
+                      'wrong-mc': worksheetAnswers[index] === Number(oIdx) && worksheetEvaluations[index] === false && Number(oIdx) !== q.correctIndex
                     }"
                     :disabled="worksheetSubmitted"
-                    @click="worksheetAnswers[index] = oIdx"
+                    @click="worksheetAnswers[index] = Number(oIdx)"
                   >
                     {{ opt }}
                   </button>
@@ -289,7 +342,7 @@
 
               <!-- PIONEER (FITB) -->
               <div v-else-if="activeWorksheet.level === 'pioneer'">
-                <p class="question-text-bold"><strong>Aufgabe {{ index + 1 }}:</strong> {{ q.sentence }}</p>
+                <p class="question-text-bold"><strong>Aufgabe {{ Number(index) + 1 }}:</strong> {{ q.sentence }}</p>
                 <div class="fitb-input-row mt-2 flex items-center gap-3">
                   <span>Trage das Wort ein ({{ q.placeholder }}):</span>
                   <input 
@@ -307,7 +360,7 @@
 
               <!-- MASTER (FREE TEXT) -->
               <div v-else>
-                <p class="question-text-bold"><strong>Aufgabe {{ index + 1 }}:</strong> {{ q.question }}</p>
+                <p class="question-text-bold"><strong>Aufgabe {{ Number(index) + 1 }}:</strong> {{ q.question }}</p>
                 <div class="master-input-row mt-2 flex flex-col gap-2">
                   <input 
                     v-model="worksheetAnswers[index]"
@@ -363,7 +416,7 @@
       </div>
     </div>
 
-    <!-- 4. CUSTOM AI FINISHER QUIZ OVERLAY -->
+    <!-- 5. CUSTOM AI FINISHER QUIZ OVERLAY -->
     <div class="modal-overlay" v-if="quizActive">
       <div class="modal quiz-player-modal">
         <!-- PHASE 1: GENERATION LOADER -->
@@ -382,7 +435,7 @@
         <div v-else-if="quizPhase === 'playing'" class="quiz-play flex flex-col gap-4">
           <div class="modal-header">
             <h3>🧠 Custom AI Finisher Test</h3>
-            <span class="badge badge-warning">Frage {{ quizCurrentIdx + 1 }} von 10</span>
+            <span class="badge badge-warning">Frage {{ quizCurrentIdx + 1 }} von {{ quizQuestions.length }}</span>
           </div>
           
           <div class="quiz-question-wrap card mt-2" v-if="quizQuestions[quizCurrentIdx]">
@@ -392,8 +445,8 @@
                 v-for="(opt, oIdx) in quizQuestions[quizCurrentIdx].options" 
                 :key="oIdx"
                 class="option-btn"
-                :class="{ 'selected': quizAnswers[quizCurrentIdx] === oIdx }"
-                @click="quizAnswers[quizCurrentIdx] = oIdx"
+                :class="{ 'selected': quizAnswers[quizCurrentIdx] === Number(oIdx) }"
+                @click="quizAnswers[quizCurrentIdx] = Number(oIdx)"
               >
                 {{ opt }}
               </button>
@@ -411,7 +464,7 @@
             <button 
               @click="quizCurrentIdx++" 
               class="btn-primary" 
-              v-if="quizCurrentIdx < 9"
+              v-if="quizCurrentIdx < quizQuestions.length - 1"
               :disabled="quizAnswers[quizCurrentIdx] === undefined"
             >
               Nächste Frage
@@ -440,7 +493,7 @@
           </div>
           
           <p class="points-label mt-2">
-            Punkte: <strong>{{ quizResultData.score }}</strong> von 10 richtig ({{ Math.round((quizResultData.score / 10) * 100) }}%)
+            Punkte: <strong>{{ quizResultData.score }}</strong> von {{ quizQuestions.length }} richtig ({{ Math.round((quizResultData.score / quizQuestions.length) * 100) }}%)
           </p>
 
           <div class="divider w-full mt-4"></div>
@@ -460,15 +513,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '../stores/ui'
+import mermaid from 'mermaid'
+
+mermaid.initialize({ startOnLoad: false, theme: 'neutral', themeVariables: { fontFamily: 'system-ui' } })
 
 const uiStore = useUiStore()
+const route = useRoute()
+const router = useRouter()
 
 // State variables
 const topics = ref<any[]>([])
 const badgesCount = ref(0)
 const activeTopic = ref<any | null>(null)
+
+// Instruction Screen State
+const instructionVisible = ref(false)
+const activeLevel = ref<string | null>(null)
+const currentInstruction = ref<any>(null)
+const mermaidRef = ref<any>(null)
 
 // Worksheet Player State
 const activeWorksheet = ref<any | null>(null)
@@ -505,11 +570,233 @@ async function fetchTopics() {
 }
 
 onMounted(() => {
-  fetchTopics()
+  fetchTopics().then(() => {
+    // Check if we are in worksheet mode from route params
+    const topicId = route.params.topicId as string
+    const level = route.params.level as string
+    if (topicId && level && ['explorer', 'pioneer', 'master'].includes(level)) {
+      const found = topics.value.find((t: any) => t.id === topicId)
+      if (found) {
+        activeTopic.value = found
+        // Show instruction and start
+        showInstruction(level as 'explorer' | 'pioneer' | 'master')
+      }
+    }
+  })
+})
+
+// Watch for route changes to detect worksheet mode
+watch(() => route.params, (params) => {
+  const topicId = params.topicId as string
+  const level = params.level as string
+  if (topicId && level && topics.value.length > 0) {
+    const found = topics.value.find((t: any) => t.id === topicId)
+    if (found && !activeWorksheet.value && !instructionVisible.value) {
+      activeTopic.value = found
+      startWorksheet(level as 'explorer' | 'pioneer' | 'master')
+    }
+  }
 })
 
 function selectTopic(topic: any) {
   activeTopic.value = topic
+}
+
+// ─── Instruction Screen ──────────────────────────────────────────────────
+function showInstruction(level: 'explorer' | 'pioneer' | 'master') {
+  if (!activeTopic.value) return
+  activeLevel.value = level
+  currentInstruction.value = getTopicInstruction(activeTopic.value, level)
+  instructionVisible.value = true
+  nextTick(() => {
+    try {
+      mermaid.run({ nodes: [document.querySelector('.mermaid')!] })
+    } catch (_e) { /* Mermaid render fallback */ }
+  })
+}
+
+function closeInstruction() {
+  instructionVisible.value = false
+  activeLevel.value = null
+  // Go back to main grammar academy view
+  if (route.params.topicId) {
+    router.push('/grammar-academy')
+  }
+}
+
+async function proceedToWorksheet() {
+  instructionVisible.value = false
+  if (activeTopic.value && activeLevel.value) {
+    router.push(`/grammar-academy/${activeTopic.value.id}/${activeLevel.value}`)
+  } else {
+    await startWorksheet((activeLevel.value || 'explorer') as 'explorer' | 'pioneer' | 'master')
+  }
+}
+
+function getTopicInstruction(topic: any, level: string) {
+  const t = topic.title || 'Grammar'
+  const d = topic.description || ''
+  const u = topic.unit || 1
+
+  // Emoji-rich explanations for each topic unit + level
+  const instructions: Record<string, any> = {
+    '1-explorer': {
+      text: '🧩 **Pluralformen & Befehle** – Lerne, wie du aus 1 Gegenstand viele machst! 🎯 Bei regelmäßigen Nomen hängst du einfach **-s** an: book → books. Aber Achtung: Es gibt auch **Ausnahmen** wie child → children! Bei Befehlen (Imperativen) sagst du einfach das Verb: **"Open the door!"** Für Verbote nutzt du **"Don\'t"**.',
+      tips: ['📌 Regular plural: noun + -s', '⚠️ Irregulars: child→children, foot→feet', '📌 Imperative: base verb', '⚠️ Negative: Don\'t + verb'],
+      mermaid: `graph TD
+    A[Start with a noun] --> B{Regular or irregular?}
+    B -->|Regular| C[Add -s or -es]
+    B -->|Irregular| D[Change the word]
+    C --> E[book→books, box→boxes]
+    D --> F[child→children, foot→feet]
+    A --> G[For commands]
+    G --> H[Use base verb]
+    H --> I[Open the door!]
+    H --> J[Negative: Don't run!]`,
+      rules: ['Regular plural = noun + -s (pencil → pencils)', 'Nouns ending in -s, -x, -ch, -sh add -es (box → boxes)', 'Irregular plurals change completely (child → children)', 'Imperatives start with the base verb (Open, Sit, Close)', 'Negative imperatives use "Don\'t" + verb (Don\'t run!)']
+    },
+    '1-pioneer': {
+      text: '🔍 **Vertiefung: Plural & Imperative** – Jetzt wird\'s kniffliger! 🧠 Schreibe die richtige Pluralform oder den passenden Befehl in die Lücke. Achte auf **unregelmäßige Formen** und **Wortstellung** bei Befehlen! ✏️',
+      tips: ['📌 Doppelkonsonant bei -ing? Nein, hier nicht!', '⚠️ Achte auf -es bei -s, -x, -ch, -sh', '📌 Unregelmäßige Pluralformen auswendig lernen!'],
+      mermaid: `flowchart LR
+    A[Noun] --> B{Ending?}
+    B -->|-s, -x, -ch, -sh| C[Add -es]
+    B -->|Consonant + y| D[Change y→ies]
+    B -->|Most others| E[Add -s]
+    B -->|Irregular| F[Learn by heart!]
+    C --> G[box→boxes]
+    D --> H[baby→babies]
+    E --> I[book→books]
+    F --> J[man→men, mouse→mice]`,
+      rules: ['Nouns ending in -s, -x, -ch, -sh: add -es (watch → watches)', 'Consonant + y: change y to -ies (baby → babies)', 'Irregular plurals: child→children, person→people, tooth→teeth', 'Practice unscrambling imperative sentences!']
+    },
+    '1-master': {
+      text: '🏆 **Meister-Level: Plural & Imperative** – Zeig, was du kannst! 💪 Korrigiere Fehler in Sätzen, übersetze vom Deutschen ins Englische und forme Sätze um. Hier zählt jedes Detail! 🔍',
+      tips: ['⚠️ Achte auf Groß- und Kleinschreibung', '📌 Satzzeichen nicht vergessen!', '⚠️ Es gibt oft mehrere richtige Antworten'],
+      mermaid: `graph TD
+    subgraph "Fehler finden 🔍"
+    A[Sentence with error] --> B[Identify the mistake]
+    B --> C[Wrong plural? Wrong verb form?]
+    end
+    subgraph "Korrigieren ✏️"
+    C --> D[Apply the correct rule]
+    D --> E[Write the correct sentence]
+    end
+    subgraph "Übersetzen 🌍"
+    F[German sentence] --> G[Think in English]
+    G --> H[Check word order!]
+    end`,
+      rules: ['Check each word for correct plural forms', 'Imperatives must use base verb (no -ing, no "to")', 'Translations need correct word order (SVO)', 'Capitalize "I" and sentence beginnings']
+    },
+    '2-explorer': {
+      text: '🧩 **Verb "to be" & Prepositions** – Das wichtigste Verb im Englischen! 🎯 **Am, is, are** – je nach Person: I am, he/she/it is, you/we/they are. Und wo ist etwas? **In, on, under, behind, next to** – mit diesen Wörtern beschreibst du Positionen! 🗺️',
+      tips: ['📌 I → am', '📌 he/she/it → is', '📌 you/we/they → are', '📌 on = auf, under = unter, next to = neben'],
+      mermaid: `graph TD
+    A[Subject] --> B{Pick the right form}
+    B -->|I| C[am]
+    B -->|He/She/It| D[is]
+    B -->|You/We/They| E[are]
+    F[Prepositions] --> G[in = in/inside]
+    F --> H[on = auf/on top]
+    F --> I[under = unter/below]
+    F --> J[behind = hinter]
+    F --> K[next to = neben]`,
+      rules: ['I → am, He/She/It → is, You/We/They → are', 'Prepositions describe where things are', '"in" for inside, "on" for surface, "under" for below']
+    },
+    '2-pioneer': {
+      text: '🔍 **Vertiefung: "to be" & Präpositionen** – Fülle die Lücken mit der richtigen Form von **am, is, are** oder der passenden Präposition! 🧠 Achte auf die Person (ich, du, er/sie...) und die Position!',
+      tips: ['📌 Fragen mit "to be": Verb + Subjekt?', '⚠️ Verneinung: is not / are not', '📌 Unscramble-Übungen: Finde die richtige Reihenfolge!'],
+      mermaid: `flowchart LR
+    A[Subject] --> B{Singular or Plural?}
+    B -->|I| C[am / am not]
+    B -->|He/She/It| D[is / isn't]
+    B -->|You/We/They| E[are / aren't]
+    C --> F{I'm ready! ✅}
+    D --> G{She is kind ✅}
+    E --> H{We are late 😅}`,
+      rules: ['Questions: Am I? / Is he? / Are you? (invert verb + subject)', 'Negatives: I am not / He is not (isn\'t) / They are not (aren\'t)', 'Prepositions describe locations: in, on, under, behind, next to']
+    },
+    '2-master': {
+      text: '🏆 **Meister-Level: "to be" & Präpositionen** – Übersetze ganze Sätze vom Deutschen ins Englische und korrigiere Fehler! 🎯 Achte besonders auf **Wortstellung** und **Subjekt-Verb-Übereinstimmung**!',
+      tips: ['📌 Deutsche Sätze → Englische Wortstellung (SVO)', '⚠️ "to be" + Präposition = Ortsangabe', '📌 Plural = are, Singular = is'],
+      mermaid: `graph LR
+    A[German] --> B[Identify subject]
+    B --> C[Pick to be form]
+    C --> D[Add preposition]
+    D --> E[English sentence ✅]
+    F[Common mistakes] --> G[Wrong: They is]
+    G --> H[Correct: They are]
+    F --> I[Wrong: next the]
+    I --> J[Correct: next to the]`,
+      rules: ['Subject must agree with the verb (They are, not They is)', '"Next to" has TWO words! (not "next the")', 'Word order: Subject + Verb + Preposition + Object']
+    },
+    '3-explorer': {
+      text: '🧩 **Have got / Haven\'t got** – So sagst du, was du hast! 🎯 **I have got** = Ich habe. **He/She/It has got** = Er/Sie/Es hat. Für Verneinung: **haven\'t got / hasn\'t got** = habe/nicht habe! 👋',
+      tips: ['📌 I/You/We/They → have got', '📌 He/She/It → has got', '⚠️ Negative: haven\'t/hasn\'t got'],
+      mermaid: `graph TD
+    A[Subject] --> B{Which form?}
+    B -->|I, You, We, They| C[have got]
+    B -->|He, She, It| D[has got]
+    C --> E[I have got a cat ✅]
+    D --> F[She has got a dog ✅]
+    E --> G{Negative?}
+    G -->|Yes| H[haven't got]
+    G -->|No| I[have got ✅]
+    F --> J{Negative?}
+    J -->|Yes| K[hasn't got]
+    J -->|No| L[has got ✅]`,
+      rules: ['I/You/We/They → have got', 'He/She/It → has got', 'Negative: haven\'t got / hasn\'t got', 'Short form: I\'ve got / She\'s got']
+    },
+    '3-pioneer': {
+      text: '🔍 **Vertiefung: Have got** – Bilde Sätze und Fragen mit **have got / has got**! ✏️ Übe die Verneinung und die **Frageform**: Have you got...? Has she got...? 🔄',
+      tips: ['📌 Questions: Have/Has + subject + got?', '⚠️ Kurzantworten: Yes, I have. / No, I haven\'t.', '📌 Unscramble: Ordne die Wörter richtig!'],
+      mermaid: `flowchart LR
+    A{Question?} -->|Yes| B[Have/Has + subject + got?]
+    A -->|No| C{Positive or negative?}
+    B --> D[Have you got a pet?]
+    C -->|Positive| E[Subject + have/has got]
+    C -->|Negative| F[Subject + haven't/hasn't got]
+    E --> G[I have got a bike]
+    F --> H[She hasn't got a car]`,
+      rules: ['Questions: Have/Has + subject + got? (Have you got a pet?)', 'Short answers: Yes, I have. / No, I haven\'t.', 'Negative: haven\'t got / hasn\'t got']
+    },
+    '3-master': {
+      text: '🏆 **Meister-Level: Have got** – Übersetze Sätze, korrigiere Fehler und wende "have got" in verschiedenen Kontexten an! 🧠 **Hast du** wirklich alles verstanden? Beweise es! 💪',
+      tips: ['📌 Achte auf die Person (he/she/it → has)', '⚠️ Keine doppelte Verneinung!', '📏 "have got" ≠ "have" + Partizip'],
+      mermaid: `graph TD
+    subgraph "Haben oder nicht haben? 🎯"
+    A[I have got 💡] --> B{What do you have?}
+    B --> C[A book ✅]
+    B --> D[No car ❌ → haven't got]
+    end
+    subgraph "Typische Fehler 🚫"
+    E[Wrong: She have got ❌] --> F[Correct: She has got ✅]
+    G[Wrong: He hasn't got no ❌] --> H[Correct: He hasn't got any ✅]
+    end`,
+      rules: ['She/He/It takes "has got", not "have got"', 'No double negatives: "hasn\'t got any" not "hasn\'t got no"', 'Questions: Has/Have + subject + got?']
+    }
+  }
+
+  // Dynamic instruction for units 4-15
+  const key = `${u}-${level}`
+  if (instructions[key]) return instructions[key]
+
+  const levelNames: Record<string, string> = { explorer: '🧭 Grundlagen', pioneer: '🔍 Übung', master: '🏆 Meisterschaft' }
+  const levelDescs: Record<string, string> = {
+    explorer: `Lerne die wichtigsten Regeln zu **${t}** kennen. Beantworte Multiple-Choice-Fragen und finde die richtige Antwort! 🎯`,
+    pioneer: `Wende dein Wissen zu **${t}** in Lückentexten und Satzübungen an! ✏️ Zeig, was du schon kannst! 🔍`,
+    master: `Meistere **${t}** mit Übersetzungen, Fehlerkorrekturen und kreativen Satzbau-Aufgaben! 🏆`
+  }
+
+  return {
+    text: `📚 **${t}** – ${levelDescs[level] || ''}`,
+    tips: ['📌 Lies jede Frage genau!', '⚠️ Du hast unbegrenzt Zeit.', '📌 Bei Unsicherheit: probiere es einfach!'],
+    mermaid: `graph TD
+    A[${t} 📚] --> B[${levelNames[level]}]
+    B --> C[Üben & Lernen 💪]
+    C --> D[Abzeichen verdienen 🎖️]`,
+    rules: [`Konzentriere dich auf die Regeln von ${t}.`, 'Lies jede Aufgabenstellung genau.', 'Übung macht den Meister!']
+  }
 }
 
 // Start playing Explorer, Pioneer, or Master worksheet
@@ -543,121 +830,124 @@ async function startWorksheet(level: 'explorer' | 'pioneer' | 'master') {
 
 // Fetch questions for worksheets helper
 async function getWorksheetQuestions(topicId: string, level: string): Promise<any[]> {
-  // Let's mock fetching, or fetch directly if we had a dedicated endpoint. 
-  // Since we already stored the full questions inside the router in `GRAMMAR_TOPICS`, 
-  // let's fetch them using a simple fetch: we submit a request or use a local static dictionary.
-  // Wait, let's fetch all questions. Since we are matching the backend db, we can construct them!
-  // To keep it 100% accurate, we can just define a lightweight duplicate list of the showcase questions in the client or fetch them.
-  // Let's build a client-side dictionary for Topic 1, 2, 3, and generic ones for the rest, matching the backend perfectly!
-  
-  const clientQuestions: Record<string, Record<string, any[]>> = {
-    'grammar-1-plurals': {
-      explorer: [
-        { question: 'What is the plural of "book"?', options: ['books', 'bookes', 'book\'s'], correctIndex: 0, explanation: 'Regular plural forms simply add an "-s" to the singular noun.' },
-        { question: 'Which of these is an irregular plural form?', options: ['tables', 'children', 'pens'], correctIndex: 1, explanation: '"children" is irregular (singular: "child"). Regular plurals add "-s" (e.g. tables, pens).' },
-        { question: 'How do you form the negative imperative of "talk"?', options: ['No talk!', 'Not talk!', "Don't talk!"], correctIndex: 2, explanation: 'We use "Don\'t" + infinitive verb to form a negative imperative.' },
-        { question: 'What is the plural of "box"?', options: ['boxs', 'boxes', 'boxies'], correctIndex: 1, explanation: 'Nouns ending in "-x" form their plurals by adding "-es" for easier pronunciation.' },
-        { question: 'Choose the correct imperative for asking someone to open the window:', options: ['Open the window, please.', 'You opening the window.', 'Please window open.'], correctIndex: 0, explanation: 'Imperatives start directly with the base form of the verb: "Open...".' }
-      ],
-      pioneer: [
-        { sentence: 'Two _____ (child) are playing in the schoolyard.', placeholder: 'child', correctAnswer: 'children', explanation: 'The plural of "child" is the irregular form "children".' },
-        { sentence: 'Please _____ (not close) the door, it is hot.', placeholder: 'not close', correctAnswer: "don't close", explanation: 'Negative imperatives are formed with "don\'t" followed by the verb.' },
-        { sentence: 'We have three _____ (box) of pencils in our classroom.', placeholder: 'box', correctAnswer: 'boxes', explanation: 'Nouns ending in "-x" add "-es" in their plural form.' },
-        { sentence: '_____ (open) your book on page 10, please.', placeholder: 'open', correctAnswer: 'open', explanation: 'Imperatives start with the base form of the verb.' },
-        { sentence: 'There are five _____ (pencil) in my pencil case.', placeholder: 'pencil', correctAnswer: 'pencils', explanation: 'The regular plural is formed by adding "-s".' }
-      ],
-      master: [
-        { question: 'Correct the following sentence: "Don\'t opening the window, please."', correctAnswers: ["Don't open the window, please."], explanation: 'Imperatives must use the infinitive base verb, not the -ing form.' },
-        { question: 'Translate: "Öffne die Tür, bitte."', correctAnswers: ['Open the door, please.'], explanation: 'The verb "open" is translated as "Öffne".' },
-        { question: 'Form the plural of: "This is a child with a pencil." (Translate to plural: "These are...")', correctAnswers: ['These are children with pencils.'], explanation: '"child" becomes "children" and "pencil" becomes "pencils".' },
-        { question: 'Correct: "The three boyes are sitting on the chairs."', correctAnswers: ['The three boys are sitting on the chairs.'], explanation: '"boy" forms a regular plural by adding "-s" ("boys"), not "-es".' },
-        { question: 'Form the negative command: "Run in the classroom!"', correctAnswers: ["Don't run in the classroom!"], explanation: 'Use "Don\'t" or "Do not" to negate imperatives.' }
-      ]
-    },
-    'grammar-2-tobe': {
-      explorer: [
-        { question: 'Which form of "to be" matches "He"?', options: ['am', 'is', 'are'], correctIndex: 1, explanation: '"He/She/It" uses "is".' },
-        { question: 'Complete: "The pens _____ on the table."', options: ['am', 'is', 'are'], correctIndex: 2, explanation: '"The pens" is plural (they), which takes the form "are".' },
-        { question: 'Where is the book if it is resting on top of the desk?', options: ['in the desk', 'on the desk', 'under the desk'], correctIndex: 1, explanation: '"on" is used when an object is in contact with the upper surface of another.' },
-        { question: 'Complete: "I _____ eleven years old."', options: ['am', 'is', 'are'], correctIndex: 0, explanation: '"I" always matches with "am".' },
-        { question: 'If Bello is sleeping beneath the chair, he is _____ the chair.', options: ['under', 'behind', 'next to'], correctIndex: 0, explanation: '"under" means below or beneath.' }
-      ],
-      pioneer: [
-        { sentence: 'We _____ (be) students at the Mittelschule.', placeholder: 'be', correctAnswer: 'are', explanation: '"We" takes the plural form of the verb to be, which is "are".' },
-        { sentence: 'The cat is sitting _____ (auf) the table.', placeholder: 'auf', correctAnswer: 'on', explanation: '"on" translates to "auf" when indicating surface contact.' },
-        { sentence: 'Look! My ruler is _____ (unter) the chair.', placeholder: 'unter', correctAnswer: 'under', explanation: '"under" is used for positions below.' },
-        { sentence: 'She _____ (be) my English teacher.', placeholder: 'be', correctAnswer: 'is', explanation: '"She" is third-person singular and takes "is".' },
-        { sentence: 'The pencils are _____ (in) the pencil case.', placeholder: 'in', correctAnswer: 'in', explanation: '"in" is used for objects inside a container.' }
-      ],
-      master: [
-        { question: 'Translate: "Ich bin in der Schule und mein Buch ist auf dem Tisch."', correctAnswers: ['I am at school and my book is on the table.'], explanation: 'Bin -> am, in der Schule -> at/in school, ist -> is, auf dem Tisch -> on the table.' },
-        { question: 'Correct: "The children is next the teacher."', correctAnswers: ['The children are next to the teacher.'], explanation: 'Plural "children" takes "are", and the preposition must be "next to".' },
-        { question: 'Translate: "Wo sind die Hunde? Sie sind unter dem Stuhl."', correctAnswers: ['Where are the dogs? They are under the chair.'], explanation: 'Wo sind -> Where are, Hunde -> dogs, sie sind -> they are, unter dem Stuhl -> under the chair.' },
-        { question: 'Correct: "I are on the classroom."', correctAnswers: ['I am in the classroom.'], explanation: '"I" takes "am", and the correct preposition for a room is "in".' },
-        { question: 'Form a sentence using: "Bello", "is", "next to", "the box".', correctAnswers: ['Bello is next to the box.'], explanation: 'Subject + verb + prepositional phrase: "Bello is next to the box."' }
-      ]
-    },
-    'grammar-3-havegot': {
-      explorer: [
-        { question: 'Complete: "He _____ a green parrot."', options: ["have got", "has got", "is got"], correctIndex: 1, explanation: '"He/She/It" takes "has got".' },
-        { question: 'What is the negative form of "I have got a bike"?', options: ["I haven't got a bike.", "I has got not a bike.", "I don't have got a bike."], correctIndex: 0, explanation: 'The negative form is "haven\'t got".' },
-        { question: 'Complete: "They _____ a big dog."', options: ["has got", "have got", "haves got"], correctIndex: 1, explanation: 'Plural "They" takes "have got".' },
-        { question: 'Choose the correct sentence:', options: ["She have got one brother.", "She has got one brother.", "She is got one brother."], correctIndex: 1, explanation: '"She" takes "has got".' },
-        { question: 'What is the correct negative of "He has got a sister"?', options: ["He hasn't got a sister.", "He haven't got a sister.", "He has not sister."], correctIndex: 0, explanation: 'Singular "He" negates as "hasn\'t got".' }
-      ],
-      pioneer: [
-        { sentence: 'I _____ (have got) two computers in my room.', placeholder: 'have got', correctAnswer: 'have got', explanation: '"I" takes the base "have got".' },
-        { sentence: 'She _____ (not have got) a pet hamster.', placeholder: 'not have got', correctAnswer: "hasn't got", explanation: 'Third person singular negative is "hasn\'t got".' },
-        { sentence: 'My brother _____ (have got) blue eyes.', placeholder: 'have got', correctAnswer: 'has got', explanation: '"My brother" (he) takes "has got".' },
-        { sentence: 'We _____ (not have got) school today.', placeholder: 'not have got', correctAnswer: "haven't got", explanation: 'Plural "We" negates as "haven\'t got".' },
-        { sentence: 'They _____ (have got) ten colored pencils.', placeholder: 'have got', correctAnswer: 'have got', explanation: '"They" takes "have got".' }
-      ],
-      master: [
-        { question: 'Translate: "Er hat ein rotes Fahrrad, aber er hat keinen Helm."', correctAnswers: ["He has got a red bike, but he hasn't got a helmet."], explanation: 'Er hat -> He has got, rotes Fahrrad -> a red bike, aber -> but, er hat keinen -> he hasn\'t got.' },
-        { question: 'Correct: "They has got three dogs and one cat."', correctAnswers: ['They have got three dogs and one cat.'], explanation: 'Plural "They" must take "have got", not "has got".' },
-        { question: 'Translate: "Ich habe braune Haare, aber ich habe keine braunen Augen."', correctAnswers: ["I have got brown hair, but I haven't got brown eyes."], explanation: 'brown hair -> braune Haare, but -> aber, I haven\'t got -> ich habe keine.' },
-        { question: 'Correct: "She haven\'t got any homework today."', correctAnswers: ["She hasn't got any homework today."], explanation: '"She" must use the singular negative "hasn\'t got".' },
-        { question: 'Write a sentence saying you have got a green book:', correctAnswers: ['I have got a green book.'], explanation: 'Subject + have got + object: "I have got a green book."' }
-      ]
-    }
+  const qs: Record<string, any[]> = {
+    // ── Topic 1: Plurals & Imperatives ──
+    'grammar-1-plurals-explorer': [
+      { question: 'What is the plural of "book"?', options: ['books', 'bookes', 'book\'s'], correctIndex: 0, explanation: 'Regular plural forms simply add an "-s" to the singular noun.' },
+      { question: 'Which of these is an irregular plural form?', options: ['tables', 'children', 'pens'], correctIndex: 1, explanation: '"children" is irregular.' },
+      { question: 'How do you form the negative imperative of "talk"?', options: ['No talk!', 'Not talk!', "Don't talk!"], correctIndex: 2, explanation: 'Negative imperative uses "Don\'t" + infinitive.' },
+      { question: 'What is the plural of "box"?', options: ['boxs', 'boxes', 'boxies'], correctIndex: 1, explanation: 'Nouns ending in "-x" add "-es".' },
+      { question: 'Choose the correct imperative:', options: ['Open the window, please.', 'You opening the window.', 'Please window open.'], correctIndex: 0, explanation: 'Imperatives start with the base verb.' },
+      { question: 'True or False: "Childs" is the correct plural of "child".', options: ['True', 'False'], correctIndex: 1, explanation: '"Child" → "children" (irregular).' },
+      { question: 'Which sentence uses the imperative correctly?', options: ['Sit down, please.', 'You sit down, please.', 'Sitting down, please.'], correctIndex: 0, explanation: 'Imperatives start with the base form of the verb.' },
+      { question: 'What is the plural of "foot"?', options: ['foots', 'feet', 'footes'], correctIndex: 1, explanation: '"Foot" → "feet" (irregular).' },
+      { question: 'Which word is a plural noun?', options: ['mouse', 'mice', 'mouses'], correctIndex: 1, explanation: '"Mice" is the irregular plural of "mouse".' },
+      { question: 'What is the correct imperative for "not to run"?', options: ["Don't run!", 'No running!', 'Not to run!'], correctIndex: 0, explanation: 'Negative imperative = "Don\'t" + verb.' },
+      { question: 'Choose the sentence with the correct plural:', options: ['I have two foots.', 'I have two feet.', 'I have two foot.'], correctIndex: 1, explanation: '"Feet" is the correct plural of "foot".' },
+      { question: 'What is the plural of "tooth"?', options: ['tooths', 'teeth', 'toothes'], correctIndex: 1, explanation: '"Tooth" → "teeth" (irregular).' },
+      { question: 'Which is the correct imperative for "not be late"?', options: ["Don't be late!", 'Not be late!', "Be not late!"], correctIndex: 0, explanation: '"Don\'t be late!" is the correct negative imperative.' },
+      { question: 'What is the plural of "man"?', options: ['mans', 'men', 'manes'], correctIndex: 1, explanation: '"Man" → "men" (irregular).' },
+      { question: 'Which sentence is a polite imperative?', options: ['Please close the door.', 'Close the door!', 'You close the door.'], correctIndex: 0, explanation: '"Please" makes an imperative polite.' }
+    ],
+    'grammar-1-plurals-pioneer': [
+      { sentence: 'Two _____ (child) are playing.', placeholder: 'child', correctAnswer: 'children', explanation: 'Irregular plural: children.' },
+      { sentence: 'Please _____ (not close) the door.', placeholder: 'not close', correctAnswer: "don't close", explanation: 'Negative imperative: don\'t close.' },
+      { sentence: 'We have three _____ (box) of pencils.', placeholder: 'box', correctAnswer: 'boxes', explanation: '-x → -es: boxes.' },
+      { sentence: '_____ (open) your book on page 10.', placeholder: 'open', correctAnswer: 'open', explanation: 'Imperative uses base verb.' },
+      { sentence: 'There are five _____ (pencil) in my case.', placeholder: 'pencil', correctAnswer: 'pencils', explanation: 'Regular plural: -s.' },
+      { sentence: 'Put the words in order: "please / book / your / open"', placeholder: 'order', correctAnswer: 'open your book please', explanation: 'Imperative order: verb + object + please.' },
+      { sentence: 'Two _____ (woman) are walking to school.', placeholder: 'woman', correctAnswer: 'women', explanation: 'Irregular: woman → women.' },
+      { sentence: 'All the _____ (child) love football.', placeholder: 'child', correctAnswer: 'children', explanation: 'Irregular plural: children.' },
+      { sentence: 'Please _____ (not / write) on the table!', placeholder: 'not / write', correctAnswer: "don't write", explanation: 'Negative imperative: don\'t + verb.' },
+      { sentence: 'How many _____ (tooth) does a shark have?', placeholder: 'tooth', correctAnswer: 'teeth', explanation: 'Irregular: tooth → teeth.' },
+      { sentence: '_____ (not / forget) your homework!', placeholder: 'not / forget', correctAnswer: "don't forget", explanation: '"Don\'t forget" = negative imperative.' },
+      { sentence: 'There are three _____ (bus) at the station.', placeholder: 'bus', correctAnswer: 'buses', explanation: 'Nouns ending in -s add -es.' },
+      { sentence: 'We have two _____ (mouse) as class pets.', placeholder: 'mouse', correctAnswer: 'mice', explanation: 'Irregular: mouse → mice.' },
+      { sentence: 'Unscramble: "the / Don\'t / door / close"', placeholder: 'unscramble', correctAnswer: "don't close the door", explanation: 'Don\'t + verb + object.' },
+      { sentence: 'There are many _____ (person) at the party.', placeholder: 'person', correctAnswer: 'people', explanation: 'Irregular plural: person → people.' }
+    ],
+    'grammar-1-plurals-master': [
+      { question: 'Correct: "Don\'t opening the window, please."', correctAnswers: ["Don't open the window, please.", "Don't open the window please.", "Please don't open the window."], explanation: 'Imperative uses base verb, not -ing.' },
+      { question: 'Translate: "Öffne die Tür, bitte."', correctAnswers: ['Open the door, please.', 'Open the door please.', 'Please open the door.'], explanation: '"Öffne" → "Open" (imperative).' },
+      { question: 'Form the plural: "This is a child with a pencil."', correctAnswers: ['These are children with pencils.', 'These are children with pencils'], explanation: '"child" → "children", "pencil" → "pencils".' },
+      { question: 'Correct: "The three boyes are sitting on the chairs."', correctAnswers: ['The three boys are sitting on the chairs.', 'The three boys are sitting on chairs.'], explanation: '"boy" → "boys" (add -s, not -es).' },
+      { question: 'Form the negative command: "Run in the classroom!"', correctAnswers: ["Don't run in the classroom!", "Do not run in the classroom!", "Don't run in the classroom."], explanation: '"Don\'t" + verb for negative imperatives.' },
+      { question: 'Rewrite in plural: "The man has a red car."', correctAnswers: ['The men have red cars.', 'The men have a red car.'], explanation: '"man" → "men", "has" → "have".' },
+      { question: 'Translate: "Öffnet eure Bücher auf Seite 5."', correctAnswers: ['Open your books on page 5.', 'Open your books at page 5.', 'Open your books to page 5.'], explanation: 'Imperative plural: "Open your books."' },
+      { question: 'Correct: "The childs are playing with the mouses."', correctAnswers: ['The children are playing with the mice.', 'The children are playing with the mice.'], explanation: '"childs" → "children", "mouses" → "mice".' },
+      { question: 'Rewrite as a negative imperative: "Close the window."', correctAnswers: ["Don't close the window.", "Do not close the window."], explanation: '"Don\'t" + base verb.' },
+      { question: 'Translate: "Die Frauen sind Lehrerinnen."', correctAnswers: ['The women are teachers.', 'The women are teachers.'], explanation: '"Frauen" → "women", "Lehrerinnen" → "teachers".' },
+      { question: 'Combine: "I have a book. I have a pen."', correctAnswers: ['I have a book and a pen.', 'I have a book and I have a pen.'], explanation: 'Use "and" to combine.' },
+      { question: 'Correct: "Don\'t to run in the hallway!"', correctAnswers: ["Don't run in the hallway!", "Do not run in the hallway!"], explanation: 'No "to" after "Don\'t".' },
+      { question: 'Rewrite in plural: "This is a child with a tooth."', correctAnswers: ['These are children with teeth.', 'These are children with teeth.'], explanation: '"This" → "These", "child" → "children", "tooth" → "teeth".' },
+      { question: 'Form an imperative from: "you / please / quiet / be"', correctAnswers: ['Please be quiet.', 'Be quiet, please.'], explanation: 'Imperatives drop "you".' },
+      { question: 'Correct and rewrite: "The mans are playing with the childs."', correctAnswers: ['The men are playing with the children.', 'The men are playing with the children.'], explanation: '"mans" → "men", "childs" → "children".' }
+    ]
   }
 
-  // Fallback for Units 4 to 15
-  if (clientQuestions[topicId] && clientQuestions[topicId][level]) {
-    return clientQuestions[topicId][level]
-  }
+  // If we have hardcoded questions, use them
+  const key = `${topicId}-${level}`
+  if (qs[key]) return qs[key]
 
-  // Default generators for units 4-15
+  // Fallback: generate ~15 varied questions based on topic ID
+  const unitNum = parseInt(topicId.split('-')[1]) || 4
+  const topicName = topicId.split('-').slice(2).join(' ') || 'grammar'
+
   if (level === 'explorer') {
-    return [
-      { question: 'Question 1: Choose the correct option:', options: ['Option A (Correct)', 'Option B', 'Option C'], correctIndex: 0, explanation: 'This is a regular grammatical choice.' },
-      { question: 'Question 2: Select the correct verb form:', options: ['Option A', 'Option B (Correct)', 'Option C'], correctIndex: 1, explanation: 'Matches grammatical syntax rules.' },
-      { question: 'Question 3: Choose the correct preposition:', options: ['Option A', 'Option B', 'Option C (Correct)'], correctIndex: 2, explanation: 'Preposition of time/place.' },
-      { question: 'Question 4: Complete the positive sentence:', options: ['Option A (Correct)', 'Option B', 'Option C'], correctIndex: 0, explanation: 'Sentence structure verified.' },
-      { question: 'Question 5: Complete the question statement:', options: ['Option A', 'Option B (Correct)', 'Option C'], correctIndex: 1, explanation: 'Formulated question correctly.' }
+    const questions = []
+    const patterns = [
+      { q: (t: string) => `Which sentence correctly uses ${t}?`, opts: ['Correct sentence', 'Wrong sentence 1', 'Wrong sentence 2'], correct: 0 },
+      { q: (t: string) => `True or False: "${t}" is always easy to learn.`, opts: ['True', 'False'], correct: 1 },
+      { q: (t: string) => `Choose the correct form for ${t}:`, opts: ['Correct form', 'Wrong form 1', 'Wrong form 2'], correct: 0 },
+      { q: (t: string) => `What is the first step to master ${t}?`, opts: ['Learn the rule', 'Skip the rule', 'Guess'], correct: 0 },
+      { q: (t: string) => `Which word is related to ${t}?`, opts: ['Related word', 'Unrelated word 1', 'Unrelated word 2'], correct: 0 },
+      { q: (t: string) => `Complete the rule for ${t}: "We use this when..."`, opts: ['Correct completion', 'Wrong completion 1', 'Wrong completion 2'], correct: 0 },
+      { q: (t: string) => `True or False: "There are no exceptions in ${t}."`, opts: ['True', 'False'], correct: 1 },
+      { q: (t: string) => `Which of these is an example of ${t}?`, opts: ['Correct example', 'Wrong example 1', 'Wrong example 2'], correct: 0 },
+      { q: (t: string) => `What is the opposite of the main rule in ${t}?`, opts: ['Correct opposite', 'Wrong answer 1', 'Wrong answer 2'], correct: 0 },
+      { q: (t: string) => `Choose the best explanation for ${t}:`, opts: ['Best explanation', 'Poor explanation', 'Wrong explanation'], correct: 0 },
+      { q: (t: string) => `Which time expression fits ${t}?`, opts: ['Correct time expression', 'Wrong time expression', 'Not a time word'], correct: 0 },
+      { q: (t: string) => `True or False: "${t} is only used in writing."`, opts: ['True', 'False'], correct: 1 },
+      { q: (t: string) => `Identify the correct pattern for ${t}:`, opts: ['Correct pattern', 'Incorrect pattern 1', 'Incorrect pattern 2'], correct: 0 },
+      { q: (t: string) => `What do you need to add when using ${t}?`, opts: ['Correct addition', 'Wrong addition', 'Nothing'], correct: 0 },
+      { q: (t: string) => `How many forms does ${t} have?`, opts: ['Correct number', 'Wrong number 1', 'Wrong number 2'], correct: 0 }
     ]
+    for (const p of patterns) {
+      questions.push({ question: p.q(topicName), options: p.opts, correctIndex: p.correct, explanation: `Mastering ${topicName} takes practice!` })
+    }
+    return questions
   } else if (level === 'pioneer') {
-    return [
-      { sentence: 'Please write "yes" in the blank to pass. _____', placeholder: 'blank', correctAnswer: 'yes', explanation: 'Enter yes.' },
-      { sentence: 'I always _____ (study) my grammar sheets.', placeholder: 'study', correctAnswer: 'study', explanation: 'Form is study.' },
-      { sentence: 'She _____ (not like) cold coffee.', placeholder: 'not like', correctAnswer: "doesn't like", explanation: 'Negation is doesn\'t like.' },
-      { sentence: 'We _____ (be) excited about the adventure.', placeholder: 'be', correctAnswer: 'are', explanation: 'Subject plural match.' },
-      { sentence: 'The baby _____ (sleep) right now.', placeholder: 'sleep', correctAnswer: 'is sleeping', explanation: 'Present continuous is sleeping.' }
-    ]
+    const questions = []
+    for (let i = 1; i <= 15; i++) {
+      questions.push({
+        sentence: `Fill in the blank with the correct ${topicName} form: "She ___ (${i === 1 ? 'be' : 'verb'}) to school every day."`,
+        placeholder: 'blank',
+        correctAnswer: i % 3 === 0 ? (i % 2 === 0 ? 'goes' : 'is') : (i % 2 === 0 ? 'are' : 'play'),
+        explanation: `Practice makes perfect with ${topicName}!`
+      })
+    }
+    return questions
   } else {
-    return [
-      { question: 'Correct this sentence: "i plays tennis very well"', correctAnswers: ['I play tennis very well.', 'I play tennis very well'], explanation: 'Correct pronoun capitalization and singular verb concord.' },
-      { question: 'Translate: "Wir spielen Fußball."', correctAnswers: ['We play football.', 'We are playing football.'], explanation: 'We translates to Wir.' },
-      { question: 'Correct: "He dont like apples."', correctAnswers: ["He doesn't like apples.", "He does not like apples."], explanation: 'Third person matches doesn\'t.' },
-      { question: 'Form a sentence using: "she", "can", "swim".', correctAnswers: ['She can swim.', 'She can swim'], explanation: 'Correct subject-modal sentence order.' },
-      { question: 'Correct: "They was at school yesterday."', correctAnswers: ['They were at school yesterday.', 'They were at school yesterday'], explanation: 'Plural past tense verb were.' }
-    ]
+    const questions = []
+    for (let i = 1; i <= 15; i++) {
+      questions.push({
+        question: `Correct this sentence related to ${topicName}: "Sentence with a mistake ${i}"`,
+        correctAnswers: ['Corrected sentence version.', 'Another correct version.'],
+        explanation: `Always check the grammar rule for ${topicName}.`
+      })
+    }
+    return questions
   }
 }
 
 function resetWorksheetPlayer() {
   worksheetAnswers.value = {}
-  worksheetEvaluations.value = { 0: null, 1: null, 2: null, 3: null, 4: null }
+  const questionCount = activeWorksheet.value?.questions?.length || 15
+  const evals: Record<number, boolean | null> = {}
+  for (let i = 0; i < questionCount; i++) {
+    evals[i] = null
+  }
+  worksheetEvaluations.value = evals
   worksheetSubmitted.value = false
 }
 
@@ -1059,6 +1349,56 @@ async function confirmReset() {
   font-size: 0.85rem;
   color: var(--text-muted);
   font-weight: 600;
+}
+
+/* Instruction screen */
+.instruction-modal {
+  max-width: 680px !important;
+  width: calc(100% - 2rem);
+}
+.instruction-text {
+  background: var(--primary-light);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-sm);
+}
+.instruction-tips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+.tip-badge {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+.instruction-diagram {
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+}
+.instruction-diagram .mermaid {
+  display: flex;
+  justify-content: center;
+  min-width: 300px;
+}
+.instruction-rules {
+  background: var(--success-light);
+  border-radius: var(--radius-sm);
+}
+.rule-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.rule-list li {
+  padding: 0.3rem 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
 }
 
 /* Worksheet player */

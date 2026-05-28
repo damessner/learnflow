@@ -76,6 +76,11 @@ const routes: RouteRecordRaw[] = [
     component: GrammarAcademy,
     meta: { requiresAuth: true },
   },
+  {
+    path: '/grammar-academy/:topicId/:level',
+    component: GrammarAcademy,
+    meta: { requiresAuth: true },
+  },
 ]
 
 // Vite can expose an empty BASE_URL depending on how it was built/served.

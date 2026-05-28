@@ -1,79 +1,96 @@
-# Plan: Critical System Audit & Stabilization
+# Plan: Expand Grammar Academy Quizzes & Open in Separate Tab
 
 ## Summary
-I audited backend/frontend flows, quality gates, and security-sensitive code paths. The highest-impact issues are: inconsistent exercise runtime behavior (builder allows `true_false` / `ordering` but student runtime and scoring are incomplete), insecure random generation for credentials/class codes, startup side effects that overwrite worksheet library state, and backend lint failures that block clean CI. This plan fixes those first, validates with full checks, and leaves a concrete improvement backlog.
+The Grammar Academy currently has only 5 questions per level (Explorer/Pioneer/Master) per topic and 10 questions for the AI Finisher Quiz. The user wants these **much longer** (target: ~15 per level, ~20 for the quiz). Also, the worksheet player is currently a modal overlay — open it as a **separate route/tab** instead.
 
-## Current State (file:line references)
-- Backend lint currently fails due explicit `any` and unused variables:
-  - `backend/routes/grammar.ts:10`, `:23`, `:742`, plus unused vars around `:603`, `:606`, `:764`, `:767`
-  - `backend/routes/submissions.ts:144`
-- Exercise type mismatch across app layers:
-  - Builder supports `true_false` and `ordering` (`frontend/src/views/WorksheetBuilder.vue:441-444`, `:2889-2894`)
-  - Preview handles them (`frontend/src/views/WorksheetPreview.vue:1043-1050`, `:1109-1117`)
-  - Player has no main worksheet UI for them (no corresponding `block.type === 'true_false'` / `ordering` section in main block renderer; only remediation `true_false` exists at `frontend/src/views/WorksheetPlayer.vue:273-298`)
-  - Scoring engine does not implement explicit `true_false` / `ordering` scoring branches (`backend/routes/scoring.ts` switch in `scoreAnswers`, around `:135+`)
-- Insecure randomness in security-sensitive paths:
-  - `backend/services/studentImporter.ts:36-47` uses `Math.random()` for passwords/class codes
-  - `backend/routes/classes.ts:51` uses `Math.random()` for class join code
-- Startup side effect overrides worksheet visibility:
-  - `backend/server.ts:14-21` unconditionally sets all worksheets `in_library = 1`
-- Error handling leaks internal messages:
-  - `backend/middleware/errorHandler.ts:9` returns raw `err.message` for all statuses
-- UX inconsistency for remediation rounds:
-  - UI says up to 2 rounds / `used x/2` while backend allows 3 (`frontend/src/views/WorksheetPlayer.vue:98`, `:108`; backend `MAX_REMEDIATION_ROUNDS = 3` in `backend/routes/submissions.ts:19`)
-- Automated test depth is still thin for scoring edge cases:
-  - Only broad sanity and selected AI/validate tests exist (`backend/app.test.ts`, `backend/routes/ai.test.ts`, `backend/middleware/validate.test.ts`)
+## Current State
+
+### Backend — `backend/routes/grammar.ts`
+- **Topics 1-3** (`grammar-1-plurals`, `grammar-2-tobe`, `grammar-3-havegot`): Fully hardcoded with **5 Explorer MC, 5 Pioneer FITB, 5 Master text** questions each.
+- **Topics 4-15**: Dynamically generated with **5 placeholder questions** per level.
+- **AI Finisher Quiz** (`/quiz/generate`): Generates **10 questions** (static template).
+- `resetWorksheetPlayer()` in frontend hardcodes `{ 0: null, 1: null, 2: null, 3: null, 4: null }` — only 5 slots.
+- Quiz UI references "Frage X von 10" hardcoded.
+
+### Frontend — `frontend/src/views/GrammarAcademy.vue`
+- **`getWorksheetQuestions()`**: Has duplicate hardcoded questions for topics 1-3 (5 each) and fallback generators for 4-15 (5 each).
+- **Worksheet player**: Modal overlay, not a separate route.
+- **Quiz**: "Frage {{ quizCurrentIdx + 1 }} von 10" and button logic assumes 10 questions.
+
+### Router — `frontend/src/router/index.ts`
+- Grammar Academy is at `/grammar-academy` (already a separate route).
 
 ## Approach
-Use a risk-first remediation sequence:
-1. Restore quality gate cleanliness (lint blockers) to ensure reliable iteration.
-2. Fix security-sensitive randomness and class code uniqueness.
-3. Remove accidental destructive startup behavior.
-4. Align exercise support end-to-end (UI + scoring) for `true_false`/`ordering`.
-5. Add targeted tests for newly fixed scoring behavior.
-6. Run full verification and clean warnings where practical.
 
-This minimizes regression risk while addressing the most user-visible and security-relevant problems.
+1. **Expand backend questions with varied types** — Add ~15 questions per level per topic with variety:
+   - **Explorer**: Mix of MC, True/False, "Which sentence is correct?," multiple-choice ordering
+   - **Pioneer**: Mix of FITB, unscramble-and-write, word formation, sentence completion
+   - **Master**: Mix of error correction, translation (both directions), sentence rewriting, combining sentences
+2. **Expand AI Finisher Quiz** — From 10 to 20 mixed-type questions.
+3. **Expand frontend client-side questions** — Match the backend expansions.
+4. **Add instruction screen with Mermaid diagram before each level** — Before the worksheet starts, show:
+   - A kid-friendly **instruction card** explaining the grammar rule for that topic
+   - A **Mermaid diagram** visualizing the grammar concept (e.g., conjugation flow, plural formation, preposition map)
+   - Emoji-rich, colorful design with playful language
+   - A "Los geht's!" button to start the questions
+5. **Open worksheet as sub-route** — Navigate to `/grammar-academy/:topicId/:level` instead of modal overlay.
+6. **Fix hardcoded lengths** — `resetWorksheetPlayer()`, "von 10" label, button logic.
 
 ## Files to Change
-| File | Change type | Planned change |
-|---|---|---|
-| `backend/routes/grammar.ts` | Refactor | Replace `any` with typed interfaces, remove unused vars, replace console logging with structured logger |
-| `backend/routes/submissions.ts` | Refactor | Remove explicit `any` typing in category scoring path |
-| `backend/services/studentImporter.ts` | Security hardening | Replace `Math.random()` with `crypto.randomInt()` for password/class code generation |
-| `backend/routes/classes.ts` | Security + reliability | Generate secure class codes and enforce uniqueness against DB |
-| `backend/server.ts` | Behavior fix | Remove or guard unconditional startup publish-all update |
-| `backend/middleware/errorHandler.ts` | Security hardening | Avoid leaking internal error details for 500-level errors |
-| `backend/routes/scoring.ts` | Functional fix | Add robust scoring logic for `true_false` and `ordering` |
-| `frontend/src/views/WorksheetPlayer.vue` | Functional + UX fix | Add main worksheet interaction UI for `true_false` + `ordering`, normalize submission payload for ordering, fix remediation rounds text consistency |
-| `backend/routes/scoring.test.ts` (new) | Tests | Add tests for `true_false`/`ordering` scoring behavior |
-| `frontend/src/views/WorksheetBuilder.vue` and `frontend/src/views/WorksheetPlayer.vue` | Cleanup | Resolve current template-shadow lint warnings for a clean output |
+
+| File | Change Type | What |
+|------|-------------|------|
+| `backend/routes/grammar.ts` | Edit | Expand topics 1-3 questions to ~15 each with variety; expand topic 4-15 to ~15 real questions; expand quiz to 20 mixed-type questions |
+| `frontend/src/views/GrammarAcademy.vue` | Edit | Expand client-side questions to match; add instruction+Mermaid screen before worksheet; remove hardcoded 5; update quiz to 20; add sub-route support |
+| `frontend/src/router/index.ts` | Edit | Add `/grammar-academy/:topicId/:level` route for dedicated worksheet view |
+| `frontend/package.json` | Edit | Add `mermaid` dependency if not present |
 
 ## Step-by-Step Execution
-1. [x] Fix lint-blocking types/warnings in backend (`grammar.ts`, `submissions.ts`) so backend lint can pass.
-2. [x] Harden random generation in `studentImporter.ts` and class code creation in `classes.ts` with secure randomness + collision-safe generation.
-3. [x] Remove/guard startup auto-publish behavior in `server.ts`.
-4. [x] Harden `errorHandler.ts` to return generic messages for internal server errors.
-5. [x] Implement `true_false` and `ordering` handling in `scoring.ts` and ensure compatibility with existing answer formats.
-6. [x] Add/adjust main worksheet UI in `WorksheetPlayer.vue` for `true_false` + `ordering`, including submission normalization.
-7. [x] Fix remediation rounds copy/labels to match backend max rounds.
-8. [x] Add focused tests for scoring regressions (`backend/routes/scoring.test.ts`).
-9. [x] Clean remaining frontend lint warnings (`vue/no-template-shadow`) in the warned templates.
-10. [x] Verify with full checks and fix any regressions.
+
+### Step 1: Expand backend topics 1-3 (15 questions per level)
+Edit `backend/routes/grammar.ts` — expand each of `grammar-1-plurals`, `grammar-2-tobe`, `grammar-3-havegot` arrays from 5 to ~15 questions.
+
+### Step 2: Expand backend topics 4-15 (15 placeholder questions)
+Edit `backend/routes/grammar.ts` — increase the `for` loop generation from 5 to ~15, add variety to the generated questions.
+
+### Step 3: Expand AI Finisher Quiz to 20 questions
+Edit `backend/routes/grammar.ts` — add 10 more unique questions to the `generatedQuestions` array (line ~674).
+
+### Step 4: Update frontend client-side questions
+Edit `GrammarAcademy.vue` — expand the hardcoded questions in `getWorksheetQuestions()` to match backend.
+
+### Step 5: Add instruction + Mermaid diagram screen before worksheet
+Edit `GrammarAcademy.vue` — Add an `instructionPhase` before the worksheet starts:
+- Create a `getTopicExplanation(topicId, level)` function returning emoji-rich instruction text + Mermaid diagram definition
+- Display instruction card with diagram before showing questions
+- "Los geht's!" button transitions to the worksheet
+- Install/ensure `mermaid` npm package is available in frontend
+
+### Step 6: Fix hardcoded 5-question assumption
+Edit `GrammarAcademy.vue` — `resetWorksheetPlayer()` should initialize dynamically based on actual question count.
+
+### Step 7: Update quiz UI from "von 10" to dynamic count
+Edit `GrammarAcademy.vue` — "Frage {{ quizCurrentIdx + 1 }} von 10" → use `quizQuestions.length`, fix button logic.
+
+### Step 8: Open worksheet as sub-route
+- Create a new `GrammarWorksheetView.vue` component extracted from the modal portion of `GrammarAcademy.vue`
+- Add `/grammar-academy/:topicId/:level` route in `router/index.ts`
+- Wire up navigation from the start buttons
 
 ## Risks and Edge Cases
-- Existing worksheets may store `true_false` and `ordering` answers in multiple historical formats; scoring must accept booleans, strings, and numeric representations.
-- Changing class-code generation must preserve UX format (`xxxx-xxxx`) while preventing collisions.
-- Startup behavior change may alter current deployment assumptions if someone relied on auto-publish-all; mitigation is to support an explicit opt-in env flag if needed.
-- Ordering exercises may assume author-provided order is canonical; runtime interaction should not mutate source-of-truth unexpectedly.
+- **CSRF token** — worksheet submission uses cookie-based CSRF; must ensure it works on the new route.
+- **State sharing** — progress state is fetched on mount; the separate route will need to refetch or receive topic data.
+- **Backward compatibility** — existing users with progress in the JSON file must still work.
 
 ## Verification
-- Backend lint: `npm run lint --workspace backend`
-- Frontend lint: `npm run lint --workspace frontend`
-- Backend tests: `npm test --workspace backend`
-- Frontend tests: `npm test --workspace frontend`
-- Backend build: `npm run build --workspace backend`
-- Frontend build: `npm run build --workspace frontend`
+1. Server starts without errors (`npm run dev` in backend)
+2. Frontend builds without errors (`npm run build` in frontend)
+3. `/api/grammar/topics` returns 15+ questions per level
+4. `/api/grammar/topics/:id/quiz/generate` returns 20 questions
+5. Instruction screen shows before worksheet with Mermaid diagram rendering
+6. Worksheet player shows all questions (not just 5)
+7. Quiz shows all 20 questions with correct counter
 
 ## Open Questions
-None blocking. Assumption: startup auto-publish-all is unintended and should be removed (or made explicit opt-in).
+1. **"Open in separate tab"**: Should the worksheet *player* (currently a modal) open as a new browser tab (`window.open`), or should it navigate to a sub-route within the app? I'll implement it as a sub-route since it keeps the app context.
+2. **Question content**: Should I write actual grammar content for the expanded questions in topics 4-15, or keep them as varied but sensible placeholders with real grammar structure? **Update**: Will write real, varied grammar questions for all topics — topics 1-3 get expanded with more variety, topics 4-15 get proper questions instead of placeholders.
