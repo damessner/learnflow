@@ -3,6 +3,19 @@
     <h2 v-if="worksheet">{{ worksheet.title }} (Preview)</h2>
     <p v-if="worksheet" style="color: var(--text-muted)">{{ worksheet.description }}</p>
 
+    <div v-if="worksheet" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; align-items: center; flex-wrap: wrap">
+      <button v-if="isTeacher" class="btn-primary btn-lg" style="display: flex; align-items: center; gap: 0.25rem" @click="cloneWorksheet">
+        <span>📥</span> Clone to my Worksheets
+      </button>
+      <button class="btn btn-lg" @click="goBack">Go Back</button>
+      <span v-if="worksheet.subject" class="badge" style="background: rgba(79, 70, 229, 0.1); color: var(--primary); padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 600">
+        {{ worksheet.subject }}
+      </span>
+      <span v-if="worksheet.grade_level" class="badge" style="background: rgba(107, 114, 128, 0.1); color: var(--text-main); padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 600">
+        Grade {{ worksheet.grade_level }}
+      </span>
+    </div>
+
     <div v-for="block in blocks" :key="block.id" class="card" style="margin-bottom: 0.5rem">
       <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem">
         <strong>{{ block.type.replace(/_/g, ' ') }}</strong>
@@ -66,6 +79,57 @@
 
       <template v-if="block.type === 'text'">
         <div style="white-space: pre-wrap">{{ block.text }}</div>
+      </template>
+
+      <!-- Media / Image Block -->
+      <template v-if="block.type === 'media'">
+        <div style="text-align: center; margin-top: 0.5rem">
+          <img :src="block.src" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid var(--border-color)" />
+          <p v-if="block.caption" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem">{{ block.caption }}</p>
+        </div>
+      </template>
+
+      <!-- Audio Block -->
+      <template v-if="block.type === 'audio'">
+        <div style="margin-top: 0.5rem">
+          <audio :src="block.src" controls style="width:100%"></audio>
+          <p v-if="block.caption" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem">{{ block.caption }}</p>
+        </div>
+      </template>
+
+      <!-- Video Block -->
+      <template v-if="block.type === 'video'">
+        <div style="text-align: center; margin-top: 0.5rem">
+          <video :src="block.src" controls style="max-width:100%; max-height:400px; border-radius:8px"></video>
+          <p v-if="block.caption" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem">{{ block.caption }}</p>
+        </div>
+      </template>
+
+      <!-- YouTube Block -->
+      <template v-if="block.type === 'youtube'">
+        <div style="text-align: center; margin-top: 0.5rem">
+          <iframe
+            v-if="youtubeEmbed(block.src)"
+            width="560"
+            height="315"
+            :src="youtubeEmbed(block.src)"
+            title="YouTube video player"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+            style="max-width:100%; border-radius:8px"
+          ></iframe>
+          <div v-else style="color:var(--text-muted)">Invalid YouTube Link</div>
+          <p v-if="block.caption" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem">{{ block.caption }}</p>
+        </div>
+      </template>
+
+      <!-- Drawing Block -->
+      <template v-if="block.type === 'drawing'">
+        <div style="margin-top: 0.5rem">
+          <div style="font-weight: 500; margin-bottom: 0.25rem">{{ block.text || 'Draw here:' }}</div>
+          <ScratchpadCanvas />
+        </div>
       </template>
 
       <template v-if="block.type === 'vocabulary'">
@@ -169,19 +233,57 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useWorksheetsStore } from '../stores/worksheets'
+import { useAuthStore } from '../stores/auth'
+import { useUiStore } from '../stores/ui'
 import MermaidDiagram from '../components/exercises/MermaidDiagram.vue'
 import Vocabulary from '../components/exercises/Vocabulary.vue'
 import SemanticSorter from '../components/exercises/SemanticSorter.vue'
 import Flashcards from '../components/exercises/Flashcards.vue'
+import ScratchpadCanvas from '../components/exercises/ScratchpadCanvas.vue'
+
+function youtubeEmbed(url: string) {
+  if (!url) return ''
+  const id = url.match(/(?:v=|\/)([\w-]{11})/)
+  return id ? `https://www.youtube.com/embed/${id[1]}` : ''
+}
 
 const route = useRoute()
+const router = useRouter()
 const store = useWorksheetsStore()
+const authStore = useAuthStore()
+const uiStore = useUiStore()
+
 const worksheet = ref(null)
 const blocks = ref([])
 
+const isTeacher = computed(() => authStore.role === 'teacher' || authStore.role === 'admin')
 const totalPoints = computed(() => blocks.value.reduce((s, b) => s + (b.points || 0), 0))
+
+async function cloneWorksheet() {
+  if (!worksheet.value) return
+  try {
+    let cloned
+    if (worksheet.value.in_library) {
+      cloned = await store.cloneLibraryWorksheet(worksheet.value.id)
+    } else {
+      cloned = await store.duplicateWorksheet(worksheet.value.id)
+    }
+    uiStore.showToast('Worksheet duplicated successfully!', 'success')
+    router.push(`/teacher/builder/${cloned.id}`)
+  } catch (err: any) {
+    uiStore.showToast(err.message || 'Failed to clone worksheet', 'error')
+  }
+}
+
+function goBack() {
+  if (route.query.from === 'bank') {
+    router.push('/teacher/bank')
+  } else {
+    router.push('/teacher')
+  }
+}
 
 onMounted(async () => {
   await store.fetchWorksheet(route.params.id)

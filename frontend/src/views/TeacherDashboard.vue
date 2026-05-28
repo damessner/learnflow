@@ -4,6 +4,7 @@
     <h2 class="page-title">Teacher Dashboard</h2>
       <div class="flex gap-sm">
         <router-link to="/teacher/workspace" class="btn-primary btn-lg">Subject Workspace</router-link>
+        <router-link to="/teacher/bank" class="btn-primary btn-lg">LearnFlowBank</router-link>
         <router-link to="/teacher/builder" class="btn-primary btn-lg">Create Worksheet</router-link>
         <router-link to="/teacher/stories" class="btn-primary btn-lg">Stories</router-link>
       </div>

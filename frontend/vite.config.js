@@ -11,4 +11,20 @@ export default defineConfig({
       '/uploads': { target: 'http://localhost:3001', changeOrigin: true },
     },
   },
+  build: {
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('mermaid')) {
+              return 'mermaid'
+            }
+            return 'vendor'
+          }
+        },
+      },
+    },
+  },
 })
+

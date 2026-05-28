@@ -18,6 +18,10 @@
             <span class="collapse-arrow" :class="{ open: titlePanelOpen }">▾</span>
           </button>
           <div class="card sidebar-card" style="margin-top:0.25rem">
+            <div style="display:flex;align-items:center;justify-content:space-between;background:var(--primary-light);border:1px solid var(--primary-soft);border-radius:var(--radius-sm);padding:0.4rem 0.6rem;margin-bottom:0.5rem;font-size:0.75rem;font-weight:600;color:var(--primary)">
+              <span>⏱️ Est. Pupil Time:</span>
+              <span>{{ estimatedTimeFormatted }}</span>
+            </div>
             <div class="form-group" style="margin-bottom:0.35rem">
               <label>Title</label>
               <input v-model="form.title" placeholder="Worksheet title" />
@@ -81,6 +85,14 @@
                   <option value="B2">B2 – Upper Intermediate</option>
                   <option value="C1">C1 – Advanced</option>
                   <option value="C2">C2 – Proficient</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-top:0.5rem; margin-bottom:0">
+                <label>Pupil Target Speed</label>
+                <select v-model="form.pupil_profile" style="font-size:0.75rem">
+                  <option value="default">Default Pupil (Average)</option>
+                  <option value="slow">Slow Worker (+50%)</option>
+                  <option value="fast">Fast Worker (-30%)</option>
                 </select>
               </div>
             </div>
@@ -166,51 +178,6 @@
                   style="font-size:0.75rem"
                   @input="autoExpand($event)"
                 ></textarea>
-              </div>
-
-              <div v-if="lernzieleTemplates.length" style="margin-bottom:0.4rem">
-                <select style="font-size:0.68rem;padding:0.2rem;width:100%" @change="e => { if (e.target.value) { aiLernziele = e.target.value; e.target.value = '' } }">
-                  <option value="">📚 Select learning objective template…</option>
-                  <option v-for="t in lernzieleTemplates" :key="t" :value="t">{{ t }}</option>
-                </select>
-              </div>
-
-              <div class="form-group" style="margin-bottom: 0.5rem">
-                <textarea
-                  v-model="aiLernziele"
-                  rows="2"
-                  placeholder="Learning objectives / Lernziele (optional)"
-                  style="font-size:0.7rem"
-                  @input="autoExpand($event)"
-                ></textarea>
-              </div>
-
-              <div style="display:flex;gap:0.25rem;margin-bottom:0.5rem;flex-wrap:wrap">
-                <div style="flex: 1; min-width: 60px">
-                  <label style="font-size: 0.6rem; color: var(--text-muted)">Style</label>
-                  <select v-model="aiStyle" style="font-size:0.65rem;padding:0.2rem;width:100%">
-                    <option value="practice">Practice</option>
-                    <option value="test">Test</option>
-                    <option value="revision">Revision</option>
-                    <option value="challenge">Challenge</option>
-                  </select>
-                </div>
-                <div style="flex: 1; min-width: 50px">
-                  <label style="font-size: 0.6rem; color: var(--text-muted)">Difficulty</label>
-                  <select v-model="aiDifficulty" style="font-size:0.65rem;padding:0.2rem;width:100%">
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                </div>
-                <div style="flex: 1; min-width: 50px">
-                  <label style="font-size: 0.6rem; color: var(--text-muted)">Length</label>
-                  <select v-model="aiLength" style="font-size:0.65rem;padding:0.2rem;width:100%">
-                    <option value="short">Short</option>
-                    <option value="medium">Medium</option>
-                    <option value="long">Long</option>
-                  </select>
-                </div>
               </div>
 
               <button
@@ -363,15 +330,20 @@
           v-for="(block, idx) in blocks"
           :key="block.id"
           class="card block-card"
+          :class="{ 'is-collapsed': expandedBlockId !== block.id }"
+          @click="expandBlock(block.id)"
           @focusout="updateBlockPoints(block)"
         >
           <!-- Block header row -->
-          <div class="block-card-header">
-            <div class="block-card-title">
+          <div class="block-card-header" style="cursor: pointer" @click.stop="toggleBlockCollapse(block.id)">
+            <div class="block-card-title" style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.5rem">
               <span class="block-type-icon">{{ blockIcons[block.type] || '📄' }}</span>
-              <strong>{{ germanBlockLabel[block.type] || block.type.replace(/_/g, ' ') }}</strong>
+              <strong style="white-space: nowrap">{{ germanBlockLabel[block.type] || block.type.replace(/_/g, ' ') }}</strong>
+              <span v-if="expandedBlockId !== block.id" style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: 0.5rem; flex: 1">
+                {{ getBlockSnippet(block) }}
+              </span>
             </div>
-            <div class="block-card-controls">
+            <div class="block-card-controls" @click.stop>
               <label class="pts-label">Pts:</label>
               <input v-model.number="block.points" type="number" class="pts-input" min="0" />
               <button class="btn-sm" :disabled="idx === 0" @click="moveBlock(idx, -1)" title="Move up">↑</button>
@@ -380,9 +352,8 @@
             </div>
           </div>
 
-
           <!-- Block fields -->
-          <div class="block-card-body">
+          <div v-show="expandedBlockId === block.id" class="block-card-body">
             <!-- Textarea for question-based blocks (exclude text, read_aloud, info_box which have their own) -->
             <div v-if="block.type !== 'text' && block.type !== 'read_aloud' && block.type !== 'info_box' && block.type !== 'true_false'" class="form-group">
               <textarea
@@ -649,12 +620,8 @@
               </div>
               <div v-if="block.src" style="margin-top:0.5rem">
                 <img v-if="block.type === 'media'" :src="block.src" style="max-width:100%;max-height:200px;border-radius:4px" />
-                <audio v-else-if="block.type === 'audio'" controls style="width:100%">
-                  <source :src="block.src" :type="block.mime_type || inferMimeType(block.src, 'audio')" />
-                </audio>
-                <video v-else controls style="max-width:100%;max-height:200px;border-radius:4px">
-                  <source :src="block.src" :type="block.mime_type || inferMimeType(block.src, 'video')" />
-                </video>
+                <audio v-else-if="block.type === 'audio'" :src="block.src" controls style="width:100%"></audio>
+                <video v-else :src="block.src" controls style="max-width:100%;max-height:200px;border-radius:4px"></video>
               </div>
             </template>
 
@@ -927,9 +894,89 @@
             <label>Description (Optional)</label>
             <textarea v-model="form.description" rows="2" placeholder="Describe the focus or instructions..."></textarea>
           </div>
+          <div class="form-group" style="margin-top:0.75rem">
+            <label>Pupil Target Speed Profile (optional)</label>
+            <select v-model="form.pupil_profile">
+              <option value="default">Default Pupil (Average Speed)</option>
+              <option value="slow">Slow Worker (+50% Time)</option>
+              <option value="fast">Fast Worker (-30% Time)</option>
+            </select>
+          </div>
         </div>
         <div class="modal-footer" style="display:flex;justify-content:flex-end;margin-top:1.25rem">
           <button class="btn-primary" @click="submitSetup">Save & Start Editing</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Generator Preview Modal Overlay -->
+    <div v-if="showAiPreviewModal" class="modal-overlay">
+      <div class="modal-container card" style="max-width: 800px; max-height: 85vh; display: flex; flex-direction: column">
+        <div class="modal-header">
+          <h3>✨ AI Generated Worksheet Preview</h3>
+          <p>Review the generated exercises before importing them into your worksheet.</p>
+        </div>
+        <div class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 0.5rem; margin-top: 0.5rem">
+          <div v-if="aiPreviewBlocks.length === 0" style="text-align: center; color: var(--text-muted); padding: 2rem">
+            No blocks generated.
+          </div>
+          <div v-else style="display: flex; flex-direction: column; gap: 0.75rem">
+            <div v-for="(block, idx) in aiPreviewBlocks" :key="block.id || idx" class="card" style="padding: 0.85rem; border: 1px solid var(--border-color)">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem">
+                <strong>{{ block.type.replace(/_/g, ' ') }}</strong>
+                <span class="badge">{{ block.points }} pts</span>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-main)">
+                <div v-if="block.text" style="white-space: pre-wrap; font-weight: 500">{{ block.text }}</div>
+                <div v-if="block.template" style="font-family: monospace; background: var(--bg-main); padding: 0.35rem; border-radius: 4px; margin-top: 0.25rem">
+                  {{ block.template }}
+                </div>
+                <div v-if="block.options?.length" style="margin-top: 0.35rem">
+                  <div v-for="(opt, oi) in block.options" :key="oi" style="padding: 0.15rem 0">
+                    <span v-if="block.correct === oi || (Array.isArray(block.correct) && block.correct.includes(oi))" style="color: var(--success)">[✓]</span>
+                    <span v-else>[ ]</span>
+                    {{ opt }}
+                  </div>
+                </div>
+                <div v-if="block.pairs?.length" style="margin-top: 0.35rem; font-size: 0.8rem">
+                  <div v-for="(pair, pi) in block.pairs" :key="pi">
+                    {{ pair[0] }} ➔ {{ pair[1] }}
+                  </div>
+                </div>
+                <div v-if="block.words?.length" style="margin-top: 0.35rem">
+                  <strong>Words/Clues:</strong>
+                  <div v-for="(item, wi) in block.words" :key="wi" style="font-size: 0.8rem">
+                    {{ item.word }} <span v-if="item.description" style="color: var(--text-muted)">({{ item.description }})</span>
+                  </div>
+                </div>
+                <div v-if="block.rows?.length" style="margin-top: 0.35rem">
+                  <table style="width: 100%; border: 1px solid var(--border-color); font-size: 0.8rem">
+                    <thead>
+                      <tr>
+                        <th>Statement</th>
+                        <th v-for="col in block.columns" :key="col">{{ col }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="row in block.rows" :key="row">
+                        <td>{{ row.split('##')[0] }}</td>
+                        <td v-for="col in block.columns" :key="col" style="text-align: center">
+                          <span v-if="row.split('##')[1] === col" style="color: var(--success)">✓</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div v-if="block.type === 'info_box' && block.mermaid" style="margin-top: 0.5rem; background: var(--bg-main); padding: 0.4rem; border-radius: 4px">
+                  <code>Mermaid Diagram Code Present</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem">
+          <button class="btn-sm" @click="discardAiGeneratedBlocks">Discard & Re-prompt</button>
+          <button class="btn-primary btn-sm" @click="keepAiGeneratedBlocks">Keep & Add to Worksheet</button>
         </div>
       </div>
     </div>
@@ -948,7 +995,7 @@ const router = useRouter()
 const store = useWorksheetsStore()
 const uiStore = useUiStore()
 
-const emptyForm = () => ({ title: '', subject: '', grade_level: '', description: '', source_lang: '', target_lang: '', cefr_level: '' })
+const emptyForm = () => ({ title: '', subject: '', grade_level: '', description: '', source_lang: '', target_lang: '', cefr_level: '', pupil_profile: 'default' })
 
 const isEditing = ref(false)
 const blocks = ref([])
@@ -972,6 +1019,165 @@ const aiTab = ref('generate')
 const titlePanelOpen = ref(false)
 const versionPanelOpen = ref(true)
 const showSetupModal = ref(false)
+
+const expandedBlockId = ref(null)
+
+function expandBlock(id) {
+  if (expandedBlockId.value !== id) {
+    expandedBlockId.value = id
+  }
+}
+
+function toggleBlockCollapse(id) {
+  expandedBlockId.value = expandedBlockId.value === id ? null : id
+}
+
+function getBlockSnippet(block) {
+  if (!block) return ''
+  const val = block.text || block.template || block.sentence || block.audioText || block.title || ''
+  if (val.length > 60) return val.substring(0, 60) + '...'
+  return val || '(empty block)'
+}
+
+const estimatedTimeSeconds = computed(() => {
+  let total = 0
+  const profile = form.value.pupil_profile || 'default'
+  let multiplier = 1.0
+  if (profile === 'slow') multiplier = 1.5
+  if (profile === 'fast') multiplier = 0.7
+
+  const grade = parseInt(form.value.grade_level) || 5
+  if (grade <= 3) multiplier *= 1.3
+  else if (grade >= 7) multiplier *= 0.85
+
+  for (const block of blocks.value) {
+    if (!block.type) continue
+    switch (block.type) {
+      case 'text':
+      case 'read_aloud': {
+        const words = (block.text || '').split(/\s+/).filter(Boolean).length
+        total += words * 1.2
+        break
+      }
+      case 'info_box': {
+        const words = (block.text || '').split(/\s+/).filter(Boolean).length
+        total += words * 1.2 + 10
+        break
+      }
+      case 'media':
+        total += 10
+        break
+      case 'audio':
+        total += 60
+        break
+      case 'video':
+        total += 120
+        break
+      case 'youtube':
+        total += 180
+        break
+      case 'gap_fill': {
+        const gaps = (block.template || '').match(/\(\(.*?\)\)/g)?.length || 0
+        total += gaps * 15 + 10
+        break
+      }
+      case 'drag_words': {
+        const gaps = (block.template || '').match(/\(\(.*?\)\)/g)?.length || 0
+        total += gaps * 12 + 10
+        break
+      }
+      case 'correct_words': {
+        const gaps = (block.template || '').match(/\(\(.*?\)\)/g)?.length || 0
+        total += gaps * 20 + 10
+        break
+      }
+      case 'question_table': {
+        const rows = (block.rows || []).length
+        total += rows * 15
+        break
+      }
+      case 'single_choice':
+      case 'multiple_choice': {
+        const opts = (block.options || []).length
+        total += 20 + opts * 5
+        break
+      }
+      case 'matching': {
+        const pairs = (block.pairs || []).length
+        total += pairs * 15
+        break
+      }
+      case 'word_scramble': {
+        const words = (block.words || []).length
+        total += words * 30
+        break
+      }
+      case 'short_answer':
+        total += 90
+        break
+      case 'true_false':
+        total += 15
+        break
+      case 'ordering': {
+        const items = (block.items || []).length
+        total += items * 15
+        break
+      }
+      case 'vocabulary': {
+        const pairs = (block.vocabulary?.pairs || []).length
+        total += pairs * 15
+        break
+      }
+      case 'semantic_sorter': {
+        const count = (block.categories || []).reduce((s, c) => s + (c.words || []).length, 0)
+        total += count * 10
+        break
+      }
+      case 'flashcards': {
+        const cards = (block.cards || []).length
+        total += cards * 15
+        break
+      }
+      case 'crossword': {
+        const words = (block.words || []).length
+        total += words * 45
+        break
+      }
+      case 'audio_match': {
+        const pairs = (block.pairs || []).length
+        total += pairs * 20
+        break
+      }
+      case 'dictation':
+        total += 60
+        break
+      case 'word_search': {
+        const words = (block.words || []).length
+        total += words * 30
+        break
+      }
+      case 'sentence_builder':
+        total += 25
+        break
+      case 'odd_one_out':
+        total += 30
+        break
+      case 'drawing':
+        total += 120
+        break
+      default:
+        total += 30
+    }
+  }
+  return Math.max(15, Math.round(total * multiplier))
+})
+
+const estimatedTimeFormatted = computed(() => {
+  const mins = Math.floor(estimatedTimeSeconds.value / 60)
+  const secs = estimatedTimeSeconds.value % 60
+  if (mins === 0) return `${secs}s`
+  return `${mins}m ${secs}s`
+})
 
 function applySuggestion(text) {
   aiPrompt.value = text
@@ -1353,15 +1559,20 @@ async function syncBuilderToRoute() {
       subject: store.current.subject || '',
       grade_level: store.current.grade_level || '',
       description: store.current.description || '',
+      pupil_profile: 'default',
     }
     try {
       const content = JSON.parse(store.current.content || '{}')
       blocks.value = mapLoadedBlocks(content.blocks)
+      form.value.pupil_profile = content.pupil_profile || 'default'
+      if (blocks.value.length > 0) {
+        expandedBlockId.value = blocks.value[0].id
+      }
     } catch {
       blocks.value = []
     }
     await loadVersions()
-    showSetupModal.value = true
+    showSetupModal.value = false
   } catch {
     uiStore.showToast('Failed to load worksheet', 'error')
     resetBuilder()
@@ -1641,6 +1852,7 @@ function addBlock(type) {
     block.background_image = ''
   }
   blocks.value.push(block)
+  expandedBlockId.value = block.id
 }
 
 function removeBlock(idx) {
@@ -1742,7 +1954,7 @@ async function save() {
     }
     return copy
   })
-  const content = JSON.stringify({ blocks: mappedBlocks })
+  const content = JSON.stringify({ blocks: mappedBlocks, pupil_profile: form.value.pupil_profile || 'default' })
   const totalPoints = blocks.value.reduce((s, b) => s + (b.points || 0), 0)
   const payload = {
     ...form.value,
@@ -1824,6 +2036,24 @@ async function generateAudioMatchAudios(block) {
   }
 }
 
+const showAiPreviewModal = ref(false)
+const aiPreviewBlocks = ref([])
+
+function keepAiGeneratedBlocks() {
+  if (aiPreviewBlocks.value.length) {
+    blocks.value.push(...aiPreviewBlocks.value)
+    expandedBlockId.value = aiPreviewBlocks.value[0].id
+  }
+  aiPreviewBlocks.value = []
+  showAiPreviewModal.value = false
+  uiStore.showToast('Blocks added to worksheet', 'success')
+}
+
+function discardAiGeneratedBlocks() {
+  aiPreviewBlocks.value = []
+  showAiPreviewModal.value = false
+}
+
 async function generateAI() {
   if (!aiPrompt.value.trim()) return
   if (!form.value.subject || !form.value.grade_level) {
@@ -1832,21 +2062,21 @@ async function generateAI() {
   }
   aiLoading.value = true
   try {
+    // Default length to long for worksheets generated via the simplified generator
     const data = await store.aiGenerate(aiPrompt.value, aiProvider.value, {
-      difficulty: aiDifficulty.value,
-      length: aiLength.value,
-      lernziele: aiLernziele.value.trim() || undefined,
+      difficulty: 'medium',
+      length: 'long',
       subject: form.value.subject,
       grade_level: form.value.grade_level,
       title: form.value.title || undefined,
       description: form.value.description || undefined,
-      style: aiStyle.value,
+      style: 'practice',
       source_lang: form.value.source_lang || undefined,
       target_lang: form.value.target_lang || undefined,
       cefr_level: form.value.cefr_level || undefined,
     })
-    blocks.value.push(...mapLoadedBlocks(data.blocks))
-    uiStore.showToast(`Generated ${data.blocks.length} blocks`, 'success')
+    aiPreviewBlocks.value = mapLoadedBlocks(data.blocks)
+    showAiPreviewModal.value = true
   } catch (e) {
     uiStore.showToast(e.message, 'error')
   } finally {
@@ -2154,6 +2384,21 @@ async function uploadFile(event, block) {
 .block-card:hover {
   border-color: var(--primary-soft);
   box-shadow: var(--shadow-md);
+}
+
+.block-card.is-collapsed {
+  padding: 0.6rem 1rem !important;
+  margin-bottom: 0.35rem;
+  border-color: var(--border-color);
+  box-shadow: none !important;
+  cursor: pointer;
+}
+.block-card.is-collapsed:hover {
+  border-color: var(--primary-soft);
+  background: var(--bg-main);
+}
+.block-card.is-collapsed .block-card-header {
+  margin-bottom: 0 !important;
 }
 
 /* Block card header */

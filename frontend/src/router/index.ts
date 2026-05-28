@@ -10,6 +10,7 @@ import TeacherRegistration from '../views/TeacherRegistration.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import StoryGenerator from '../views/StoryGenerator.vue'
 import ClassWorkspace from '../views/ClassWorkspace.vue'
+import LearnFlowBank from '../views/LearnFlowBank.vue'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
@@ -60,6 +61,11 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/teacher/stories',
     component: StoryGenerator,
+    meta: { requiresAuth: true, role: ['teacher', 'admin'] },
+  },
+  {
+    path: '/teacher/bank',
+    component: LearnFlowBank,
     meta: { requiresAuth: true, role: ['teacher', 'admin'] },
   },
   { path: '/admin', component: AdminDashboard, meta: { requiresAuth: true, role: 'admin' } },

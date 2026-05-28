@@ -461,6 +461,57 @@
         <div style="white-space: pre-wrap">{{ block.text }}</div>
       </template>
 
+      <!-- Media / Image Block -->
+      <template v-if="block.type === 'media'">
+        <div style="text-align: center; margin-top: 0.5rem">
+          <img :src="block.src" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid var(--border-color)" />
+          <p v-if="block.caption" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem">{{ block.caption }}</p>
+        </div>
+      </template>
+
+      <!-- Audio Block -->
+      <template v-if="block.type === 'audio'">
+        <div style="margin-top: 0.5rem">
+          <audio :src="block.src" controls style="width:100%"></audio>
+          <p v-if="block.caption" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem">{{ block.caption }}</p>
+        </div>
+      </template>
+
+      <!-- Video Block -->
+      <template v-if="block.type === 'video'">
+        <div style="text-align: center; margin-top: 0.5rem">
+          <video :src="block.src" controls style="max-width:100%; max-height:400px; border-radius:8px"></video>
+          <p v-if="block.caption" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem">{{ block.caption }}</p>
+        </div>
+      </template>
+
+      <!-- YouTube Block -->
+      <template v-if="block.type === 'youtube'">
+        <div style="text-align: center; margin-top: 0.5rem">
+          <iframe
+            v-if="youtubeEmbed(block.src)"
+            width="560"
+            height="315"
+            :src="youtubeEmbed(block.src)"
+            title="YouTube video player"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+            style="max-width:100%; border-radius:8px"
+          ></iframe>
+          <div v-else style="color:var(--text-muted)">Invalid YouTube Link</div>
+          <p v-if="block.caption" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem">{{ block.caption }}</p>
+        </div>
+      </template>
+
+      <!-- Drawing Block -->
+      <template v-if="block.type === 'drawing'">
+        <div style="margin-top: 0.5rem">
+          <div style="font-weight: 500; margin-bottom: 0.25rem">{{ block.text || 'Draw here:' }}</div>
+          <ScratchpadCanvas />
+        </div>
+      </template>
+
       <template v-if="block.type === 'info_box'">
         <div
           @click="toggleInfoBox(block.id)"
@@ -994,6 +1045,13 @@ import SemanticSorter from '../components/exercises/SemanticSorter.vue'
 import Flashcards from '../components/exercises/Flashcards.vue'
 import MemoryMatch from '../components/exercises/MemoryMatch.vue'
 import DragDrop from '../components/exercises/DragDrop.vue'
+import ScratchpadCanvas from '../components/exercises/ScratchpadCanvas.vue'
+
+function youtubeEmbed(url: string) {
+  if (!url) return ''
+  const id = url.match(/(?:v=|\/)([\w-]{11})/)
+  return id ? `https://www.youtube.com/embed/${id[1]}` : ''
+}
 
 const route = useRoute()
 const store = useSubmissionsStore()

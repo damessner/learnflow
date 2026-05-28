@@ -258,6 +258,7 @@ router.post(
         content,
         total_points: req.body.total_points || 0,
         is_published: req.body.is_published || 0,
+        in_library: 1,
         created_by: req.user!.userId,
         tags: req.body.tags || '',
         rubric_json: req.body.rubric_json || '',

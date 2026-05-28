@@ -109,6 +109,32 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     return api.post('/worksheets/tts', { text, voice })
   }
 
+  async function fetchLibraryWorksheets(params = {}) {
+    const searchParams = new URLSearchParams()
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.append(key, String(value))
+      }
+    }
+    const query = searchParams.toString()
+    const path = query ? `/library/worksheets?${query}` : '/library/worksheets'
+    const data = await api.get(path)
+    return data.worksheets || []
+  }
+
+  async function cloneLibraryWorksheet(id) {
+    const data = await api.post(`/library/worksheets/${id}/clone`)
+    return data.worksheet
+  }
+
+  async function publishToLibrary(id) {
+    return api.post(`/library/worksheets/${id}/publish`)
+  }
+
+  async function unpublishFromLibrary(id) {
+    return api.post(`/library/worksheets/${id}/unpublish`)
+  }
+
   return {
     worksheets,
     templates,
@@ -136,5 +162,9 @@ export const useWorksheetsStore = defineStore('worksheets', () => {
     aiCheckAnswer,
     aiDifferentiateConcept,
     generateTTS,
+    fetchLibraryWorksheets,
+    cloneLibraryWorksheet,
+    publishToLibrary,
+    unpublishFromLibrary,
   }
 })

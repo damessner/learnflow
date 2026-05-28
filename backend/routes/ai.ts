@@ -237,6 +237,18 @@ const exerciseTypes = new Set([
   'percentage',
   'unit_conversion',
   'angle',
+  'vocabulary',
+  'semantic_sorter',
+  'flashcards',
+  'drag_words',
+  'correct_words',
+  'question_table',
+  'crossword',
+  'audio_match',
+  'dictation',
+  'word_search',
+  'sentence_builder',
+  'odd_one_out',
 ])
 
 function buildWorksheetPrompt({
@@ -260,6 +272,7 @@ function buildWorksheetPrompt({
   parts.push(``)
   parts.push(`WORKSHEET CONTEXT:`)
   parts.push(`- Teacher request: ${userPrompt}`)
+  parts.push(`- IMPORTANT: If the teacher request is very short or brief (e.g. "simple past", "fractions", "water cycle", "climate change"), you MUST expand this topic into a comprehensive worksheet design. Brainstorm the core subtopics, rules, relevant vocabulary, processes, or facts, and fully cover and test them.`)
   if (title) parts.push(`- Worksheet title: ${title}`)
   if (subject) parts.push(`- Subject: ${subject}`)
   if (grade_level) parts.push(`- Grade level: Grade ${grade_level}`)
@@ -276,7 +289,10 @@ function buildWorksheetPrompt({
   parts.push(`- Make each exercise self-contained: include enough information, numbers, text, and context to solve it.`)
   parts.push(`- Use plausible distractors for choice questions; never make the correct answer obvious.`)
   parts.push(`- Include a progression: warm-up or orientation, core practice, then at least one more demanding item.`)
-  parts.push(`- Prefer real exercises over long explanation blocks. Use at most one intro text/read_aloud/info_box block unless explicitly needed.`)
+  parts.push(`- You MUST ALWAYS start the worksheet with a conceptual explanation inside a block of type "info_box". This block MUST contain:`)
+  parts.push(`  1. A visual Mermaid diagram (using the "mermaid" field) that illustrates the concept, structural flow, or grammatical relations.`)
+  parts.push(`  2. A clear text explanation.`)
+  parts.push(`- After the info_box, generate a variety of interactive exercises. Generate between 6 to 10 scored exercise blocks to make the worksheet longer rather than shorter.`)
   parts.push(`- Default language: German, unless the teacher request explicitly asks for another language or the subject is English.`)
   parts.push(`- Match vocabulary, sentence length, and cognitive demand to the specified grade level.`)
   parts.push(`- For hard worksheets, include transfer tasks, multi-step reasoning, and written explanation requirements.`)
@@ -602,6 +618,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
     const maxAttempts = 2
     let attempt = 0
     let blocks: GeneratedBlock[] = []
+    let lastError: any = null
 
     while (attempt < maxAttempts && blocks.length < getMinExerciseCount(length)) {
       attempt++
@@ -636,10 +653,11 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
             const parsed = JSON.parse(text)
             blocks = normalizeGeneratedBlocks(parsed.blocks, length)
           } else {
-            console.error('OpenCode Zen error:', data)
+            throw new Error(data.error?.message || `OpenCode Zen API returned status ${response.status}`)
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error('OpenCode Zen generation failed:', e)
+          lastError = e
         }
       } else if (provider === 'opencode' && (await isOpenCodeAvailable())) {
         try {
@@ -649,65 +667,81 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
             model: await getModelConfig(),
           })
           blocks = normalizeGeneratedBlocks((result as { blocks?: unknown }).blocks, length)
-        } catch (e) {
+        } catch (e: any) {
           console.error('OpenCode generation failed:', e)
+          lastError = e
         }
       } else if (provider === 'ollama' && process.env.OLLAMA_URL) {
-        const response = await fetchWithTimeout(`${process.env.OLLAMA_URL}/api/generate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: process.env.OLLAMA_MODEL || 'llama3',
-            prompt: attemptPrompt,
-            stream: false,
-            format: 'json',
-          }),
-        })
-        const data = await response.json()
         try {
-          const parsed = JSON.parse(data.response)
-          blocks = normalizeGeneratedBlocks(parsed.blocks, length)
-        } catch (e) {
+          const response = await fetchWithTimeout(`${process.env.OLLAMA_URL}/api/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: process.env.OLLAMA_MODEL || 'llama3',
+              prompt: attemptPrompt,
+              stream: false,
+              format: 'json',
+            }),
+          })
+          const data = await response.json()
+          if (response.ok) {
+            const parsed = JSON.parse(data.response)
+            blocks = normalizeGeneratedBlocks(parsed.blocks, length)
+          } else {
+            throw new Error(`Ollama returned status ${response.status}`)
+          }
+        } catch (e: any) {
           console.error('Validation failed for Ollama:', e)
+          lastError = e
         }
       } else if ((provider === 'gemini' || !['opencode', 'ollama'].includes(provider)) && process.env.GEMINI_API_KEY) {
-        const response = await fetchWithTimeout(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Goog-Api-Key': process.env.GEMINI_API_KEY,
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    {
-                      text: attemptPrompt,
-                    },
-                  ],
-                },
-              ],
-              generationConfig: {
-                responseMimeType: 'application/json',
-              },
-            }),
-          },
-        )
-        const data = await response.json()
         try {
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
-          const parsed = JSON.parse(text)
-          blocks = normalizeGeneratedBlocks(parsed.blocks, length)
-        } catch (e) {
+          const response = await fetchWithTimeout(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': process.env.GEMINI_API_KEY,
+              },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      {
+                        text: attemptPrompt,
+                      },
+                    ],
+                  },
+                ],
+                generationConfig: {
+                  responseMimeType: 'application/json',
+                },
+              }),
+            },
+          )
+          const data = await response.json()
+          if (response.ok) {
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
+            const parsed = JSON.parse(text)
+            blocks = normalizeGeneratedBlocks(parsed.blocks, length)
+          } else {
+            throw new Error(data.error?.message || `Gemini API returned status ${response.status}`)
+          }
+        } catch (e: any) {
           console.error('Validation failed for Gemini:', e)
+          lastError = e
         }
       }
 
       if (blocks.length === 0 && attempt < maxAttempts - 1) {
         console.log(`Retry ${attempt}: regenerating with stricter prompt...`)
       }
+    }
+
+    if (blocks.length === 0) {
+      res.status(500).json({ error: lastError?.message || 'AI Generator failed to produce any valid exercise blocks.' })
+      return
     }
 
     // Ensure IDs and map correct formats
