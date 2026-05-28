@@ -4,11 +4,14 @@
       <!-- ===== Left Sidebar (sticky) ===== -->
       <aside class="builder-sidebar">
         <!-- Header row -->
-        <div class="sidebar-header">
+        <div class="sidebar-header" style="gap: 0.35rem">
           <div class="sidebar-header-title">
-            <h2>{{ isEditing ? '✏️ Edit Worksheet' : '📝 New Worksheet' }}</h2>
+            <h2 style="font-size: 1.1rem; white-space: nowrap">{{ isEditing ? '✏️ Edit' : '📝 New' }}</h2>
           </div>
-          <button class="btn-primary" @click="save" style="flex-shrink:0">Save</button>
+          <div style="display:flex;gap:0.35rem;flex-shrink:0">
+            <button class="btn-secondary" @click="goToPreview" style="padding:0.4rem 0.5rem;font-size:0.75rem;font-weight:600">Preview</button>
+            <button class="btn-primary" @click="save" style="padding:0.4rem 0.5rem;font-size:0.75rem;font-weight:600">Save</button>
+          </div>
         </div>
 
         <!-- Settings (collapsible) -->
@@ -319,6 +322,30 @@
 
       <!-- ===== Right Main Area (flex, scrollable) ===== -->
       <main class="builder-main">
+        <!-- Sticky Editor Toolbar -->
+        <div style="position: sticky; top: 0; z-index: 100; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; box-shadow: var(--shadow-sm); margin-bottom: 0.25rem">
+          <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0; flex: 1">
+            <span style="font-size: 1.25rem">📄</span>
+            <span style="font-weight: 700; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main)">
+              {{ form.title || 'Untitled Worksheet' }}
+            </span>
+            <span v-if="form.subject || form.grade_level" style="font-size: 0.75rem; color: var(--text-muted); background: var(--bg-main); padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid var(--border-color); white-space: nowrap">
+              {{ form.subject }} · Klasse {{ form.grade_level }}
+            </span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0">
+            <div style="font-size: 0.75rem; font-weight: 600; color: var(--primary); background: var(--primary-light); border: 1px solid var(--primary-soft); border-radius: var(--radius-sm); padding: 0.25rem 0.5rem; white-space: nowrap">
+              ⏱️ Est. Time: {{ estimatedTimeFormatted }}
+            </div>
+            <button class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.25rem" @click="goToPreview">
+              <span>👁️</span> <strong>Preview</strong>
+            </button>
+            <button class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.25rem" @click="save">
+              <span>💾</span> <strong>Save</strong>
+            </button>
+          </div>
+        </div>
+
         <!-- Empty state -->
         <div v-if="blocks.length === 0" class="card empty-state" style="text-align:center;color:var(--text-muted);padding:3rem">
           <div style="font-size:3rem;margin-bottom:0.5rem;opacity:0.3">📝</div>
@@ -1971,6 +1998,42 @@ async function save() {
       router.push(`/teacher/builder/${ws.id}`)
     }
     uiStore.showToast('Saved', 'success')
+  } catch (e) {
+    uiStore.showToast(e.message, 'error')
+  }
+}
+
+async function goToPreview() {
+  const worksheetId = getRouteWorksheetId()
+  const mappedBlocks = blocks.value.map((b) => {
+    updateBlockPoints(b)
+    const copy = { ...b }
+    if (copy.type === 'short_answer') {
+      copy.keywords = (copy.keywordsStr || '')
+        .split(',')
+        .map((k) => k.trim())
+        .filter(Boolean)
+    }
+    return copy
+  })
+  const content = JSON.stringify({ blocks: mappedBlocks, pupil_profile: form.value.pupil_profile || 'default' })
+  const totalPoints = blocks.value.reduce((s, b) => s + (b.points || 0), 0)
+  const payload = {
+    ...form.value,
+    content,
+    total_points: totalPoints,
+    change_summary: isEditing.value ? 'Updated from worksheet builder' : 'Initial version',
+  }
+  try {
+    if (isEditing.value && worksheetId) {
+      await store.updateWorksheet(worksheetId, payload)
+      await loadVersions()
+      router.push(`/teacher/preview/${worksheetId}`)
+    } else {
+      const ws = await store.createWorksheet(payload)
+      router.push(`/teacher/preview/${ws.id}`)
+    }
+    uiStore.showToast('Saved & Opened Preview', 'success')
   } catch (e) {
     uiStore.showToast(e.message, 'error')
   }

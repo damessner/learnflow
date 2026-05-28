@@ -2,6 +2,8 @@ import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import { requireAuth, requireRole } from '../middleware/requireAuth'
 import { z } from 'zod'
+import * as fs from 'fs'
+import * as path from 'path'
 import {
   createSession,
   sendPromptStructured,
@@ -88,6 +90,74 @@ export const SUBJECTS = [
 ] as const
 
 export const GRADE_LEVELS = ['1', '2', '3', '4', '5', '6', '7', '8'] as const
+
+// Austrian Mittelschule Curriculum (Lehrpläne) integration
+const subjectKeyMap: Record<string, string> = {
+  english: 'English',
+  englisch: 'English',
+  mathematics: 'Mathematics',
+  mathe: 'Mathematics',
+  mathematik: 'Mathematics',
+  german: 'German',
+  deutsch: 'German',
+  science: 'Science',
+  biologie: 'Science',
+  physik: 'Science',
+  chemie: 'Science',
+  naturwissenschaften: 'Science',
+  history: 'History',
+  geschichte: 'History',
+  geography: 'Geography',
+  geografie: 'Geography',
+  geographie: 'Geography',
+}
+
+let lehrplaeneCache: Record<string, Record<string, string>> | null = null
+
+function getLehrplaeneData(): Record<string, Record<string, string>> {
+  if (lehrplaeneCache) {
+    return lehrplaeneCache
+  }
+  const pathsToTry = [
+    path.join(__dirname, '../data/lehrplaene.json'),
+    path.join(__dirname, '../../data/lehrplaene.json'),
+    path.join(process.cwd(), 'data/lehrplaene.json'),
+    path.join(process.cwd(), 'backend/data/lehrplaene.json'),
+  ]
+  for (const filePath of pathsToTry) {
+    try {
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, 'utf-8')
+        lehrplaeneCache = JSON.parse(content)
+        return lehrplaeneCache!
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+  return {}
+}
+
+export function getAustrianGrade(gradeLevel: string | undefined): string | null {
+  if (!gradeLevel) return null
+  const cleanGrade = gradeLevel.trim()
+  if (cleanGrade === '1' || cleanGrade === '5') return '1'
+  if (cleanGrade === '2' || cleanGrade === '6') return '2'
+  if (cleanGrade === '3' || cleanGrade === '7') return '3'
+  if (cleanGrade === '4' || cleanGrade === '8') return '4'
+  return null
+}
+
+export function getSubjectKey(subject: string | undefined): string | null {
+  if (!subject) return null
+  const cleanSubject = subject.trim().toLowerCase()
+  if (subjectKeyMap[cleanSubject]) {
+    return subjectKeyMap[cleanSubject]
+  }
+  const capitalized = cleanSubject.charAt(0).toUpperCase() + cleanSubject.slice(1)
+  return capitalized
+}
+
 
 const BlockSchema = z.object({
   id: z.string().uuid().optional(),
@@ -251,7 +321,7 @@ const exerciseTypes = new Set([
   'odd_one_out',
 ])
 
-function buildWorksheetPrompt({
+export function buildWorksheetPrompt({
   prompt: userPrompt,
   difficulty,
   length,
@@ -266,6 +336,17 @@ function buildWorksheetPrompt({
   cefr_level,
 }: GenerateRequest & { source_lang?: string; target_lang?: string; cefr_level?: string }): string {
   const parts: string[] = []
+
+  const austrianGrade = getAustrianGrade(grade_level)
+  const mappedSubject = getSubjectKey(subject)
+  let lehrplanText = ''
+
+  if (austrianGrade && mappedSubject) {
+    const data = getLehrplaeneData()
+    if (data[mappedSubject] && data[mappedSubject][austrianGrade]) {
+      lehrplanText = data[mappedSubject][austrianGrade]
+    }
+  }
 
   parts.push(`Create a teacher-usable worksheet that makes pupils actively work.`)
   parts.push(`The worksheet must feel classroom-ready, not like a rough draft.`)
@@ -282,6 +363,21 @@ function buildWorksheetPrompt({
   if (lernziele) parts.push(`- Learning objectives (Lernziele): ${lernziele}`)
   if (style) parts.push(`- Worksheet style: ${style}`)
 
+  if (lehrplanText) {
+    parts.push(``)
+    parts.push(`AUSTRIAN CURRICULUM CONSTRAINTS (LEHRPLAN):`)
+    parts.push(`You MUST adhere to the following official curriculum standards for Mittelschule Österreich (Grade ${austrianGrade} / Schulstufe ${grade_level || ''}):`)
+    parts.push(`- Curriculum Specs: ${lehrplanText}`)
+    parts.push(`- Ensure all questions, vocabulary, math problems, and grammar match these specific topics and expectations.`)
+  }
+
+  parts.push(``)
+  parts.push(`NEUROLOGICAL & MOTIVATIONAL RESEARCH GUIDELINES:`)
+  parts.push(`- Cognitive Load Theory: Structure information clearly. Break tasks into small chunks, starting with simple recognition and building up to production.`)
+  parts.push(`- Retrieval Practice: Actively test student knowledge. Use spaced retrieval cues.`)
+  parts.push(`- Self-Determination Theory (Autonomy, Competence, Relatedness): Use real-world, relevant scenarios. Provide clear instruction, tips, and choice where applicable.`)
+  parts.push(`- Spaced repetition & Gamification elements: Integrate crosswords, word search, or puzzle elements (matching, scramble) to keep students motivated and reduce test anxiety.`)
+
   parts.push(``)
   parts.push(`PEDAGOGICAL QUALITY RULES:`)
   parts.push(`- The worksheet must require genuine thinking, writing, solving, comparing, explaining, or calculating.`)
@@ -292,7 +388,9 @@ function buildWorksheetPrompt({
   parts.push(`- You MUST ALWAYS start the worksheet with a conceptual explanation inside a block of type "info_box". This block MUST contain:`)
   parts.push(`  1. A visual Mermaid diagram (using the "mermaid" field) that illustrates the concept, structural flow, or grammatical relations.`)
   parts.push(`  2. A clear text explanation.`)
-  parts.push(`- After the info_box, generate a variety of interactive exercises. Generate between 6 to 10 scored exercise blocks to make the worksheet longer rather than shorter.`)
+  parts.push(`  3. An informative title (e.g. "Merksatz", "Wusstest du?", "Auf einen Blick").`)
+  parts.push(`- After the info_box, generate a variety of interactive exercises. Generate between 8 to 12 scored exercise blocks to make the worksheet longer rather than shorter.`)
+  parts.push(`- VARIETY: You MUST generate at least 6 to 7 different exercise block types (e.g., gap_fill, multiple_choice, crossword, sentence_builder, odd_one_out, matching) to cover a wide range of exercises. Every single exercise block should have sufficient depth (at least 5-10 question items, options, or pairs inside it to be comprehensive).`)
   parts.push(`- Default language: German, unless the teacher request explicitly asks for another language or the subject is English.`)
   parts.push(`- Match vocabulary, sentence length, and cognitive demand to the specified grade level.`)
   parts.push(`- For hard worksheets, include transfer tasks, multi-step reasoning, and written explanation requirements.`)
@@ -413,6 +511,31 @@ function asStringArray(value: unknown): string[] {
     .filter(Boolean)
 }
 
+function parseCorrectIndices(correctVal: unknown, options: string[]): number[] {
+  if (typeof correctVal === 'number') {
+    return [correctVal]
+  }
+  if (typeof correctVal === 'string') {
+    const clean = correctVal.trim().toLowerCase()
+    const num = parseInt(clean, 10)
+    if (!isNaN(num)) return [num]
+    const idx = options.findIndex((opt) => opt.trim().toLowerCase() === clean)
+    if (idx !== -1) return [idx]
+    if (clean.length === 1) {
+      const charCode = clean.charCodeAt(0) - 97
+      if (charCode >= 0 && charCode < options.length) return [charCode]
+    }
+  }
+  if (Array.isArray(correctVal)) {
+    const indices: number[] = []
+    for (const val of correctVal) {
+      indices.push(...parseCorrectIndices(val, options))
+    }
+    return [...new Set(indices)]
+  }
+  return []
+}
+
 function normalizeGeneratedBlock(raw: unknown): GeneratedBlock | null {
   if (!raw || typeof raw !== 'object') return null
 
@@ -421,7 +544,13 @@ function normalizeGeneratedBlock(raw: unknown): GeneratedBlock | null {
   if (!BlockSchema.shape.type.safeParse(type).success) return null
 
   const id = typeof candidate.id === 'string' && z.string().uuid().safeParse(candidate.id).success ? candidate.id : uuidv4()
-  const text = typeof candidate.text === 'string' ? candidate.text.trim() : ''
+  let text = typeof candidate.text === 'string' ? candidate.text.trim() : ''
+  if (!text && typeof candidate.question === 'string') {
+    text = candidate.question.trim()
+  }
+  if (!text && typeof candidate.problem_text === 'string') {
+    text = candidate.problem_text.trim()
+  }
   const title = typeof candidate.title === 'string' ? candidate.title.trim() : ''
 
   switch (type) {
@@ -443,33 +572,45 @@ function normalizeGeneratedBlock(raw: unknown): GeneratedBlock | null {
       }
     }
     case 'gap_fill': {
-      const template = typeof candidate.template === 'string' ? candidate.template.trim() : ''
-      if (!template || !/\(\(.+?\)\)/.test(template)) return null
+      let template = typeof candidate.template === 'string' ? candidate.template.trim() : ''
+      if (!template && text && /\(\(.+?\)\)/.test(text)) {
+        template = text
+        text = 'Fülle die Lücken aus.'
+      }
+      if (!template || !/\(\(.+?\)\)/.test(template)) {
+        template = template || text || ''
+        template = template
+          .replace(/\[(.+?)\]/g, '(($1))')
+          .replace(/__(.+?)__/g, '(($1))')
+          .replace(/\{(.+?)\}/g, '(($1))')
+        if (!/\(\(.+?\)\)/.test(template)) return null
+      }
       return { id, type, points: clampPoints(candidate.points, 8), text, template }
     }
     case 'single_choice': {
       const options = asStringArray(candidate.options)
-      const correct = Array.isArray(candidate.correct) ? candidate.correct[0] : candidate.correct
-      if (!text || options.length < 2 || typeof correct !== 'number' || correct < 0 || correct >= options.length) return null
-      return { id, type, points: clampPoints(candidate.points, 8), text, options, correct }
+      const correctIndices = parseCorrectIndices(candidate.correct !== undefined ? candidate.correct : candidate.correctIndex, options)
+      if (!text || options.length < 2 || correctIndices.length === 0) return null
+      return { id, type, points: clampPoints(candidate.points, 8), text, options, correct: correctIndices[0] }
     }
     case 'multiple_choice': {
       const options = asStringArray(candidate.options)
-      const correct = Array.isArray(candidate.correct)
-        ? candidate.correct.filter((n): n is number => typeof n === 'number' && n >= 0 && n < options.length)
-        : typeof candidate.correct === 'number' && candidate.correct >= 0 && candidate.correct < options.length
-          ? [candidate.correct]
-          : []
-      if (!text || options.length < 3 || correct.length === 0) return null
-      return { id, type, points: clampPoints(candidate.points, 10), text, options, correct: [...new Set(correct)] }
+      const correctIndices = parseCorrectIndices(candidate.correct !== undefined ? candidate.correct : candidate.correctIndices, options)
+      if (!text || options.length < 3 || correctIndices.length === 0) return null
+      return { id, type, points: clampPoints(candidate.points, 10), text, options, correct: correctIndices }
     }
     case 'matching': {
-      const pairs = Array.isArray(candidate.pairs)
-        ? candidate.pairs
-            .filter((pair): pair is [string, string] => Array.isArray(pair) && pair.length === 2)
-            .map((pair) => [String(pair[0]).trim(), String(pair[1]).trim()] as [string, string])
-            .filter(([left, right]) => left && right)
-        : []
+      let pairs: [string, string][] = []
+      if (Array.isArray(candidate.pairs)) {
+        pairs = candidate.pairs
+          .filter((pair): pair is [string, string] => Array.isArray(pair) && pair.length === 2)
+          .map((pair) => [String(pair[0]).trim(), String(pair[1]).trim()] as [string, string])
+          .filter(([left, right]) => left && right)
+      } else if (candidate.pairs && typeof candidate.pairs === 'object') {
+        pairs = Object.entries(candidate.pairs)
+          .map(([left, right]) => [left.trim(), String(right).trim()] as [string, string])
+          .filter(([left, right]) => left && right)
+      }
       if (pairs.length < 2) return null
       return { id, type, points: clampPoints(candidate.points, 8), text, pairs }
     }
@@ -500,14 +641,36 @@ function normalizeGeneratedBlock(raw: unknown): GeneratedBlock | null {
         sample_answer: typeof candidate.sample_answer === 'string' ? candidate.sample_answer.trim() : '',
       }
     }
-        case 'drag_words': {
-      const template = typeof candidate.template === 'string' ? candidate.template.trim() : ''
-      if (!template || !/\(\(.+?\)\)/.test(template)) return null
+    case 'drag_words': {
+      let template = typeof candidate.template === 'string' ? candidate.template.trim() : ''
+      if (!template && text && /\(\(.+?\)\)/.test(text)) {
+        template = text
+        text = 'Ziehe die richtigen Wörter in die Lücken.'
+      }
+      if (!template || !/\(\(.+?\)\)/.test(template)) {
+        template = template || text || ''
+        template = template
+          .replace(/\[(.+?)\]/g, '(($1))')
+          .replace(/__(.+?)__/g, '(($1))')
+          .replace(/\{(.+?)\}/g, '(($1))')
+        if (!/\(\(.+?\)\)/.test(template)) return null
+      }
       return { id, type, points: clampPoints(candidate.points, 8), text, template }
     }
     case 'correct_words': {
-      const template = typeof candidate.template === 'string' ? candidate.template.trim() : ''
-      if (!template || !/\(\(.+?\)\)/.test(template)) return null
+      let template = typeof candidate.template === 'string' ? candidate.template.trim() : ''
+      if (!template && text && /\(\(.+?\)\)/.test(text)) {
+        template = text
+        text = 'Markiere das richtige Wort.'
+      }
+      if (!template || !/\(\(.+?\)\)/.test(template)) {
+        template = template || text || ''
+        template = template
+          .replace(/\[(.+?)\]/g, '(($1))')
+          .replace(/__(.+?)__/g, '(($1))')
+          .replace(/\{(.+?)\}/g, '(($1))')
+        if (!/\(\(.+?\)\)/.test(template)) return null
+      }
       return { id, type, points: clampPoints(candidate.points, 8), text, template }
     }
     case 'question_table': {
@@ -517,11 +680,21 @@ function normalizeGeneratedBlock(raw: unknown): GeneratedBlock | null {
       return { id, type, points: clampPoints(candidate.points, 10), text, columns, rows }
     }
     case 'crossword': {
-      const words = Array.isArray(candidate.words)
+      let words = Array.isArray(candidate.words)
         ? candidate.words
-            .filter((w: any) => w && typeof w === 'object' && typeof w.word === 'string' && typeof w.description === 'string')
-            .map((w: any) => ({ word: w.word.trim().toUpperCase(), description: w.description.trim() }))
+            .filter((w: any) => w && typeof w === 'object' && typeof (w.word || w.answer) === 'string' && typeof (w.description || w.clue) === 'string')
+            .map((w: any) => ({
+              word: String(w.word || w.answer).trim().toUpperCase(),
+              description: String(w.description || w.clue).trim()
+            }))
         : []
+
+      if (words.length === 0 && Array.isArray(candidate.words)) {
+        words = candidate.words
+          .filter((w): w is string => typeof w === 'string' && !!w)
+          .map((w) => ({ word: w.trim().toUpperCase(), description: `Finde das Wort: ${w}` }))
+      }
+
       if (words.length < 2) return null
       return { id, type, points: clampPoints(candidate.points, 10), text, words }
     }
@@ -541,7 +714,18 @@ function normalizeGeneratedBlock(raw: unknown): GeneratedBlock | null {
       return { id, type, points: clampPoints(candidate.points, 8), text, audioText, voice: typeof candidate.voice === 'string' ? candidate.voice.trim() : '' }
     }
     case 'word_search': {
-      const words = asStringArray(candidate.words).map(w => ({ word: w.toUpperCase() }))
+      let words = Array.isArray(candidate.words)
+        ? candidate.words
+            .map((entry) => {
+              if (typeof entry === 'string') return entry.trim().toUpperCase()
+              if (entry && typeof entry === 'object' && typeof (entry as any).word === 'string') {
+                return (entry as any).word.trim().toUpperCase()
+              }
+              return ''
+            })
+            .filter(Boolean)
+            .map(w => ({ word: w }))
+        : []
       if (words.length === 0) return null
       return { id, type, points: clampPoints(candidate.points, 8), text, words }
     }
@@ -586,17 +770,35 @@ function normalizeGeneratedBlocks(rawBlocks: unknown, length: GenerateRequest['l
 }
 
 function getMinExerciseCount(length: GenerateRequest['length']): number {
-  const counts = { short: 2, medium: 4, long: 6 }
+  const counts = { short: 3, medium: 5, long: 8 }
   return counts[length || 'medium']
 }
 
 function buildDifferentiatePrompt({ concept, subject, grade_level, language }: z.infer<typeof DifferentiateSchema>): string {
   const outputLanguage = language || (subject === 'English' ? 'English' : 'German')
-  return [
+  const austrianGrade = getAustrianGrade(grade_level)
+  const mappedSubject = getSubjectKey(subject)
+  let lehrplanText = ''
+
+  if (austrianGrade && mappedSubject) {
+    const data = getLehrplaeneData()
+    if (data[mappedSubject] && data[mappedSubject][austrianGrade]) {
+      lehrplanText = data[mappedSubject][austrianGrade]
+    }
+  }
+
+  const promptParts = [
     'You are an expert differentiated instruction assistant for LearnFlow.',
     `Concept: ${concept}`,
     subject ? `Subject: ${subject}` : '',
     grade_level ? `Grade level: Grade ${grade_level}` : '',
+  ]
+
+  if (lehrplanText) {
+    promptParts.push(`Austrian Curriculum Context (Lehrplan Grade ${austrianGrade}): ${lehrplanText}`)
+  }
+
+  promptParts.push(
     `Output language: ${outputLanguage}`,
     '',
     'Generate three accurate explanations of the same concept:',
@@ -606,16 +808,16 @@ function buildDifferentiatePrompt({ concept, subject, grade_level, language }: z
     '',
     'Return ONLY valid JSON with this exact shape:',
     '{"basic":"...","standard":"...","advanced":"..."}',
-  ]
-    .filter(Boolean)
-    .join('\n')
+  )
+
+  return promptParts.filter(Boolean).join('\n')
 }
 
 router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (req, res, next) => {
   try {
     const request = GenerateRequestSchema.parse(req.body)
     const { prompt, provider, difficulty, length, lernziele, subject, grade_level, title, description, style } = request
-    const maxAttempts = 2
+    const maxAttempts = 3
     let attempt = 0
     let blocks: GeneratedBlock[] = []
     let lastError: any = null
@@ -642,6 +844,8 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
         ? `${worksheetPrompt}\n\nIMPORTANT: Your previous attempt was rejected because it did not produce enough valid exercise blocks or had quality issues. Make sure to:\n- Include enough real exercise blocks (not just text/info)\n- Use at least 3 different exercise block types\n- Ensure answers are correct and options are plausible\n- Follow all format rules exactly`
         : worksheetPrompt
 
+      let candidateBlocks: GeneratedBlock[] = []
+
       if (provider === 'opencode' && getZenApiKey()) {
         try {
           const response = await callZenChat('Create the worksheet now and return only valid JSON.', attemptPrompt, false, {
@@ -651,7 +855,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
           if (response.ok) {
             const text = data.choices?.[0]?.message?.content || '{}'
             const parsed = JSON.parse(text)
-            blocks = normalizeGeneratedBlocks(parsed.blocks, length)
+            candidateBlocks = normalizeGeneratedBlocks(parsed.blocks, length)
           } else {
             throw new Error(data.error?.message || `OpenCode Zen API returned status ${response.status}`)
           }
@@ -666,7 +870,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
             system: attemptPrompt,
             model: await getModelConfig(),
           })
-          blocks = normalizeGeneratedBlocks((result as { blocks?: unknown }).blocks, length)
+          candidateBlocks = normalizeGeneratedBlocks((result as { blocks?: unknown }).blocks, length)
         } catch (e: any) {
           console.error('OpenCode generation failed:', e)
           lastError = e
@@ -686,7 +890,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
           const data = await response.json()
           if (response.ok) {
             const parsed = JSON.parse(data.response)
-            blocks = normalizeGeneratedBlocks(parsed.blocks, length)
+            candidateBlocks = normalizeGeneratedBlocks(parsed.blocks, length)
           } else {
             throw new Error(`Ollama returned status ${response.status}`)
           }
@@ -724,7 +928,7 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
           if (response.ok) {
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
             const parsed = JSON.parse(text)
-            blocks = normalizeGeneratedBlocks(parsed.blocks, length)
+            candidateBlocks = normalizeGeneratedBlocks(parsed.blocks, length)
           } else {
             throw new Error(data.error?.message || `Gemini API returned status ${response.status}`)
           }
@@ -734,7 +938,11 @@ router.post('/generate', requireAuth, requireRole('teacher', 'admin'), async (re
         }
       }
 
-      if (blocks.length === 0 && attempt < maxAttempts - 1) {
+      if (candidateBlocks.length > blocks.length) {
+        blocks = candidateBlocks
+      }
+
+      if (blocks.length === 0 && attempt < maxAttempts) {
         console.log(`Retry ${attempt}: regenerating with stricter prompt...`)
       }
     }
@@ -773,12 +981,21 @@ router.post('/regenerate-block', requireAuth, requireRole('teacher', 'admin'), a
 
     const currentBlockContext = currentBlock ? `Current block JSON to improve or replace:\n${JSON.stringify(currentBlock, null, 2)}` : ''
     const worksheetContextText = worksheetContext ? `Worksheet context:\n${JSON.stringify(worksheetContext, null, 2)}` : ''
+    const austrianGrade = getAustrianGrade(grade_level)
+    const mappedSubject = getSubjectKey(subject)
+    let lehrplanSnippet = ''
+    if (austrianGrade && mappedSubject) {
+      const data = getLehrplaeneData()
+      if (data[mappedSubject] && data[mappedSubject][austrianGrade]) {
+        lehrplanSnippet = `\nOfficial Austrian Curriculum Constraints (Lehrplan Grade ${austrianGrade}):\n${data[mappedSubject][austrianGrade]}\n`
+      }
+    }
 
     const blockPrompt = `Generate ONE block of type "${blockType}" for a worksheet.
 Teacher request: ${prompt || 'Generate a suitable exercise'}
 ${subject ? `Subject: ${subject}` : ''}
 ${grade_level ? `Grade level: ${grade_level}` : ''}
-${difficulty ? `Difficulty: ${difficulty}` : ''}
+${lehrplanSnippet}${difficulty ? `Difficulty: ${difficulty}` : ''}
 ${style ? `Worksheet style: ${style}` : ''}
 ${lernziele ? `Learning objectives: ${lernziele}` : ''}
 ${currentBlockContext}

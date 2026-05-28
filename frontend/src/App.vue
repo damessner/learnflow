@@ -2,7 +2,7 @@
   <div :data-theme="uiStore.isDark ? 'dark' : ''">
     <header class="header glass-strong">
       <div class="header-inner">
-        <router-link to="/login" class="header-logo">
+        <router-link :to="logoDestination" class="header-logo">
           <span class="logo-icon">✦</span>
           <span class="logo-text">LearnFlow</span>
         </router-link>
@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from './stores/auth'
 import { useUiStore } from './stores/ui'
 
@@ -104,6 +104,12 @@ const authStore = useAuthStore()
 const uiStore = useUiStore()
 const showChangePassword = ref(false)
 const passwordForm = ref({ current: '', newPassword: '' })
+
+const logoDestination = computed(() => {
+  if (!authStore.isAuthenticated) return '/login'
+  if (authStore.role === 'student') return '/student'
+  return '/teacher'
+})
 
 async function changePassword() {
   try {

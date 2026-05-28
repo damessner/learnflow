@@ -4,12 +4,21 @@ dotenv.config()
 import { createApp } from './app'
 import { initDB } from './db/init'
 import { seedDB } from './db/seed'
-import { closeKnex } from './db/knex'
+import { closeKnex, getKnex } from './db/knex'
 import logger from './lib/logger'
 
 async function main(): Promise<void> {
   await initDB()
   await seedDB()
+
+  // Ensure all worksheets are published in the library
+  try {
+    const knex = getKnex()
+    await knex('worksheets').update({ in_library: 1 })
+    logger.info('Set in_library = 1 for all worksheets')
+  } catch (err) {
+    logger.error({ err }, 'Failed to set in_library = 1')
+  }
 
   const app = createApp()
   const port = parseInt(process.env.PORT || '3001', 10)
