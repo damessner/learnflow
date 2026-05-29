@@ -105,12 +105,12 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/student/reading/:textbook/:unit/:storyId',
     component: ReadingPlay,
-    meta: { requiresAuth: true, role: 'student' },
+    meta: { requiresAuth: true, role: ['student', 'teacher', 'admin'] },
   },
   {
     path: '/student/listening/:textbook/:unit/:listeningId',
     component: ListeningPlay,
-    meta: { requiresAuth: true, role: 'student' },
+    meta: { requiresAuth: true, role: ['student', 'teacher', 'admin'] },
   },
 ]
 

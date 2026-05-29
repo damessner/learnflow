@@ -48,22 +48,100 @@
       </div>
     </div>
 
-    <!-- LEVEL 2: CURRICULUM PREVIEW (No class needed) -->
+    <!-- LEVEL 2: CURRICULUM PREVIEW / UNIT DETAIL -->
     <div v-else-if="previewMode" class="fade-in">
-      <div class="flex items-center gap-3 mb-4">
-        <button @click="previewMode = false" class="btn-secondary btn-sm">← Back</button>
-        <h3 class="text-lg font-bold">📘 MORE! 1 — Curriculum Overview</h3>
-        <span class="text-sm text-secondary">All 15 units with grammar, vocabulary & writing content</span>
+      <!-- Back button -->
+      <button @click="selectedPreviewUnit ? backToPreview() : (previewMode = false)" class="btn-secondary btn-sm mb-3">
+        ← {{ selectedPreviewUnit ? 'Back to Units' : 'Back to Textbooks' }}
+      </button>
+
+      <!-- Unit Grid (when no unit is selected) -->
+      <div v-if="!selectedPreviewUnit">
+        <h3 class="text-lg font-bold mb-3">📘 MORE! 1 — Curriculum Overview</h3>
+        <p class="text-xs text-secondary mb-3">Click any unit to see all Grammar, Vocabulary, Reading & Listening exercises</p>
+        <div class="preview-grid">
+          <div v-for="u in MORE1_UNITS" :key="u.unit" class="preview-card card card-lift" @click="selectUnit(u.unit)">
+            <span class="preview-unit-badge">Unit {{ u.unit }}</span>
+            <h4 class="text-base font-bold mt-2">{{ u.title }}</h4>
+            <p class="text-xs text-secondary mt-1">{{ u.theme }}</p>
+            <div class="flex flex-wrap gap-1 mt-3">
+              <span class="chip-preview">🔤 Grammar</span>
+              <span class="chip-preview">📚 Vocabulary ({{ vocabWordCount(u.unit) }} words)</span>
+              <span class="chip-preview">📖 Reading ({{ getReadingForUnit(u.unit).length }} stories)</span>
+              <span class="chip-preview">🎧 Listening ({{ getListeningForUnit(u.unit).length }} tracks)</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="preview-grid">
-        <div v-for="u in MORE1_UNITS" :key="u.unit" class="preview-card card">
-          <span class="preview-unit-badge">Unit {{ u.unit }}</span>
-          <h4 class="text-base font-bold mt-2">{{ u.title }}</h4>
-          <p class="text-xs text-secondary mt-1">{{ u.theme }}</p>
-          <div class="flex flex-wrap gap-1 mt-3">
-            <span class="chip-preview">🔤 Grammar</span>
-            <span class="chip-preview">📚 Vocabulary ({{ vocabWordCount(u.unit) }} words)</span>
-            <span class="chip-preview">✍️ Writing</span>
+
+      <!-- Unit Detail View (when a unit is selected) -->
+      <div v-else class="unit-detail fade-in">
+        <h3 class="text-lg font-bold mb-1">Unit {{ selectedPreviewUnit }}: {{ getSelectedUnitTitle() }}</h3>
+        <p class="text-xs text-secondary mb-4">Click any exercise to try it — you'll see what your students see!</p>
+
+        <!-- Grammar Section -->
+        <div class="detail-section card mb-4">
+          <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><span>🏆</span> Grammar</h4>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="level in ['explorer', 'pioneer', 'master']"
+              :key="level"
+              class="btn-exercise"
+              @click="router.push(`/grammar-academy/${UNIT_GRAMMAR_IDS[selectedPreviewUnit]}/${level}`)"
+            >🧭 {{ level === 'explorer' ? 'Explorer' : level === 'pioneer' ? 'Pioneer' : 'Master' }}</button>
+            <button
+              class="btn-exercise btn-exercise-accent"
+              @click="router.push(`/grammar-academy/${UNIT_GRAMMAR_IDS[selectedPreviewUnit]}`)"
+            >🧠 Quiz Mode</button>
+          </div>
+        </div>
+
+        <!-- Vocabulary Section -->
+        <div class="detail-section card mb-4">
+          <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><span>📚</span> Vocabulary</h4>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="tier in [{k:'starter',l:'🌱 Starter'},{k:'practice',l:'🔥 Practice'},{k:'challenge',l:'⚡ Challenge'}]"
+              :key="tier.k"
+              class="btn-exercise"
+              @click="router.push(`/vocabulary/more1/${selectedPreviewUnit}`)"
+            >{{ tier.l }}</button>
+          </div>
+        </div>
+
+        <!-- Reading Section -->
+        <div class="detail-section card mb-4">
+          <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><span>📖</span> Reading ({{ getReadingForUnit(selectedPreviewUnit).length }} stories)</h4>
+          <div class="flex flex-col gap-2">
+            <div v-for="tierName in ['Starter', 'Practice', 'Challenge', 'Master']" :key="'r'+tierName">
+              <span class="text-xs font-bold text-secondary">{{ tierName }}:</span>
+              <div class="flex flex-wrap gap-1 mt-1">
+                <button
+                  v-for="story in getReadingForUnit(selectedPreviewUnit).filter((s:any) => s.tier === tierName)"
+                  :key="story.id || story.title"
+                  class="btn-exercise btn-sm text-xs"
+                  @click="router.push(`/student/reading/more1/${selectedPreviewUnit}/${story.id}`)"
+                >📄 {{ story.title?.slice(0, 22) }}{{ story.title?.length > 22 ? '…' : '' }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Listening Section -->
+        <div class="detail-section card mb-4">
+          <h4 class="font-bold text-sm mb-3 flex items-center gap-2"><span>🎧</span> Listening ({{ getListeningForUnit(selectedPreviewUnit).length }} tracks)</h4>
+          <div class="flex flex-col gap-2">
+            <div v-for="tierName in ['Starter', 'Practice', 'Challenge', 'Master']" :key="'l'+tierName">
+              <span class="text-xs font-bold text-secondary">{{ tierName }}:</span>
+              <div class="flex flex-wrap gap-1 mt-1">
+                <button
+                  v-for="task in getListeningForUnit(selectedPreviewUnit).filter((t:any) => t.tier === tierName)"
+                  :key="task.id"
+                  class="btn-exercise btn-sm text-xs"
+                  @click="router.push(`/student/listening/more1/${selectedPreviewUnit}/${task.id}`)"
+                >🎵 {{ task.title?.slice(0, 22) }}{{ task.title?.length > 22 ? '…' : '' }}</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -270,9 +348,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUiStore } from '../stores/ui'
 import { api } from '../services/api'
 import { MORE1_VOCABULARY } from '../data/vocabularyData'
+import { MORE1_READING_DATA } from '../data/readingData'
+import { MORE1_READING_OPTIONS_BC } from '../data/readingDataSupplement'
+import { MORE1_LISTENING_DATA } from '../data/listeningData'
 
 const MORE1_UNITS = [
   { unit: 1, title: 'Time for School', theme: 'colours, school things, classroom' },
@@ -293,13 +375,26 @@ const MORE1_UNITS = [
 ]
 
 const uiStore = useUiStore()
+const router = useRouter()
 
 const classes = ref<any[]>([])
 const selectedClassId = ref('')
 const loadingMatrix = ref(false)
 const matrixData = ref<any[]>([])
 const previewMode = ref(false)
+const selectedPreviewUnit = ref<number | null>(null)
 const activeStudent = ref<any>(null)
+
+// Grammar topic ID mapping per unit
+const UNIT_GRAMMAR_IDS: Record<number, string> = {
+  1: 'grammar-1-plurals', 2: 'grammar-2-tobe', 3: 'grammar-3-havegot',
+  4: 'grammar-4-questionsnegativeswithtobe', 5: 'grammar-5-cancantpossessives',
+  6: 'grammar-6-presentsimpleaffirmative', 7: 'grammar-7-presentsimplenegativesarticles',
+  8: 'grammar-8-presentsimplequestions', 9: 'grammar-9-questionwordsobjectpronouns',
+  10: 'grammar-10-demonstrativesprices', 11: 'grammar-11-presentcontinuous',
+  12: 'grammar-12-pastsimpleoftobe', 13: 'grammar-13-pastsimpleregularverbs',
+  14: 'grammar-14-pastsimplenegativesirregularverbs', 15: 'grammar-15-futureplansbegoingto'
+}
 
 const MORE1_THEMES = [
   'colours, school things, classroom',
@@ -353,12 +448,39 @@ async function loadClassMatrix(classId: string) {
 
 function showPreview() {
   previewMode.value = true
+  selectedPreviewUnit.value = null
+}
+
+function selectUnit(unit: number) {
+  selectedPreviewUnit.value = unit
+}
+
+function backToPreview() {
+  selectedPreviewUnit.value = null
+}
+
+// Get reading stories for a unit (Option A + supplement B/C)
+function getReadingForUnit(unit: number) {
+  const u = MORE1_READING_DATA.find((r: any) => r.unit === unit)
+  const sup = MORE1_READING_OPTIONS_BC.find((r: any) => r.unit === unit)
+  return [...(u?.stories || []), ...(sup?.stories || [])]
+}
+
+// Get listening tasks for a unit
+function getListeningForUnit(unit: number) {
+  const u = MORE1_LISTENING_DATA.find((l: any) => l.unit === unit)
+  return u?.tasks || []
+}
+
+function getSelectedUnitTitle() {
+  const u = MORE1_UNITS.find((u) => u.unit === selectedPreviewUnit.value)
+  return u?.title || ''
 }
 
 function vocabWordCount(unit: number) {
   const vu = MORE1_VOCABULARY.find(u => u.unit === unit)
   if (!vu) return 0
-  return vu.categories.reduce((sum, c) => sum + c.words.length, 0) + (vu.phrases?.length || 0)
+  return vu.categories.reduce((sum: number, c) => sum + c.words.length, 0) + (vu.phrases?.length || 0)
 }
 
 function promptSelectClass() {
@@ -605,6 +727,12 @@ th.sticky-col {
 }
 .preview-card {
   padding: 1.25rem;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.preview-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 .preview-unit-badge {
   font-size: var(--font-size-xs);
@@ -620,5 +748,31 @@ th.sticky-col {
   border-radius: 999px;
   background: var(--bg-hover);
   color: var(--text-muted);
+}
+
+/* Unit Detail */
+.detail-section { padding: 1.25rem; }
+.btn-exercise {
+  padding: 0.4rem 0.9rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-exercise:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+.btn-exercise-accent {
+  border-color: rgba(245,158,11,0.4);
+  background: rgba(245,158,11,0.06);
+}
+.btn-exercise-accent:hover {
+  border-color: #f59e0b;
+  background: rgba(245,158,11,0.12);
 }
 </style>
