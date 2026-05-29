@@ -598,4 +598,29 @@ th.sticky-col {
   grid-template-columns: repeat(5, 1fr);
   gap: 0.5rem;
 }
+
+/* Preview mode */
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+.preview-card {
+  padding: 1.25rem;
+}
+.preview-unit-badge {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--primary-dark);
+  background: var(--primary-light);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+.chip-preview {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+}
 </style>
