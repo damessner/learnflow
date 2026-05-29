@@ -14,6 +14,8 @@ const WritingCoach = () => import('../views/WritingCoach.vue')
 const GrammarAcademy = () => import('../views/GrammarAcademy.vue')
 const EnglishHub = () => import('../views/EnglishHub.vue')
 const VocabularyUnit = () => import('../views/VocabularyUnit.vue')
+const ReadingPlay = () => import('../views/ReadingPlay.vue')
+const ListeningPlay = () => import('../views/ListeningPlay.vue')
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
@@ -98,6 +100,16 @@ const routes: RouteRecordRaw[] = [
     path: '/vocabulary/:textbook/:unit',
     component: VocabularyUnit,
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/student/reading/:textbook/:unit/:storyId',
+    component: ReadingPlay,
+    meta: { requiresAuth: true, role: 'student' },
+  },
+  {
+    path: '/student/listening/:textbook/:unit/:listeningId',
+    component: ListeningPlay,
+    meta: { requiresAuth: true, role: 'student' },
   },
 ]
 

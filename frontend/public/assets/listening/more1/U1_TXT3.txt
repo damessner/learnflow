@@ -1,0 +1,11 @@
+Scene: A classroom lesson
+
+Speaker 1: Good morning, class. Please sit down.
+
+Speaker 2: Good morning, Mr. Green.
+
+Speaker 1: Open your notebooks and write the date.
+
+Speaker 2: Can I have a pen, please?
+
+Speaker 1: Yes, here is a red pen. Open page five.

@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { db } from '../db'
-import { requireAuth } from '../middleware/auth'
+import { requireAuth } from '../middleware/requireAuth'
 import { nanoid } from 'nanoid'
 
 const router = Router()

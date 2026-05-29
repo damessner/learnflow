@@ -100,6 +100,59 @@ router.get('/student-status', requireAuth, async (req, res, next) => {
   }
 })
 
+// Get assignments for a class student is in with submission status
+router.get('/student/class/:classId/assignments', requireAuth, async (req, res, next) => {
+  try {
+    const knex = getKnex()
+    const classId = req.params.classId
+    const userId = req.user!.userId
+
+    // 1. Verify student is in class
+    const isEnrolled = await knex('class_students')
+      .where({ class_id: classId, student_id: userId })
+      .first()
+    if (!isEnrolled) {
+      res.status(403).json({ error: 'Not enrolled in this class' })
+      return
+    }
+
+    // 2. Fetch assignments for this class along with worksheet details
+    const classAssignments = await knex('assignments')
+      .join('worksheets', 'assignments.worksheet_id', 'worksheets.id')
+      .where('assignments.class_id', classId)
+      .select(
+        'assignments.id as assignment_id',
+        'assignments.due_date',
+        'worksheets.id as worksheet_id',
+        'worksheets.title as worksheet_title',
+        'worksheets.description as worksheet_description',
+        'worksheets.subject as worksheet_subject',
+        'worksheets.total_points as max_score'
+      )
+      .orderBy('assignments.created_at', 'desc')
+
+    // 3. Join with submission for this user
+    const assignmentsWithSubmissions = await Promise.all(
+      classAssignments.map(async (a) => {
+        const submission = await knex('submissions')
+          .where({ assignment_id: a.assignment_id, user_id: userId })
+          .first()
+        return {
+          ...a,
+          submitted: !!submission,
+          submitted_at: submission ? submission.submitted_at : null,
+          score: submission ? submission.score : null,
+          max_score: submission ? submission.max_score : a.max_score
+        }
+      })
+    )
+
+    res.json({ assignments: assignmentsWithSubmissions })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const knex = getKnex()

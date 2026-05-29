@@ -781,10 +781,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useUiStore } from '../stores/ui'
+import { api } from '../services/api'
 
 // Views state
+const route = useRoute()
 const authStore = useAuthStore()
 const uiStore = useUiStore()
 
@@ -1595,6 +1598,20 @@ function finalizeSubmission() {
     calculateReportStats()
     state.value = 'report'
 
+    // Call API to save progress if it is an English curriculum task
+    if (activeTask.value && activeTask.value.id.startsWith('en-1-')) {
+      const unitMatch = activeTask.value.id.match(/unit(\d+)/)
+      if (unitMatch) {
+        const unitNum = parseInt(unitMatch[1])
+        api.post('/english/writing/complete', {
+          textbook: 'more1',
+          unit: unitNum,
+          score: gamifiedScoreDetails.value.total,
+          grade: gamifiedScoreDetails.value.grade
+        }).catch(err => console.error('Failed to save writing progress', err))
+      }
+    }
+
     // Remove temporary state
     localStorage.removeItem(`learnflow_wc_essay_${activeTask.value?.id}`)
     uiStore.showToast('Aufsatz erfolgreich abgeschlossen! 🏆', 'success')
@@ -1642,6 +1659,17 @@ function backToSelection() {
 onMounted(() => {
   // Clear any existing intervals
   if (cooldownInterval.value) clearInterval(cooldownInterval.value)
+
+  // Automatically select task from query param if provided
+  const taskId = route.query.taskId as string
+  if (taskId) {
+    const task = CURRICULUM_TASKS.find(t => t.id === taskId)
+    if (task) {
+      selectTask(task)
+      // Transition state
+      state.value = 'workspace'
+    }
+  }
 })
 
 onUnmounted(() => {

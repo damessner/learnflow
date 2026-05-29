@@ -27,6 +27,9 @@ export async function up(knex: Knex): Promise<void> {
     t.text('final_quiz_grade')   // 'A', 'B', 'C', 'D', 'E', 'F'
     t.integer('final_quiz_score').defaultTo(0)
     t.integer('final_quiz_max').defaultTo(0)
+    t.integer('writing_completed').defaultTo(0)
+    t.text('writing_grade')
+    t.integer('writing_score').defaultTo(0)
     t.timestamp('updated_at').defaultTo(knex.fn.now())
     t.unique(['user_id', 'textbook', 'unit'])
   })

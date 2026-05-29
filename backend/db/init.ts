@@ -111,6 +111,46 @@ export async function initDB(): Promise<void> {
     } else {
       logger.info('Database already initialized (worksheet language columns)')
     }
+
+    // Run Teacher Onboarding & Profiles Migration
+    const hasGradeLevel = await knex.schema.hasColumn('users', 'grade_level')
+    if (!hasGradeLevel) {
+      const { up: upTeacherProfiles } = require('./migrations/20260529_010_teacher_profiles')
+      await upTeacherProfiles(knex)
+      logger.info('Database migration (teacher profiles) completed')
+    } else {
+      logger.info('Database already initialized (teacher profiles)')
+    }
+
+    // Run Vocabulary/Writing Progress Migration
+    const hasVocabProgressTable = await knex.schema.hasTable('vocabulary_progress')
+    if (!hasVocabProgressTable) {
+      const { up: upVocabProgress } = require('./migrations/20260529_011_vocabulary_progress')
+      await upVocabProgress(knex)
+      logger.info('Database migration (vocabulary progress) completed')
+    } else {
+      logger.info('Database already initialized (vocabulary progress)')
+    }
+
+    // Run Reading Progress Migration
+    const hasReadingProgressTable = await knex.schema.hasTable('reading_progress')
+    if (!hasReadingProgressTable) {
+      const { up: upReadingProgress } = require('./migrations/20260529_012_reading_progress')
+      await upReadingProgress(knex)
+      logger.info('Database migration (reading progress) completed')
+    } else {
+      logger.info('Database already initialized (reading progress)')
+    }
+
+    // Run Listening Progress Migration
+    const hasListeningProgressTable = await knex.schema.hasTable('listening_progress')
+    if (!hasListeningProgressTable) {
+      const { up: upListeningProgress } = require('./migrations/20260529_013_listening_progress')
+      await upListeningProgress(knex)
+      logger.info('Database migration (listening progress) completed')
+    } else {
+      logger.info('Database already initialized (listening progress)')
+    }
   } catch (err) {
     logger.error({ err }, 'Database migration failed')
     throw err

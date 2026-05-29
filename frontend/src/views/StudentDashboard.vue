@@ -1,534 +1,428 @@
 <template>
-  <div class="page">
-    <div
-      style="
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        flex-wrap: wrap;
-        gap: 1rem;
-      "
-    >
+  <div class="page student-dashboard">
+    <!-- Top Welcome Header -->
+    <div class="dashboard-header flex justify-between items-center mb-4">
       <div>
-        <h2 class="page-title">Student Dashboard</h2>
-        <p class="page-subtitle">
-          Welcome back, <strong>{{ authStore.user?.name || 'Student' }}</strong
-          >!
+        <h2 class="text-2xl font-bold">Student Hub</h2>
+        <p class="text-secondary text-sm">
+          Welcome back, <strong>{{ authStore.user?.name || 'Student' }}</strong>!
         </p>
       </div>
 
       <!-- Glowing Emoji Bubble & Sound Toggle -->
-      <div
-        style="
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          background: var(--bg-card);
-          padding: 0.5rem 1.25rem;
-          border-radius: 50px;
-          border: 1px solid var(--border-color);
-          box-shadow: var(--shadow-sm);
-        "
-      >
-        <div
-          @click="openEmojiModal"
-          style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer"
-        >
-          <span
-            class="streak-aura"
-            :class="streakLevel > 0 ? `streak-level-${streakLevel}` : ''"
-            style="
-              font-size: 2rem;
-              width: 44px;
-              height: 44px;
-              display: inline-flex;
-              align-items: center;
-              justify-content: center;
-            "
-          >
+      <div class="header-widgets flex items-center gap-3">
+        <div @click="openEmojiModal" class="avatar-widget flex items-center gap-2 cursor-pointer">
+          <span class="streak-aura" :class="streakLevel > 0 ? `streak-level-${streakLevel}` : ''">
             {{ authStore.user?.character_emoji || '👤' }}
           </span>
-          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted)"
-            >Choose Avatar</span
-          >
+          <span class="avatar-label">Avatar</span>
         </div>
-        <div
-          style="width: 1px; height: 24px; background: var(--border-color); margin: 0 0.25rem"
-        ></div>
-        <button
-          @click="toggleMute"
-          style="
-            background: transparent;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          "
-          :title="soundMuted ? 'Unmute victory music' : 'Mute victory music'"
-        >
+        <div class="divider-y"></div>
+        <button @click="toggleMute" class="btn-mute" :title="soundMuted ? 'Sound einschalten' : 'Sound stummschalten'">
           {{ soundMuted ? '🔇' : '🔊' }}
         </button>
       </div>
     </div>
-       <!-- Tab Pills -->
-    <div class="tab-pills" style="margin-bottom: 1.5rem; display: flex; gap: 0.25rem;">
-      <button
-        v-for="t in tabs"
-        :key="t.key"
-        :class="['tab-pill', { active: tab === t.key }]"
-        @click="tab = t.key"
-      >
-        {{ t.label }}
-      </button>
-    </div>
 
-    <!-- Tab 1: Classes 🏫 (new default) -->
-    <div v-if="tab === 'classes'" class="fade-in">
-      <!-- Join Class -->
-      <div class="card mb-4" style="margin-bottom: 1rem;">
-        <div class="flex items-center gap-3">
-          <input v-model="classCode" placeholder="Klassencode eingeben..." class="flex-1" />
-          <button class="btn-primary" :disabled="joining" @click="joinClass">Beitreten</button>
-        </div>
+    <!-- MAIN VIEW: CLASS LIST -->
+    <div v-if="!selectedClass" class="fade-in">
+      <!-- Join Class Form -->
+      <div class="card join-card mb-4 flex items-center gap-3">
+        <span class="text-lg">🏫</span>
+        <input v-model="classCode" placeholder="Enter Class Code (e.g. abcd-efgh)..." class="flex-1 input-field" />
+        <button class="btn-primary" :disabled="joining" @click="joinClass">
+          {{ joining ? 'Joining...' : 'Join Class' }}
+        </button>
+      </div>
+
+      <!-- Section Title -->
+      <h3 class="text-lg font-bold mb-3">My Classes</h3>
+
+      <!-- Empty State -->
+      <div v-if="myClasses.length === 0" class="card text-center py-6 text-secondary">
+        <span class="text-4xl">🏫</span>
+        <p class="text-lg font-bold mt-2">You aren't in any classes yet.</p>
+        <p class="text-sm">Ask your teacher for the class code to get started!</p>
       </div>
 
       <!-- Class Cards Grid -->
-      <div v-if="myClasses.length === 0" class="text-center py-6 text-secondary">
-        <p class="text-lg">🏫 Du bist noch in keiner Klasse.</p>
-        <p class="text-sm">Tritt einer Klasse bei oder frage deine Lehrkraft nach dem Code.</p>
-      </div>
-
       <div v-else class="classes-grid">
-        <div v-for="c in myClasses" :key="c.id" class="class-card card card-lift">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-lg font-bold">{{ c.name }}</h3>
-              <p class="text-sm text-secondary">{{ c.teacher_name || '—' }}</p>
-            </div>
-            <span v-if="c.newCount > 0" class="badge badge-danger">+{{ c.newCount }} neu</span>
+        <div
+          v-for="c in myClasses"
+          :key="c.id"
+          class="class-block card card-lift"
+          @click="selectClass(c)"
+        >
+          <div class="class-block-icon">🏫</div>
+          <div class="class-block-content">
+            <h4 class="text-lg font-bold">{{ c.name }}</h4>
+            <p class="text-sm text-secondary">{{ c.description || 'No description' }}</p>
           </div>
-
-          <!-- Pending Assignments -->
-          <div v-if="c.assignments?.length" class="mt-3">
-            <p class="text-xs font-bold text-secondary mb-2">📋 Ausstehende Aufgaben:</p>
-            <div v-for="a in c.assignments.slice(0, 5)" :key="a.id" class="assignment-row flex items-center justify-between py-1">
-              <router-link :to="`/student/assignment/${a.id}`" class="text-sm font-semibold">{{ a.title }}</router-link>
-              <span class="text-xs" :class="a.due_date && new Date(a.due_date) < new Date() ? 'text-danger' : 'text-muted'">
-                {{ a.due_date ? new Date(a.due_date).toLocaleDateString() : '' }}
-              </span>
-            </div>
-          </div>
-          <div v-else class="mt-3 text-xs text-muted">Keine ausstehenden Aufgaben 🎉</div>
-
-          <button class="btn-secondary btn-sm w-full justify-center mt-3" @click="router.push(`/student/course/${c.id}`)">
-            Klasse öffnen ➔
-          </button>
-        </div>
-      </div>
-
-      <!-- Submissions overview moved below -->
-      <div class="card mt-4">
-        <h3 class="font-bold mb-2">📝 Meine Abgaben</h3>
-        <div v-if="submissions.length === 0" class="text-sm text-muted">Noch keine Abgaben</div>
-        <div v-for="s in submissions.slice(0, 10)" :key="s.id" class="flex items-center justify-between py-1 border-bottom">
-          <router-link :to="`/student/assignment/${s.assignment_id}`" class="text-sm font-semibold">{{ s.worksheet_title }}</router-link>
-          <span v-if="s.score != null" class="badge">{{ s.score }}/{{ s.max_score }}</span>
-          <span v-else class="text-xs text-warning">Nicht abgegeben</span>
+          <span class="btn-arrow">➔</span>
         </div>
       </div>
     </div>
 
-    <!-- Tab 2: English 🇬🇧 (grade-linked) -->
-    <div v-if="tab === 'english'" class="fade-in">
-      <div class="flex items-center gap-3 mb-4">
-        <span class="text-2xl">🇬🇧</span>
+    <!-- DETAIL VIEW: INSIDE A CLASS -->
+    <div v-else class="fade-in">
+      <!-- Back Button -->
+      <button @click="backToClassList" class="btn-back mb-3">
+        ← Back to Classes
+      </button>
+
+      <div class="class-header-card card mb-4 flex justify-between items-start">
         <div>
-          <h2 class="text-lg font-bold">English — {{ textbook === 'more1' ? 'MORE! 1' : textbook }}</h2>
-          <p class="text-sm text-secondary" v-if="studentGrade">Klasse {{ studentGrade }} entdeckt</p>
+          <span class="badge badge-primary mb-1">Classroom</span>
+          <h2 class="text-xl font-bold">{{ selectedClass.name }}</h2>
+          <p class="text-sm text-secondary">{{ selectedClass.description || 'Subject learning space' }}</p>
         </div>
+        <span class="class-avatar-large">🏫</span>
       </div>
 
-      <div v-if="!isAvailable" class="card text-center py-6">
-        <span class="text-4xl">🚧</span>
-        <h3 class="mt-2">Coming Soon</h3>
-        <p class="text-sm text-secondary">MORE! Inhalte für Klasse {{ studentGrade }} sind in Entwicklung.</p>
-      </div>
-
-      <div v-else class="flex flex-col gap-4">
-        <!-- Grammar Section -->
-        <div class="english-section">
-          <button class="section-header" @click="englishSections.grammar = !englishSections.grammar">
-            <span>🏆 Grammar</span>
-            <span>{{ englishSections.grammar ? '▼' : '▶' }}</span>
-          </button>
-          <div v-if="englishSections.grammar" class="section-body fade-in">
-            <p class="text-sm text-secondary mb-3">15 Units mit Explorer, Pioneer, Master & AI Quiz</p>
-            <button class="btn-primary w-full justify-center" @click="router.push('/grammar-academy')">
-              🧭 Grammar Academy öffnen
-            </button>
+      <!-- TEXTBOOK BLOCK (MORE! English Hub) -->
+      <div v-if="textbookGrade" class="textbook-card card mb-4">
+        <div class="textbook-card-header flex justify-between items-center cursor-pointer" @click="toggleTextbook">
+          <div class="flex items-center gap-3">
+            <span class="text-3xl">🇬🇧</span>
+            <div>
+              <h3 class="text-lg font-bold text-primary-dark">MORE! {{ textbookGrade }} English Hub</h3>
+              <p class="text-sm text-secondary">Syllabus Grammar, Vocabulary & Writing Exercises</p>
+            </div>
           </div>
+          <button class="btn-textbook-toggle">
+            {{ textbookOpen ? 'Collapse ▲' : 'Open English Hub ▼' }}
+          </button>
         </div>
 
-        <!-- Vocabulary Section -->
-        <div class="english-section">
-          <button class="section-header" @click="englishSections.vocab = !englishSections.vocab">
-            <span>📚 Vocabulary</span>
-            <span>{{ englishSections.vocab ? '▼' : '▶' }}</span>
-          </button>
-          <div v-if="englishSections.vocab" class="section-body fade-in">
-            <p class="text-sm text-secondary mb-3">15 Units mit Starter/Practice/Challenge + Final Quiz</p>
-            <div class="unit-chips">
+        <!-- Expanded Textbook Academy Exercises -->
+        <div v-if="textbookOpen" class="textbook-exercises-panel fade-in mt-3 pt-3 border-top">
+          <!-- Exercise Menu -->
+          <div class="detail-tabs flex gap-2 mb-3">
+            <button class="tab-btn" :class="{ active: textbookTab === 'grammar' }" @click="textbookTab = 'grammar'">🏆 Grammar</button>
+            <button class="tab-btn" :class="{ active: textbookTab === 'vocab' }" @click="textbookTab = 'vocab'">📚 Vocabulary</button>
+            <button class="tab-btn" :class="{ active: textbookTab === 'writing' }" @click="textbookTab = 'writing'">✍️ Writing Coach</button>
+            <button class="tab-btn" :class="{ active: textbookTab === 'reading' }" @click="textbookTab = 'reading'">📖 Reading</button>
+            <button class="tab-btn" :class="{ active: textbookTab === 'listening' }" @click="textbookTab = 'listening'">🎧 Listening</button>
+          </div>
+
+          <!-- Grammar Section -->
+          <div v-if="textbookTab === 'grammar'" class="fade-in">
+            <div class="card flex justify-between items-center bg-hover">
+              <div>
+                <h4 class="font-bold">Grammar Academy</h4>
+                <p class="text-sm text-secondary">Practice 15 curriculum units with Explorer, Pioneer, and Master levels!</p>
+              </div>
+              <button class="btn-primary" @click="router.push('/grammar-academy')">
+                Enter Grammar Academy 🏆
+              </button>
+            </div>
+          </div>
+
+          <!-- Vocabulary Section -->
+          <div v-if="textbookTab === 'vocab'" class="fade-in">
+            <p class="text-sm text-secondary mb-3">Select a unit to practice vocabulary matching, gaps, spelling, and take the final quiz:</p>
+            <div class="vocab-units-grid">
               <button
                 v-for="u in 15"
                 :key="u"
-                class="unit-chip"
-                @click="router.push(`/vocabulary/more1/${u}`)"
-              >Unit {{ u }}</button>
+                class="vocab-unit-btn"
+                @click="router.push(`/vocabulary/more${textbookGrade}/${u}`)"
+              >
+                <span class="vocab-unit-num">Unit {{ u }}</span>
+                <span class="vocab-unit-icon">🔤</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Writing Section -->
+          <div v-if="textbookTab === 'writing'" class="fade-in">
+            <p class="text-sm text-secondary mb-3">Select a writing topic below to train with our AI Writing Coach:</p>
+            <div class="writing-tasks-grid">
+              <div
+                v-for="task in enWritingTasks"
+                :key="task.id"
+                class="writing-task-card card card-lift"
+              >
+                <h4 class="font-bold text-sm">{{ task.title }}</h4>
+                <p class="text-xs text-secondary mt-1 line-clamp-2">{{ task.description }}</p>
+                <button class="btn-primary btn-sm w-full mt-3 justify-center" @click="router.push(`/writing-coach?taskId=${task.id}`)">
+                   Start Writing ✍️
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reading Section (with Options A/B/C per tier) -->
+          <div v-if="textbookTab === 'reading'" class="fade-in">
+            <p class="text-sm text-secondary mb-3">📖 Wähle eine Schwierigkeitsstufe und ein Abenteuer — jedes Level hat 3 verschiedene Geschichten (A, B, C):</p>
+            <div class="reading-units-list flex flex-col gap-3">
+              <div v-for="u in mergedReadingData" :key="u.unit" class="card bg-hover p-3">
+                <div class="flex justify-between items-center cursor-pointer" @click="toggleReadingUnit(u.unit)">
+                  <div>
+                    <h4 class="font-bold text-sm">Unit {{ u.unit }}: {{ u.title }}</h4>
+                    <p class="text-xs text-secondary">{{ u.theme }}</p>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-light text-primary">
+                      {{ getCompletedStoriesCountForUnit(u.unit) }} / {{ u.stories.length }} Completed
+                    </span>
+                    <span class="text-sm font-bold text-secondary">{{ activeReadingUnit === u.unit ? '▲' : '▼' }}</span>
+                  </div>
+                </div>
+                
+                <!-- Expanded: grouped by tier with A/B/C options -->
+                <div v-if="activeReadingUnit === u.unit" class="mt-3 pt-3 border-top fade-in flex flex-col gap-4">
+                  <div v-for="tierName in ['Starter', 'Practice', 'Challenge', 'Master']" :key="tierName" class="tier-group">
+                    <div class="flex items-center gap-2 mb-2">
+                      <span class="badge badge-sm font-bold" :class="getTierBadgeClass(tierName)">{{ tierName }}</span>
+                      <span class="text-xs text-secondary">{{ getTierDescription(tierName) }}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <div v-for="(story, si) in getStoriesForTier(u, tierName)" :key="story.id" class="story-option-card card p-2 flex-1 min-w-[140px]" :class="{ 'border-primary': si === 0 }">
+                        <div class="flex flex-col items-center text-center gap-1">
+                          <span class="option-label">{{ ['A', 'B', 'C'][si] || '?' }}</span>
+                          <h6 class="font-bold text-xs leading-tight">{{ story.title }}</h6>
+                          <span class="text-[10px] text-success font-bold" v-if="getStoryProgress(story.id)">
+                            ✅ {{ getStoryProgress(story.id).score }}/{{ story.questions.length }}
+                          </span>
+                          <span class="text-[10px] text-secondary" v-else>⏳ Neu</span>
+                          <button class="btn-primary btn-xs w-full mt-1" @click.stop="router.push(`/student/reading/more1/${u.unit}/${story.id}`)">
+                            {{ getStoryProgress(story.id) ? 'Review 🔄' : 'Lesen 📖' }}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Listening Section -->
+          <div v-if="textbookTab === 'listening'" class="fade-in">
+            <p class="text-sm text-secondary mb-3">Improve your listening skills by practicing with these tracks and quizzes:</p>
+            <div class="listening-units-list flex flex-col gap-3">
+              <div v-for="u in MORE1_LISTENING_DATA" :key="u.unit" class="card bg-hover p-3">
+                <div class="flex justify-between items-center cursor-pointer" @click="toggleListeningUnit(u.unit)">
+                  <div>
+                    <h4 class="font-bold text-sm">Unit {{ u.unit }}: {{ u.title }}</h4>
+                    <p class="text-xs text-secondary">{{ u.theme }}</p>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-light text-primary">
+                      {{ getCompletedListeningCountForUnit(u.unit) }} / 4 Completed
+                    </span>
+                    <span class="text-sm font-bold text-secondary">{{ activeListeningUnit === u.unit ? '▲' : '▼' }}</span>
+                  </div>
+                </div>
+                
+                <!-- Expanded tracks list -->
+                <div v-if="activeListeningUnit === u.unit" class="grid grid-cols-2 gap-3 mt-3 pt-3 border-top fade-in">
+                  <div v-for="task in u.tasks" :key="task.id" class="card bg-card p-3 flex justify-between items-center">
+                    <div>
+                      <span class="badge badge-sm mb-1" :class="getTierBadgeClass(task.tier)">{{ task.tier }}</span>
+                      <h5 class="font-bold text-xs">{{ task.title }}</h5>
+                      <span class="text-[10px] text-success font-bold block mt-1" v-if="getListeningProgress(task.id)">
+                        Grade: {{ getListeningProgress(task.id).score }} / {{ task.questions.length }}
+                      </span>
+                      <span class="text-[10px] text-secondary block mt-1" v-else>Not started</span>
+                    </div>
+                    <button class="btn-primary btn-sm" @click="router.push(`/student/listening/more1/${u.unit}/${task.id}`)">
+                      {{ getListeningProgress(task.id) ? 'Review 🔄' : 'Listen 🎧' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
-        <!-- Writing Coach Section -->
-        <div class="english-section">
-          <button class="section-header" @click="englishSections.writing = !englishSections.writing">
-            <span>✍️ Writing Coach</span>
-            <span>{{ englishSections.writing ? '▼' : '▶' }}</span>
-          </button>
-          <div v-if="englishSections.writing" class="section-body fade-in">
-            <p class="text-sm text-secondary mb-3">AI-unterstütztes Schreibtraining</p>
-            <button class="btn-primary w-full justify-center" @click="router.push('/writing-coach')">
-              ✍️ Writing Coach öffnen
-            </button>
-          </div>
-        </div>
-
-        <!-- Listening / Reading -- Coming Soon -->
-        <div class="english-section disabled">
-          <div class="section-header">
-            <span>🎧 Listening</span>
-            <span class="text-muted">⏳ Coming Soon</span>
-          </div>
-        </div>
-        <div class="english-section disabled">
-          <div class="section-header">
-            <span>📖 Reading</span>
-            <span class="text-muted">⏳ Coming Soon</span>
-          </div>
-        </div>
       </div>
-    </div>
-          </div>
-          <button class="btn-primary" style="width: 100%; padding: 0.75rem;" @click="router.push('/grammar-academy')">
-            Akademie betreten ➔
-          </button>
-        </div>
 
-        <!-- Writing Coach Banner -->
+      <!-- WORKSHEETS SECTION -->
+      <h3 class="text-lg font-bold mb-3">Homework & Worksheets</h3>
+      <div v-if="loadingAssignments" class="text-center py-4 text-secondary">
+        Loading worksheets...
+      </div>
+      <div v-else-if="classAssignments.length === 0" class="card text-center py-4 text-secondary">
+        🎉 No worksheets assigned for this class yet.
+      </div>
+      <div v-else class="worksheets-grid">
         <div
-          class="card"
-          style="
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.10) 0%, rgba(6, 182, 212, 0.10) 100%), var(--bg-card);
-            border: 2px solid rgba(16, 185, 129, 0.35);
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            padding: 1.5rem;
-          "
+          v-for="a in classAssignments"
+          :key="a.assignment_id"
+          class="worksheet-card card"
+          :class="{ 'completed-gray': a.submitted }"
         >
-          <div style="flex: 1; text-align: left;">
-            <h3 style="margin-top: 0; background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 1.35rem; display: inline-block;">
-              ✍️ Writing Coach
-            </h3>
-            <p style="margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">
-              Guided curriculum writing tasks with pre-writing exercises, gamified word banks, real-time scoring and letter grades A–F.
-            </p>
-            <div style="display: flex; gap: 0.4rem; margin-top: 0.75rem; flex-wrap: wrap;">
-              <span style="font-size: 0.78rem; background: rgba(16,185,129,0.12); color: #059669; padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600;">✅ Pre-writing</span>
-              <span style="font-size: 0.78rem; background: rgba(6,182,212,0.12); color: #0891b2; padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600;">🎯 Word banks</span>
-              <span style="font-size: 0.78rem; background: rgba(99,102,241,0.12); color: var(--primary); padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600;">📊 A–F grades</span>
-            </div>
-          </div>
-          <button
-            class="btn-primary"
-            style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #10b981, #06b6d4); border: none;"
-            @click="router.push('/writing-coach')"
-          >
-            Start Writing ✍️
-          </button>
-        </div>
-      </div>
-
-      <!-- Assigned Courses Grid -->
-      <div class="card" style="text-align: left;">
-        <h3 style="margin-bottom: 1rem;">My Assigned Courses</h3>
-        <div v-if="courses.length === 0" style="color: var(--text-muted); padding: 1rem 0;">No courses assigned</div>
-        <div v-else class="grid grid-2" style="margin-top: 0.5rem;">
-          <div
-            v-for="c in courses"
-            :key="c.id"
-            class="card card-lift"
-            style="border-left: 4px solid var(--primary); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center;"
-          >
+          <div class="flex justify-between items-start">
             <div>
-              <strong style="font-size: 1.1rem; display: block; margin-bottom: 0.25rem;">{{ c.name }}</strong>
-              <span class="text-xs text-muted">Course ID: {{ c.id }}</span>
+              <span class="badge" :class="a.submitted ? 'badge-success' : 'badge-primary'">
+                {{ a.submitted ? '✓ Completed' : 'Unfinished' }}
+              </span>
+              <h4 class="text-base font-bold mt-2">{{ a.worksheet_title }}</h4>
+              <p class="text-xs text-secondary mt-1">{{ a.worksheet_description || 'No description' }}</p>
             </div>
-            <router-link :to="`/student/course/${c.id}`" class="btn btn-secondary btn-sm">Open Course ➔</router-link>
+            <span class="text-2xl">{{ a.submitted ? '📁' : '📄' }}</span>
+          </div>
+
+          <div class="worksheet-footer flex justify-between items-center mt-3 pt-2 border-top">
+            <span class="text-xs text-secondary">
+              {{ a.due_date ? 'Due: ' + new Date(a.due_date).toLocaleDateString() : 'No due date' }}
+            </span>
+            <div class="flex items-center gap-2">
+              <span v-if="a.submitted" class="score-badge">
+                Score: {{ a.score }}/{{ a.max_score }}
+              </span>
+              <router-link
+                :to="`/student/assignment/${a.assignment_id}`"
+                class="btn-sm btn-primary"
+              >
+                {{ a.submitted ? 'Review' : 'Start ➔' }}
+              </router-link>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Tab 3: Statistics & Achievements (Statistiken & Abzeichen) -->
-    <div v-if="tab === 'stats'" class="fade-in grid grid-2" style="text-align: left;">
-      <!-- Gamification Progress -->
-      <div v-if="gamification" class="card">
-        <h3>🏆 My Achievements</h3>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; margin-top: 1rem;">
-          <span>Level: <strong>{{ gamification.level }}</strong></span>
-          <span>XP: <strong>{{ gamification.xp }}</strong></span>
-        </div>
-
-        <div
-          style="width: 100%; height: 10px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem;"
-        >
-          <div
-            :style="{
-              width: levelProgress + '%',
-              background: 'var(--primary)',
-              height: '100%',
-              transition: 'width 0.5s ease',
-            }"
-          ></div>
-        </div>
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">
-          {{ gamification.xp }} / {{ xpForNext }} XP to Level {{ gamification.level + 1 }}
-        </div>
-
-        <p style="font-size: 1.05rem;">
-          🔥 Daily Streak: <strong>{{ gamification.streak_days }}</strong> days
-        </p>
-
-        <div class="divider"></div>
-        <h4 style="margin-bottom: 0.5rem;">🎖️ Earned Badges:</h4>
-        <div v-if="gamification.badges && gamification.badges.length" style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.25rem;">
-          <span
-            v-for="b in gamification.badges"
-            :key="b"
-            class="badge"
-            style="padding: 0.25rem 0.65rem;"
-          >{{ b }}</span>
-        </div>
-        <div v-else style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem 0;">
-          No badges earned yet. Keep solving worksheets and quizzes to unlock badges!
-        </div>
-      </div>
-
-      <!-- Mastery Map -->
-      <div class="card">
-        <h3>Mastery Map</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-          Track your real-time mastery of learning concepts. Teach them to a virtual AI student to review them!
-        </p>
-        <div
-          v-for="m in masteryList"
-          :key="m.id"
-          style="display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px dashed var(--border-color);"
-        >
-          <span style="flex: 1; font-weight: 500;">{{ m.topic }}</span>
-          <div
-            style="width: 100px; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden;"
-          >
-            <div
-              :style="{
-                width: m.mastery_level + '%',
-                background: 'var(--primary)',
-                height: '100%',
-              }"
-            ></div>
-          </div>
-          <span style="font-size: 0.8rem; width: 40px; text-align: right;">{{ m.mastery_level }}%</span>
+    <!-- EMOJI SELECTION MODAL -->
+    <div v-if="emojiModalOpen" class="modal-overlay" @click.self="emojiModalOpen = false">
+      <div class="modal avatar-modal">
+        <h3 class="font-bold mb-2">Choose Avatar Emoji</h3>
+        <p class="text-secondary text-sm mb-3">Select an emoji to represent you in class!</p>
+        <div class="emoji-grid">
           <button
-            v-if="m.mastery_level >= 40 && m.mastery_level <= 80"
-            class="btn-sm"
-            style="background: var(--warning); color: #000; border: none; white-space: nowrap; padding: 0.15rem 0.45rem;"
-            @click="startTeaching(m)"
+            v-for="em in emojiList"
+            :key="em"
+            @click="selectEmoji(em)"
+            class="emoji-btn"
           >
-            Teach It!
+            {{ em }}
           </button>
         </div>
+        <button @click="emojiModalOpen = false" class="btn-secondary w-full mt-3">Close</button>
       </div>
-
-      <!-- Remediation History -->
-      <div class="card" style="grid-column: 1 / -1;">
-        <h3>Remediation History</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-          Review your mistakes and Socratic revision loops from past worksheets.
-        </p>
-        <div v-if="remediationHistory.length === 0" style="color: var(--text-muted); padding: 1rem 0;">
-          No remediation rounds yet. Complete worksheets with errors to trigger remediation.
-        </div>
-        <div
-          v-for="entry in remediationHistory"
-          :key="entry.assignment_id"
-          style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);"
-        >
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-            <router-link
-              :to="`/student/assignment/${entry.assignment_id}`"
-              style="font-weight: 600"
-            >
-              {{ entry.worksheet_title }}
-            </router-link>
-            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end">
-              <span class="badge">Rounds: {{ entry.round_count || 0 }}</span>
-              <span class="badge">Correct: {{ entry.correct || 0 }}/{{ entry.attempted || 0 }}</span>
-            </div>
-          </div>
-          <div
-            v-if="entry.rounds?.length"
-            style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem"
-          >
-            Last Feedback: {{ entry.rounds[entry.rounds.length - 1]?.summary || 'No summary' }}
-          </div>
-        </div>
-      </div></div>
-
-    <div v-if="teaching" class="modal-overlay" @click.self="teaching = null">
-      <div class="modal" style="max-width: 550px">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem">
-          <h3>Teach: {{ teaching?.topic }}</h3>
-          <button
-            @click="teaching = null"
-            style="background: none; border: none; font-size: 1.5rem; cursor: pointer"
-          >
-            &times;
-          </button>
-        </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem">
-          A confused AI student needs your help! Explain this concept and correct their
-          misconceptions.
-        </p>
-        <div
-          style="
-            border: 1px solid var(--border-color);
-            padding: 1rem;
-            border-radius: 4px;
-            max-height: 300px;
-            overflow-y: auto;
-            margin-bottom: 1rem;
-          "
-        >
-          <div
-            v-for="(msg, i) in protegeMessages"
-            :key="i"
-            :style="{ textAlign: msg.role === 'user' ? 'right' : 'left', marginBottom: '0.5rem' }"
-          >
-            <span
-              :style="{
-                display: 'inline-block',
-                padding: '0.5rem 1rem',
-                borderRadius: '1rem',
-                background: msg.role === 'user' ? 'var(--primary)' : 'var(--border-color)',
-                color: msg.role === 'user' ? '#fff' : 'inherit',
-                maxWidth: '85%',
-              }"
-              >{{ msg.text }}</span
-            >
-          </div>
-          <div v-if="protegeLoading" style="color: var(--text-muted); font-size: 0.85rem">
-            AI student is thinking...
-          </div>
-        </div>
-        <div style="display: flex; gap: 0.5rem">
-          <input
-            v-model="protegeInput"
-            @keyup.enter="sendToProtege"
-            placeholder="Explain the concept..."
-            style="flex: 1"
-          />
-          <button class="btn-primary" @click="sendToProtege" :disabled="protegeLoading">
-            Teach
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Emoji Selector Modal -->
-  <div v-if="emojiModalOpen" class="modal-overlay" @click.self="emojiModalOpen = false">
-    <div class="modal" style="max-width: 450px; text-align: center">
-      <h3 style="margin-bottom: 0.5rem">Choose Your Character Emoji</h3>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem">
-        Select an emoji avatar to represent yourself in your classes!
-      </p>
-      <div
-        style="
-          display: grid;
-          grid-template-columns: repeat(6, 1fr);
-          gap: 0.75rem;
-          margin-bottom: 1.5rem;
-        "
-      >
-        <button
-          v-for="em in emojiList"
-          :key="em"
-          style="
-            font-size: 2rem;
-            padding: 0.5rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            transition: all 0.2s;
-          "
-          @click="selectEmoji(em)"
-        >
-          {{ em }}
-        </button>
-      </div>
-      <button class="btn-primary" style="width: 100%" @click="emojiModalOpen = false">Close</button>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useClassesStore } from '../stores/classes'
-import { useSubmissionsStore } from '../stores/submissions'
-import { useCoursesStore } from '../stores/courses'
-import { useLearningStore } from '../stores/learning'
-import { useUiStore } from '../stores/ui'
 import { useAuthStore } from '../stores/auth'
-import { buildApiHeaders } from '../services/api'
-import { audioSynth } from '../utils/audioSynth'
+import { useUiStore } from '../stores/ui'
+import { useClassesStore } from '../stores/classes'
+import { useLearningStore } from '../stores/learning'
+import { api } from '../services/api'
+import { CURRICULUM_TASKS } from '../data/writingTasks'
+import { MORE1_READING_DATA, type ReadingUnit } from '../data/readingData'
+import { MORE1_LISTENING_DATA } from '../data/listeningData'
+import { MORE1_READING_OPTIONS_BC } from '../data/readingDataSupplement'
 
 const router = useRouter()
-const classesStore = useClassesStore()
-const submissionsStore = useSubmissionsStore()
-const coursesStore = useCoursesStore()
-const learningStore = useLearningStore()
-const uiStore = useUiStore()
 const authStore = useAuthStore()
+const uiStore = useUiStore()
+const classesStore = useClassesStore()
+const learningStore = useLearningStore()
 
-const tab = ref('classes')
-const tabs = [
-  { key: 'classes', label: '🏫 Meine Klassen' },
-  { key: 'english', label: '🇬🇧 English' },
-  { key: 'stats', label: 'Statistiken & Abzeichen 🏆' }
-]
+// State
+const myClasses = ref<any[]>([])
+const classCode = ref('')
+const joining = ref(false)
+const selectedClass = ref<any>(null)
+const classAssignments = ref<any[]>([])
+const loadingAssignments = ref(false)
 
-const soundMuted = ref(localStorage.getItem('learnflow_sound_muted') === 'true')
-function toggleMute() {
-  soundMuted.value = !soundMuted.value
-  localStorage.setItem('learnflow_sound_muted', String(soundMuted.value))
-  uiStore.showToast(soundMuted.value ? 'Victory sound muted' : 'Victory sound unmuted', 'success')
+const textbookOpen = ref(false)
+const textbookTab = ref('grammar')
+
+const activeReadingUnit = ref<number | null>(null)
+const readingProgressList = ref<any[]>([])
+
+// Merge original stories (Option A) with supplement stories (Options B & C)
+const mergedReadingData = computed(() => {
+  return MORE1_READING_DATA.map((unit: ReadingUnit) => {
+    const supplement = MORE1_READING_OPTIONS_BC.find((u: ReadingUnit) => u.unit === unit.unit)
+    const allStories = [...unit.stories]
+    if (supplement) allStories.push(...supplement.stories)
+    return { ...unit, stories: allStories }
+  })
+})
+
+function toggleReadingUnit(unit: number) {
+  activeReadingUnit.value = activeReadingUnit.value === unit ? null : unit
 }
 
+function getStoriesForTier(unit: ReadingUnit, tierName: string) {
+  return unit.stories.filter((s) => s.tier === tierName)
+}
+
+function getTierDescription(tier: string) {
+  const desc: Record<string, string> = {
+    Starter: 'Einfache Sätze, Grundwortschatz',
+    Practice: 'Mittelschwere Texte, neuer Wortschatz',
+    Challenge: 'Längere Texte, komplexere Sätze',
+    Master: 'Anspruchsvolle Texte, volle Kompetenz'
+  }
+  return desc[tier] || ''
+}
+
+function getStoryProgress(storyId: string) {
+  return readingProgressList.value.find(p => p.story_id === storyId && p.completed)
+}
+
+function getCompletedStoriesCountForUnit(unit: number) {
+  const merged = mergedReadingData.value.find((u: ReadingUnit) => u.unit === unit)
+  return readingProgressList.value.filter((p: any) => p.unit === unit && p.completed).length
+}
+
+function getTierBadgeClass(tier: string) {
+  if (tier === 'Starter') return 'badge-success'
+  if (tier === 'Practice') return 'badge-info'
+  if (tier === 'Challenge') return 'badge-warning'
+  return 'badge-danger'
+}
+
+const activeListeningUnit = ref<number | null>(null)
+const listeningProgressList = ref<any[]>([])
+
+function toggleListeningUnit(unit: number) {
+  activeListeningUnit.value = activeListeningUnit.value === unit ? null : unit
+}
+
+function getListeningProgress(listeningId: string) {
+  return listeningProgressList.value.find(p => p.listening_id === listeningId && p.completed)
+}
+
+function getCompletedListeningCountForUnit(unit: number) {
+  return listeningProgressList.value.filter(p => p.unit === unit && p.completed).length
+}
+
+// Avatar selector states
+const emojiModalOpen = ref(false)
+const gamification = ref<any>(null)
+const soundMuted = ref(localStorage.getItem('learnflow_sound_muted') === 'true')
+
+const emojiList = [
+  '🚀', '🤖', '🦁', '🦄', '⚡', '🍕', '🎯', '🐱', '🐶', '🦊',
+  '🐼', '🐨', '🦖', '🐉', '👾', '👑', '🌈', '🧙', '🥷', '👽',
+  '🧠', '🧪', '🎨', '🎸'
+]
+
+// Textbook Grade detection
+const textbookGrade = computed(() => {
+  if (!selectedClass.value) return null
+  const match = (selectedClass.value.name || '').match(/^(\d)/)
+  return match ? parseInt(match[1]) : 1
+})
+
+const enWritingTasks = computed(() => {
+  if (!textbookGrade.value) return []
+  return CURRICULUM_TASKS.filter(
+    t => t.grade === textbookGrade.value && t.subject === 'en'
+  )
+})
+
+// Gamification calculations
 const streakLevel = computed(() => {
   const streak = gamification.value?.streak_days || 0
   if (streak >= 7) return 3
@@ -537,303 +431,349 @@ const streakLevel = computed(() => {
   return 0
 })
 
-const myClasses = ref([])
-const announcements = ref([])
-const submissions = ref([])
-const remediationHistory = ref([])
-const courses = ref([])
-const gamification = ref(null)
-const masteryList = ref([])
-const classCode = ref('')
-const joining = ref(false)
-
-// English tab state
-const englishSections = ref({ grammar: true, vocab: false, writing: false })
-const studentGrade = computed(() => {
-  const match = (authStore.user?.class_name || '').match(/^(\d)/)
-  return match ? parseInt(match[1]) : 1
-})
-const textbook = computed(() => `more${studentGrade.value}`)
-const isAvailable = computed(() => studentGrade.value === 1)
-
-const emojiModalOpen = ref(false)
-const emojiList = [
-  '🚀',
-  '🤖',
-  '🦁',
-  '🦄',
-  '⚡',
-  '🍕',
-  '🎯',
-  '🐱',
-  '🐶',
-  '🦊',
-  '🐼',
-  '🐨',
-  '🦖',
-  '🐉',
-  '👾',
-  '👑',
-  '🌈',
-  '🧙',
-  '🥷',
-  '👽',
-  '🧠',
-  '🧪',
-  '🎨',
-  '🎸',
-]
-
-async function selectEmoji(em) {
-  try {
-    await authStore.updateEmoji(em)
-    uiStore.showToast('Avatar updated!', 'success')
-  } catch (e) {
-    uiStore.showToast(e.message, 'error')
-  }
-}
-
-function openEmojiModal() {
-  emojiModalOpen.value = true
-}
-
-const dailyMix = ref([])
-const mixing = ref(false)
-const mixIndex = ref(0)
-const showAnswer = ref(false)
-const mixResults = ref([])
-
-const teaching = ref(null)
-const protegeMessages = ref([])
-const protegeInput = ref('')
-const protegeLoading = ref(false)
-const recallInput = ref('')
-
-const currentMixItem = computed(() => dailyMix.value[mixIndex.value])
-
-const levelProgress = computed(() => {
-  if (!gamification.value) return 0
-  const lvl = gamification.value.level
-  const currentXp = gamification.value.xp
-  const baseXp = (lvl - 1) * (lvl - 1) * 200
-  const nextXp = lvl * lvl * 200
-  const progress = ((currentXp - baseXp) / (nextXp - baseXp)) * 100
-  return Math.min(100, Math.max(0, progress))
-})
-
-const xpForNext = computed(() => {
-  if (!gamification.value) return 200
-  const lvl = gamification.value.level
-  return lvl * lvl * 200
-})
-
 onMounted(async () => {
+  await loadClasses()
   try {
-    const [status, ann, _summ, _remHistory, _gam, _mast, _dm] = await Promise.all([
-      classesStore.fetchStudentStatus().catch(() => ({ classes: [] })),
-      classesStore.fetchAnnouncements().catch(() => []),
-      submissionsStore.fetchStudentSummary().catch(() => []),
-      submissionsStore.fetchStudentRemediationHistory().catch(() => ({ assignments: [] })),
-      learningStore.fetchGamification().catch(() => null),
-      learningStore.fetchMastery().catch(() => []),
-      learningStore.fetchDailyMix().catch(() => []),
-    ])
-
-    myClasses.value = status.classes || []
-    announcements.value = ann || []
-    submissions.value = submissionsStore.summary
-    remediationHistory.value = _remHistory?.assignments || []
-    gamification.value = learningStore.gamification
-    masteryList.value = learningStore.mastery
-    dailyMix.value = learningStore.dailyMix || []
-
-    const _courseData = await coursesStore.fetchStudentCourses().catch(() => ({ courses: [] }))
-    courses.value = coursesStore.courses
-  } catch {
-    /* */
-  }
+    const gam = await learningStore.fetchGamification()
+    gamification.value = gam
+  } catch (_e) {}
 })
+
+async function loadClasses() {
+  try {
+    const status = await classesStore.fetchStudentStatus()
+    myClasses.value = status.classes || []
+  } catch (_e) {}
+}
 
 async function joinClass() {
   if (!classCode.value.trim()) return
   joining.value = true
   try {
     await classesStore.joinClass(classCode.value.trim())
-    uiStore.showToast('Joined class!', 'success')
+    uiStore.showToast('Class joined successfully! 🏫', 'success')
     classCode.value = ''
-    const status = await classesStore.fetchStudentStatus()
-    myClasses.value = status.classes || []
-  } catch (e) {
-    uiStore.showToast(e.message, 'error')
+    await loadClasses()
+  } catch (e: any) {
+    uiStore.showToast(e.message || 'Failed to join class', 'error')
   } finally {
     joining.value = false
   }
 }
 
-function startDailyMix() {
-  mixing.value = true
-  mixIndex.value = 0
-  showAnswer.value = false
-  mixResults.value = []
-  recallInput.value = ''
-}
-
-function revealAnswer() {
-  showAnswer.value = true
-}
-
-async function answerMix(correct, confidence) {
-  mixResults.value.push({
-    kc_id: currentMixItem.value.kc_id,
-    topic: currentMixItem.value.topic,
-    correct,
-    confidence,
-  })
-
-  if (mixIndex.value < dailyMix.value.length - 1) {
-    mixIndex.value++
-    showAnswer.value = false
-    recallInput.value = ''
-  } else {
-    // Finished mix
-    mixing.value = false
-    try {
-      const res = await learningStore.completeDailyMix(mixResults.value)
-      if (res.leveledUp || (res.newBadges && res.newBadges.length)) {
-        audioSynth.playLevelUp()
-      } else {
-        audioSynth.playComplete()
-      }
-      let msg = `Daily Mix Complete! +${res.xpGained} XP`
-      if (res.leveledUp) msg += ` | Level Up! Now Level ${res.newLevel}`
-      if (res.newBadges && res.newBadges.length) {
-        msg += ` | New Badge: ${res.newBadges.join(', ')}`
-        res.newBadges.forEach((b) => {
-          setTimeout(() => uiStore.showToast(`Badge Earned: ${b}`, 'success'), 500)
-        })
-      }
-      uiStore.showToast(msg, 'success')
-      await learningStore.fetchGamification()
-      gamification.value = learningStore.gamification
-      dailyMix.value = []
-    } catch (e) {
-      uiStore.showToast(e.message, 'error')
-    }
-  }
-}
-
-function startTeaching(kc) {
-  teaching.value = kc
-  protegeMessages.value = [
-    {
-      role: 'tutor',
-      text: `Hi! I'm trying to learn about "${kc.topic}". I'm a bit confused about some things. Can you help me understand?`,
-    },
-  ]
-  protegeInput.value = ''
-}
-
-async function sendToProtege() {
-  if (!protegeInput.value.trim() || protegeLoading.value) return
-  const msg = protegeInput.value.trim()
-  protegeMessages.value.push({ role: 'user', text: msg })
-  protegeInput.value = ''
-  protegeLoading.value = true
-
-  const replyIdx = protegeMessages.value.length
-  protegeMessages.value.push({ role: 'tutor', text: '' })
-
+async function selectClass(cls: any) {
+  selectedClass.value = cls
+  textbookOpen.value = false
+  textbookTab.value = 'grammar'
+  
+  loadingAssignments.value = true
   try {
-    const response = await fetch('/api/ai/protege', {
-      method: 'POST',
-      headers: buildApiHeaders('POST'),
-      body: JSON.stringify({
-        kcName: teaching.value.topic,
-        kcDescription: teaching.value.description || teaching.value.topic,
-        message: msg,
-      }),
-      credentials: 'include',
-    })
+    const res = await api.get(`/classes/student/class/${cls.id}/assignments`)
+    classAssignments.value = res.assignments || []
+    
+    // Fetch student reading progress
+    const readRes = await api.get('/english/reading/my-progress')
+    readingProgressList.value = readRes.progress || []
 
-    const reader = response.body?.getReader()
-    if (!reader) throw new Error('No reader')
-
-    const decoder = new TextDecoder()
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      const chunk = decoder.decode(value)
-      const lines = chunk.split('\n').filter((l) => l.startsWith('data: '))
-      for (const line of lines) {
-        if (line === 'data: [DONE]') break
-        try {
-          const json = JSON.parse(line.replace('data: ', ''))
-          protegeMessages.value[replyIdx].text += json.text
-        } catch {}
-      }
-    }
-  } catch {
-    protegeMessages.value[replyIdx].text = "I'm having trouble thinking right now..."
+    // Fetch student listening progress
+    const listenRes = await api.get('/english/listening/my-progress')
+    listeningProgressList.value = listenRes.progress || []
+  } catch (e: any) {
+    uiStore.showToast('Failed to load class details', 'error')
+    classAssignments.value = []
+  } finally {
+    loadingAssignments.value = false
   }
-  protegeLoading.value = false
+}
+
+function backToClassList() {
+  selectedClass.value = null
+  classAssignments.value = []
+}
+
+function toggleTextbook() {
+  textbookOpen.value = !textbookOpen.value
+}
+
+function openEmojiModal() {
+  emojiModalOpen.value = true
+}
+
+async function selectEmoji(em: string) {
+  try {
+    await authStore.updateEmoji(em)
+    uiStore.showToast('Avatar updated! 🎉', 'success')
+    emojiModalOpen.value = false
+  } catch (e: any) {
+    uiStore.showToast(e.message, 'error')
+  }
+}
+
+function toggleMute() {
+  soundMuted.value = !soundMuted.value
+  localStorage.setItem('learnflow_sound_muted', String(soundMuted.value))
+  uiStore.showToast(soundMuted.value ? 'Sound disabled' : 'Sound enabled', 'success')
 }
 </script>
 
 <style scoped>
+.student-dashboard {
+  padding: 1.5rem 1rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.dashboard-header {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+.divider-y {
+  width: 1px;
+  height: 24px;
+  background: var(--border-color);
+}
+.btn-mute {
+  background: none;
+  border: none;
+  font-size: 1.15rem;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+.avatar-widget {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+}
+.avatar-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.streak-aura {
+  font-size: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.streak-level-1 { text-shadow: 0 0 5px #f59e0b; }
+.streak-level-2 { text-shadow: 0 0 10px #f97316; }
+.streak-level-3 { text-shadow: 0 0 15px #ef4444; }
+
+.join-card {
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--primary);
+}
+.input-field {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  outline: none;
+  background: var(--bg-hover);
+  color: var(--text-main);
+}
 .classes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
 }
-.class-card {
+.class-block {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   padding: 1.25rem;
+  cursor: pointer;
+}
+.class-block-icon {
+  font-size: 2.25rem;
+  background: var(--primary-light);
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+}
+.class-block-content {
+  flex: 1;
+}
+.btn-arrow {
+  font-size: 1.15rem;
+  color: var(--primary);
+}
+
+/* Inside class Detail View */
+.btn-back {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-back:hover {
+  color: var(--primary);
+}
+.class-header-card {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-hover) 100%);
+  border-left: 5px solid var(--primary);
+}
+.class-avatar-large {
+  font-size: 3rem;
+}
+
+/* Textbook English Hub Card */
+.textbook-card {
+  border: 2px solid rgba(79, 70, 229, 0.25);
+  background: linear-gradient(to bottom right, rgba(79, 70, 229, 0.05), rgba(79, 70, 229, 0.02));
+  padding: 1.5rem;
+}
+.btn-textbook-toggle {
+  background: var(--primary);
+  color: white;
+  border: none;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+.textbook-exercises-panel {
+  border-top: 1px solid var(--border-color);
+}
+.vocab-units-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 0.5rem;
+}
+.vocab-unit-btn {
   display: flex;
   flex-direction: column;
-}
-.assignment-row {
-  border-bottom: 1px solid var(--border-color);
-}
-.english-section {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  background: var(--bg-card);
-}
-.english-section.disabled {
-  opacity: 0.5;
-}
-.section-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  width: 100%;
-  padding: 1rem 1.25rem;
-  background: var(--bg-hover);
-  font-weight: 700;
-  font-size: 1rem;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-}
-.section-body {
-  padding: 1rem 1.25rem;
-}
-.unit-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-.unit-chip {
-  padding: 0.3rem 0.7rem;
-  border: 1.5px solid var(--border-color);
-  border-radius: 999px;
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   background: var(--bg-card);
-  font-size: var(--font-size-xs);
   cursor: pointer;
   transition: all 0.2s;
 }
-.unit-chip:hover {
+.vocab-unit-btn:hover {
   border-color: var(--primary);
   background: var(--primary-light);
+}
+.vocab-unit-num {
+  font-size: var(--font-size-xs);
+  font-weight: bold;
+}
+.vocab-unit-icon {
+  font-size: 1.25rem;
+  margin-top: 0.25rem;
+}
+.writing-tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.writing-task-card {
+  padding: 1rem;
+}
+
+/* Worksheets grid styling */
+.worksheets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.25rem;
+}
+.worksheet-card {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.worksheet-card.completed-gray {
+  opacity: 0.65;
+  border-color: var(--border-color);
+  background: var(--bg-hover);
+}
+.score-badge {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+}
+
+/* Tab button classes */
+.detail-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.tab-btn {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xs);
+  background: var(--bg-card);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+.tab-btn.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+.tab-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Avatar modal styling */
+.avatar-modal {
+  max-width: 400px;
+}
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.emoji-btn {
+  font-size: 1.75rem;
+  padding: 0.35rem;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.emoji-btn:hover {
+  transform: scale(1.15);
+}
+.tier-group {
+  padding: 0.5rem;
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+}
+.story-option-card {
+  transition: all 0.2s;
+  border: 2px solid var(--border-color);
+}
+.story-option-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+.option-label {
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: white;
+  background: var(--primary);
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
 }
 </style>
