@@ -11,13 +11,13 @@ export interface ReadingQuestion {
 }
 
 export interface ReadingStory {
-  id: string
-  unit: number
+  id?: string       // optional — generated automatically for legacy data
+  unit?: number     // optional — inferred from parent unit
   tier: 'Starter' | 'Practice' | 'Challenge' | 'Master'
   title: string
   text: string
   vocabWords: { en: string; de: string }[]
-  imagePath: string
+  imagePath?: string // optional — default generated from unit/tier
   questions: ReadingQuestion[]
 }
 
@@ -6072,6 +6072,24 @@ export const MORE1_READING_DATA: ReadingUnit[] = [
   }
 ];
 
+const TIER_NUM: Record<string, number> = { Starter: 1, Practice: 2, Challenge: 3, Master: 4 }
+
+/** Generate a stable ID for legacy stories that lack one */
+function genStoryId(unit: number, tier: string, idx: number): string {
+  return `read-${unit}-${tier.toLowerCase()}${String.fromCharCode(97 + idx)}`
+}
+
+/** Fill in missing optional fields for a legacy story */
+export function normalizeStory(story: ReadingStory, unit: number, idx: number): ReadingStory {
+  const tierNum = TIER_NUM[story.tier] || 1
+  return {
+    ...story,
+    id: story.id || genStoryId(unit, story.tier, idx),
+    unit: story.unit ?? unit,
+    imagePath: story.imagePath || `/assets/reading/more1/U${unit}_TXT${tierNum}${String.fromCharCode(97 + idx)}.png`,
+  }
+}
+
 export function getReadingUnit(unit: number): ReadingUnit | undefined {
   return MORE1_READING_DATA.find((u) => u.unit === unit);
 }
@@ -6079,5 +6097,7 @@ export function getReadingUnit(unit: number): ReadingUnit | undefined {
 export function getReadingStory(unit: number, storyId: string): ReadingStory | undefined {
   const u = getReadingUnit(unit);
   if (!u) return undefined;
-  return u.stories.find((s) => s.id === storyId);
+  const idx = u.stories.findIndex((s) => s.id === storyId || genStoryId(unit, s.tier, idx) === storyId);
+  if (idx === -1) return undefined;
+  return normalizeStory(u.stories[idx], unit, idx);
 }

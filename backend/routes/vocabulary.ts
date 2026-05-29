@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { db } from '../db'
+import { getKnex } from '../db/knex'
 import { requireAuth } from '../middleware/requireAuth'
 import { nanoid } from 'nanoid'
 
@@ -13,18 +13,17 @@ const router = Router()
 router.get('/:textbook/:unit', requireAuth, async (req, res) => {
   try {
     const { textbook, unit } = req.params
-    const unitNum = parseInt(unit)
+    const unitStr = Array.isArray(unit) ? unit[0] : unit
+    const unitNum = parseInt(unitStr)
     if (isNaN(unitNum) || unitNum < 1 || unitNum > 15) {
       return res.status(400).json({ error: 'Invalid unit number' })
     }
-    // The actual word data lives in the frontend; this endpoint just confirms
-    // the textbook/unit combination is valid and returns student progress
     const userId = (req as any).user.id
-    const progress = await db('vocabulary_progress')
+    const progress = await getKnex()('vocabulary_progress')
       .where({ user_id: userId, textbook, unit: unitNum })
       .select('word_en', 'word_de', 'attempts', 'correct', 'last_seen_at')
 
-    const unitProgress = await db('vocabulary_unit_progress')
+    const unitProgress = await getKnex()('vocabulary_unit_progress')
       .where({ user_id: userId, textbook, unit: unitNum })
       .first()
 
@@ -54,12 +53,12 @@ router.post('/progress', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
-    const existing = await db('vocabulary_progress')
+    const existing = await getKnex()('vocabulary_progress')
       .where({ user_id: userId, textbook, unit, word_en })
       .first()
 
     if (existing) {
-      await db('vocabulary_progress')
+      await getKnex()('vocabulary_progress')
         .where({ user_id: userId, textbook, unit, word_en })
         .update({
           attempts: existing.attempts + 1,
@@ -67,7 +66,7 @@ router.post('/progress', requireAuth, async (req, res) => {
           last_seen_at: new Date().toISOString(),
         })
     } else {
-      await db('vocabulary_progress').insert({
+      await getKnex()('vocabulary_progress').insert({
         id: nanoid(),
         user_id: userId,
         textbook,
@@ -101,17 +100,17 @@ router.post('/tier-complete', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Invalid tier' })
     }
 
-    const existing = await db('vocabulary_unit_progress')
+    const existing = await getKnex()('vocabulary_unit_progress')
       .where({ user_id: userId, textbook, unit })
       .first()
 
     const updateField = `${tier}_completed`
     if (existing) {
-      await db('vocabulary_unit_progress')
+      await getKnex()('vocabulary_unit_progress')
         .where({ user_id: userId, textbook, unit })
         .update({ [updateField]: 1, updated_at: new Date().toISOString() })
     } else {
-      await db('vocabulary_unit_progress').insert({
+      await getKnex()('vocabulary_unit_progress').insert({
         id: nanoid(),
         user_id: userId,
         textbook,
@@ -136,10 +135,11 @@ router.get('/final-quiz/:textbook/:unit', requireAuth, async (req, res) => {
   try {
     const userId = (req as any).user.id
     const { textbook, unit } = req.params
-    const unitNum = parseInt(unit)
+    const unitStr = Array.isArray(unit) ? unit[0] : unit
+    const unitNum = parseInt(unitStr)
 
     // Words with at least 1 attempt, sorted by worst accuracy first
-    const words = await db('vocabulary_progress')
+    const words = await getKnex()('vocabulary_progress')
       .where({ user_id: userId, textbook, unit: unitNum })
       .where('attempts', '>', 0)
       .orderByRaw('CAST(correct AS REAL) / CAST(attempts AS REAL) ASC')
@@ -165,12 +165,12 @@ router.post('/final-quiz-complete', requireAuth, async (req, res) => {
     const userId = (req as any).user.id
     const { textbook, unit, score, maxScore, grade } = req.body
 
-    const existing = await db('vocabulary_unit_progress')
+    const existing = await getKnex()('vocabulary_unit_progress')
       .where({ user_id: userId, textbook, unit })
       .first()
 
     if (existing) {
-      await db('vocabulary_unit_progress')
+      await getKnex()('vocabulary_unit_progress')
         .where({ user_id: userId, textbook, unit })
         .update({
           final_quiz_completed: 1,
@@ -180,7 +180,7 @@ router.post('/final-quiz-complete', requireAuth, async (req, res) => {
           updated_at: new Date().toISOString(),
         })
     } else {
-      await db('vocabulary_unit_progress').insert({
+      await getKnex()('vocabulary_unit_progress').insert({
         id: nanoid(),
         user_id: userId,
         textbook,
@@ -209,8 +209,8 @@ router.delete('/reset/:textbook/:unit', requireAuth, async (req, res) => {
     const userId = (req as any).user.id
     const { textbook, unit } = req.params
 
-    await db('vocabulary_progress').where({ user_id: userId, textbook, unit }).delete()
-    await db('vocabulary_unit_progress').where({ user_id: userId, textbook, unit }).delete()
+    await getKnex()('vocabulary_progress').where({ user_id: userId, textbook, unit }).delete()
+    await getKnex()('vocabulary_unit_progress').where({ user_id: userId, textbook, unit }).delete()
 
     res.json({ ok: true, message: 'Progress reset successfully' })
   } catch (err: any) {
@@ -233,21 +233,21 @@ router.get('/class-progress/:textbook/:unit', requireAuth, async (req, res) => {
     const { textbook, unit } = req.params
 
     // Get all classes for this teacher
-    const classes = await db('classes').where({ teacher_id: user.id }).select('id', 'name')
+    const classes = await getKnex()('classes').where({ teacher_id: user.id }).select('id', 'name')
 
     const result = []
     for (const cls of classes) {
-      const students = await db('class_students')
+      const students = await getKnex()('class_students')
         .join('users', 'class_students.student_id', 'users.id')
         .where({ class_id: cls.id })
         .select('users.id', 'users.name')
 
       const studentProgress = await Promise.all(
-        students.map(async (s) => {
-          const unitProgress = await db('vocabulary_unit_progress')
+        students.map(async (s: any) => {
+          const unitProgress = await getKnex()('vocabulary_unit_progress')
             .where({ user_id: s.id, textbook, unit })
             .first()
-          const wordCount = await db('vocabulary_progress')
+          const wordCount = await getKnex()('vocabulary_progress')
             .where({ user_id: s.id, textbook, unit })
             .count('id as count')
             .first()

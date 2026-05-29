@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { db } from '../db'
+import { getKnex } from '../db/knex'
 import { requireAuth } from '../middleware/requireAuth'
 import { nanoid } from 'nanoid'
 import fs from 'fs'
@@ -42,12 +42,10 @@ router.get('/more1/units', requireAuth, async (_req, res) => {
   res.json({ textbook: 'more1', units: MORE1_UNITS })
 })
 
-// ──────────────────────────────────────────────────────────────────────────────
-// POST /api/english/writing/complete
-// Save Writing Coach completion details
-// ──────────────────────────────────────────────────────────────────────────────
+// ─── POST /api/english/writing/complete ──────────────────────────────────────
 router.post('/writing/complete', requireAuth, async (req, res) => {
   try {
+    const knex = getKnex()
     const userId = (req as any).user.id
     const { textbook, unit, score, grade } = req.body
 
@@ -55,12 +53,12 @@ router.post('/writing/complete', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
-    const existing = await db('vocabulary_unit_progress')
+    const existing = await knex('vocabulary_unit_progress')
       .where({ user_id: userId, textbook, unit })
       .first()
 
     if (existing) {
-      await db('vocabulary_unit_progress')
+      await knex('vocabulary_unit_progress')
         .where({ user_id: userId, textbook, unit })
         .update({
           writing_completed: 1,
@@ -69,7 +67,7 @@ router.post('/writing/complete', requireAuth, async (req, res) => {
           updated_at: new Date().toISOString(),
         })
     } else {
-      await db('vocabulary_unit_progress').insert({
+      await knex('vocabulary_unit_progress').insert({
         id: nanoid(),
         user_id: userId,
         textbook,
@@ -88,14 +86,12 @@ router.post('/writing/complete', requireAuth, async (req, res) => {
   }
 })
 
-// ──────────────────────────────────────────────────────────────────────────────
-// GET /api/english/reading/my-progress
-// Returns all reading progress for the current user
-// ──────────────────────────────────────────────────────────────────────────────
+// ─── GET /api/english/reading/my-progress ────────────────────────────────────
 router.get('/reading/my-progress', requireAuth, async (req, res) => {
   try {
+    const knex = getKnex()
     const userId = (req as any).user.id
-    const progress = await db('reading_progress')
+    const progress = await knex('reading_progress')
       .where({ user_id: userId })
       .select('textbook', 'unit', 'story_id', 'completed', 'score', 'max_score')
     res.json({ progress })
@@ -105,12 +101,10 @@ router.get('/reading/my-progress', requireAuth, async (req, res) => {
   }
 })
 
-// ──────────────────────────────────────────────────────────────────────────────
-// POST /api/english/reading/complete
-// Save student reading completion and score
-// ──────────────────────────────────────────────────────────────────────────────
+// ─── POST /api/english/reading/complete ──────────────────────────────────────
 router.post('/reading/complete', requireAuth, async (req, res) => {
   try {
+    const knex = getKnex()
     const userId = (req as any).user.id
     const { textbook, unit, storyId, score, maxScore } = req.body
 
@@ -118,12 +112,12 @@ router.post('/reading/complete', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
-    const existing = await db('reading_progress')
+    const existing = await knex('reading_progress')
       .where({ user_id: userId, textbook, unit, story_id: storyId })
       .first()
 
     if (existing) {
-      await db('reading_progress')
+      await knex('reading_progress')
         .where({ user_id: userId, textbook, unit, story_id: storyId })
         .update({
           completed: 1,
@@ -132,7 +126,7 @@ router.post('/reading/complete', requireAuth, async (req, res) => {
           updated_at: new Date().toISOString(),
         })
     } else {
-      await db('reading_progress').insert({
+      await knex('reading_progress').insert({
         id: nanoid(),
         user_id: userId,
         textbook,
@@ -152,14 +146,12 @@ router.post('/reading/complete', requireAuth, async (req, res) => {
   }
 })
 
-// ──────────────────────────────────────────────────────────────────────────────
-// GET /api/english/listening/my-progress
-// Returns all listening progress for the current user
-// ──────────────────────────────────────────────────────────────────────────────
+// ─── GET /api/english/listening/my-progress ──────────────────────────────────
 router.get('/listening/my-progress', requireAuth, async (req, res) => {
   try {
+    const knex = getKnex()
     const userId = (req as any).user.id
-    const progress = await db('listening_progress')
+    const progress = await knex('listening_progress')
       .where({ user_id: userId })
       .select('textbook', 'unit', 'listening_id', 'completed', 'score', 'max_score')
     res.json({ progress })
@@ -169,12 +161,10 @@ router.get('/listening/my-progress', requireAuth, async (req, res) => {
   }
 })
 
-// ──────────────────────────────────────────────────────────────────────────────
-// POST /api/english/listening/complete
-// Save student listening completion and score
-// ──────────────────────────────────────────────────────────────────────────────
+// ─── POST /api/english/listening/complete ────────────────────────────────────
 router.post('/listening/complete', requireAuth, async (req, res) => {
   try {
+    const knex = getKnex()
     const userId = (req as any).user.id
     const { textbook, unit, listeningId, score, maxScore } = req.body
 
@@ -182,12 +172,12 @@ router.post('/listening/complete', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
-    const existing = await db('listening_progress')
+    const existing = await knex('listening_progress')
       .where({ user_id: userId, textbook, unit, listening_id: listeningId })
       .first()
 
     if (existing) {
-      await db('listening_progress')
+      await knex('listening_progress')
         .where({ user_id: userId, textbook, unit, listening_id: listeningId })
         .update({
           completed: 1,
@@ -196,7 +186,7 @@ router.post('/listening/complete', requireAuth, async (req, res) => {
           updated_at: new Date().toISOString(),
         })
     } else {
-      await db('listening_progress').insert({
+      await knex('listening_progress').insert({
         id: nanoid(),
         user_id: userId,
         textbook,
@@ -216,23 +206,21 @@ router.post('/listening/complete', requireAuth, async (req, res) => {
   }
 })
 
-// ──────────────────────────────────────────────────────────────────────────────
-// GET /api/english/more1/class-results
-// Teacher endpoint: summary of all classes' progress across all units
-// ──────────────────────────────────────────────────────────────────────────────
+// ─── GET /api/english/more1/class-results ────────────────────────────────────
 router.get('/more1/class-results', requireAuth, async (req, res) => {
   try {
+    const knex = getKnex()
     const user = (req as any).user
     if (user.role !== 'teacher' && user.role !== 'admin') {
       return res.status(403).json({ error: 'Forbidden' })
     }
 
-    const classes = await db('classes').where({ teacher_id: user.id }).select('id', 'name')
+    const classes = await knex('classes').where({ teacher_id: user.id }).select('id', 'name')
     const grammarProgress = readGrammarProgress()
 
     const result = await Promise.all(
-      classes.map(async (cls) => {
-        const students = await db('class_students')
+      classes.map(async (cls: any) => {
+        const students = await knex('class_students')
           .where({ class_id: cls.id })
           .pluck('student_id')
 
@@ -240,8 +228,7 @@ router.get('/more1/class-results', requireAuth, async (req, res) => {
           return { classId: cls.id, className: cls.name, studentCount: 0, units: [] }
         }
 
-        // Vocabulary and Writing progress per unit
-        const vocabByUnit = await db('vocabulary_unit_progress')
+        const vocabByUnit = await knex('vocabulary_unit_progress')
           .whereIn('user_id', students)
           .where({ textbook: 'more1' })
           .select('unit')
@@ -250,16 +237,14 @@ router.get('/more1/class-results', requireAuth, async (req, res) => {
           .count('writing_completed as writingDone')
           .groupBy('unit')
 
-        // Reading progress per unit
-        const readingByUnit = await db('reading_progress')
+        const readingByUnit = await knex('reading_progress')
           .whereIn('user_id', students)
           .where({ textbook: 'more1' })
           .select('unit')
           .count('completed as done')
           .groupBy('unit')
 
-        // Listening progress per unit
-        const listeningByUnit = await db('listening_progress')
+        const listeningByUnit = await knex('listening_progress')
           .whereIn('user_id', students)
           .where({ textbook: 'more1' })
           .select('unit')
@@ -267,16 +252,15 @@ router.get('/more1/class-results', requireAuth, async (req, res) => {
           .groupBy('unit')
 
         const units = MORE1_UNITS.map((u) => {
-          const vocabData = vocabByUnit.find((v) => Number(v.unit) === u.unit)
-          const readingData = readingByUnit.find((r) => Number(r.unit) === u.unit)
-          const listeningData = listeningByUnit.find((l) => Number(l.unit) === u.unit)
+          const vocabData = vocabByUnit.find((v: any) => Number(v.unit) === u.unit)
+          const readingData = readingByUnit.find((r: any) => Number(r.unit) === u.unit)
+          const listeningData = listeningByUnit.find((l: any) => Number(l.unit) === u.unit)
 
-          // Grammar done count: check grammar_progress.json for student completions
           let grammarDone = 0
-          students.forEach((studentId) => {
+          students.forEach((studentId: string) => {
             const userProg = grammarProgress[studentId]
             if (userProg && userProg.completions) {
-              const topicKey = Object.keys(userProg.completions).find((k) =>
+              const topicKey = Object.keys(userProg.completions).find((k: string) =>
                 k.startsWith(`grammar-${u.unit}-`)
               )
               if (topicKey) {
@@ -312,52 +296,49 @@ router.get('/more1/class-results', requireAuth, async (req, res) => {
   }
 })
 
-// ──────────────────────────────────────────────────────────────────────────────
-// GET /api/english/more1/unit-results/:unit
-// Teacher endpoint: per-student results for a given unit across all their classes
-// ──────────────────────────────────────────────────────────────────────────────
+// ─── GET /api/english/more1/unit-results/:unit ───────────────────────────────
 router.get('/more1/unit-results/:unit', requireAuth, async (req, res) => {
   try {
+    const knex = getKnex()
     const user = (req as any).user
     if (user.role !== 'teacher' && user.role !== 'admin') {
       return res.status(403).json({ error: 'Forbidden' })
     }
 
-    const unitNum = parseInt(req.params.unit)
+    const unitNum = parseInt(req.params.unit as string)
     const classIdFilter = req.query.class_id as string | undefined
 
-    let classQuery = db('classes').where({ teacher_id: user.id })
+    let classQuery = knex('classes').where({ teacher_id: user.id })
     if (classIdFilter) classQuery = classQuery.where({ id: classIdFilter })
     const classes = await classQuery.select('id', 'name')
 
     const grammarProgress = readGrammarProgress()
 
     const result = await Promise.all(
-      classes.map(async (cls) => {
-        const students = await db('class_students')
+      classes.map(async (cls: any) => {
+        const students = await knex('class_students')
           .join('users', 'class_students.student_id', 'users.id')
           .where({ class_id: cls.id })
           .select('users.id', 'users.name')
 
         const studentResults = await Promise.all(
-          students.map(async (s) => {
-            const vocabProgress = await db('vocabulary_unit_progress')
+          students.map(async (s: any) => {
+            const vocabProgress = await knex('vocabulary_unit_progress')
               .where({ user_id: s.id, textbook: 'more1', unit: unitNum })
               .first()
-            const wordsAttempted = await db('vocabulary_progress')
+            const wordsAttempted = await knex('vocabulary_progress')
               .where({ user_id: s.id, textbook: 'more1', unit: unitNum })
               .count('id as count')
               .first()
 
-            const readingProgress = await db('reading_progress')
+            const readingProgress = await knex('reading_progress')
               .where({ user_id: s.id, textbook: 'more1', unit: unitNum })
 
-            const listeningProgress = await db('listening_progress')
+            const listeningProgress = await knex('listening_progress')
               .where({ user_id: s.id, textbook: 'more1', unit: unitNum })
 
-            // Fetch grammar details from grammar_progress.json
             const userProg = grammarProgress[s.id] || { completions: {}, quizzes: {} }
-            const topicKey = Object.keys(userProg.completions || {}).find((k) =>
+            const topicKey = Object.keys(userProg.completions || {}).find((k: string) =>
               k.startsWith(`grammar-${unitNum}-`)
             )
             const topicCompletions = topicKey ? userProg.completions[topicKey] : null
@@ -388,8 +369,8 @@ router.get('/more1/unit-results/:unit', requireAuth, async (req, res) => {
                 score: vocabProgress?.writing_score || 0,
               },
               reading: {
-                completedCount: readingProgress.filter((p) => p.completed).length,
-                stories: readingProgress.map((p) => ({
+                completedCount: readingProgress.filter((p: any) => p.completed).length,
+                stories: readingProgress.map((p: any) => ({
                   storyId: p.story_id,
                   completed: p.completed,
                   score: p.score,
@@ -397,8 +378,8 @@ router.get('/more1/unit-results/:unit', requireAuth, async (req, res) => {
                 })),
               },
               listening: {
-                completedCount: listeningProgress.filter((p) => p.completed).length,
-                tasks: listeningProgress.map((p) => ({
+                completedCount: listeningProgress.filter((p: any) => p.completed).length,
+                tasks: listeningProgress.map((p: any) => ({
                   listeningId: p.listening_id,
                   completed: p.completed,
                   score: p.score,
@@ -420,19 +401,17 @@ router.get('/more1/unit-results/:unit', requireAuth, async (req, res) => {
   }
 })
 
-// ──────────────────────────────────────────────────────────────────────────────
-// GET /api/english/more1/class-matrix/:classId
-// Teacher endpoint: returns the complete Students × Units progress matrix
-// ──────────────────────────────────────────────────────────────────────────────
+// ─── GET /api/english/more1/class-matrix/:classId ────────────────────────────
 router.get('/more1/class-matrix/:classId', requireAuth, async (req, res) => {
   try {
+    const knex = getKnex()
     const user = (req as any).user
     if (user.role !== 'teacher' && user.role !== 'admin') {
       return res.status(403).json({ error: 'Forbidden' })
     }
 
     const classId = req.params.classId
-    const students = await db('class_students')
+    const students = await knex('class_students')
       .join('users', 'class_students.student_id', 'users.id')
       .where({ class_id: classId })
       .select('users.id', 'users.name')
@@ -440,39 +419,44 @@ router.get('/more1/class-matrix/:classId', requireAuth, async (req, res) => {
     const grammarProgress = readGrammarProgress()
 
     const matrix = await Promise.all(
-      students.map(async (s) => {
-        // Fetch all vocabulary & writing unit progress for this student
-        const vocabProgList = await db('vocabulary_unit_progress')
+      students.map(async (s: any) => {
+        const vocabProgList = await knex('vocabulary_unit_progress')
           .where({ user_id: s.id, textbook: 'more1' })
 
-        // Fetch all reading progress for this student
-        const readingProgList = await db('reading_progress')
+        const readingProgList = await knex('reading_progress')
           .where({ user_id: s.id, textbook: 'more1' })
 
-        // Fetch all listening progress for this student
-        const listeningProgList = await db('listening_progress')
+        const listeningProgList = await knex('listening_progress')
           .where({ user_id: s.id, textbook: 'more1' })
 
-        // Fetch grammar progress from JSON
         const userProg = grammarProgress[s.id] || { completions: {}, quizzes: {} }
 
         const unitsData = Array.from({ length: 15 }, (_, idx) => {
           const unitNum = idx + 1
-          const vocabProgress = vocabProgList.find(p => p.unit === unitNum)
-          
-          const topicKey = Object.keys(userProg.completions || {}).find((k) =>
+          const vocabProgress = vocabProgList.find((p: any) => p.unit === unitNum)
+
+          const topicKey = Object.keys(userProg.completions || {}).find((k: string) =>
             k.startsWith(`grammar-${unitNum}-`)
           )
           const topicCompletions = topicKey ? userProg.completions[topicKey] : null
           const topicQuiz = topicKey ? userProg.quizzes?.[topicKey] : null
 
-          const unitReading = readingProgList.filter(p => p.unit === unitNum)
-          const readingCompletedCount = unitReading.filter(p => p.completed).length
+          const unitReading = readingProgList.filter((p: any) => p.unit === unitNum)
+          const readingCompletedCount = unitReading.filter((p: any) => p.completed).length
           const readingAvgScore = unitReading.length > 0
-            ? Math.round(unitReading.reduce((sum, p) => sum + (p.score / p.max_score), 0) / unitReading.length * 100)
+            ? Math.round(unitReading.reduce((sum: number, p: any) => sum + (p.score / p.max_score), 0) / unitReading.length * 100)
             : null
           const readingGrade = readingAvgScore !== null
             ? (readingAvgScore >= 90 ? 'A' : readingAvgScore >= 80 ? 'B' : readingAvgScore >= 60 ? 'C' : readingAvgScore >= 50 ? 'D' : 'F')
+            : null
+
+          const unitListening = listeningProgList.filter((p: any) => p.unit === unitNum)
+          const listeningCompletedCount = unitListening.filter((p: any) => p.completed).length
+          const listeningAvgScore = unitListening.length > 0
+            ? Math.round(unitListening.reduce((sum: number, p: any) => sum + (p.score / p.max_score), 0) / unitListening.length * 100)
+            : null
+          const listeningGrade = listeningAvgScore !== null
+            ? (listeningAvgScore >= 90 ? 'A' : listeningAvgScore >= 80 ? 'B' : listeningAvgScore >= 60 ? 'C' : listeningAvgScore >= 50 ? 'D' : 'F')
             : null
 
           return {
