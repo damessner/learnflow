@@ -36,99 +36,27 @@ export const MORE1_READING_DATA: ReadingUnit[] = [
     "stories": [
       {
         "tier": "Starter",
-        "title": "Tim's New Schoolbag",
-        "text": "Tim has a new schoolbag. His bag is blue. Inside the schoolbag, there is a red pencil, a green ruler, and a yellow book. Tim also has a black pen. Tim says: \"I love school! My pencil case is purple. I am ready for class.\"",
+        "title": "🪄 The Magic Pencil Case",
+        "text": "Tim has got a new pencil case. It is purple and pink with silver stars. One morning, Tim opens it in class. Suddenly, his blue pen jumps out! \"Good morning, Tim!\" says the pen. Tim looks around. Nobody else can hear it! The green ruler slides across the desk like a snake. \"We want to help you write!\" says the ruler. The yellow eraser bounces up and down. \"And I can fix your mistakes!\" Tim smiles. \"I have got magic school things!\" he whispers. From that day on, Tim's pencil case helps him with every lesson. His favourite colour is now purple.",
         "vocabWords": [
-          {
-            "en": "schoolbag",
-            "de": "Schultasche"
-          },
-          {
-            "en": "inside",
-            "de": "drinnen"
-          },
-          {
-            "en": "pencil case",
-            "de": "Federmäppchen"
-          },
-          {
-            "en": "ready",
-            "de": "bereit"
-          }
+          { "en": "pencil case", "de": "Federmäppchen" },
+          { "en": "silver stars", "de": "silberne Sterne" },
+          { "en": "suddenly", "de": "plötzlich" },
+          { "en": "nobody", "de": "niemand" },
+          { "en": "whispers", "de": "flüstert" },
+          { "en": "slides", "de": "gleitet" }
         ],
         "questions": [
-          {
-            "question": "What color is Tim's new schoolbag?",
-            "options": [
-              "Red",
-              "Blue",
-              "Green",
-              "Yellow"
-            ],
-            "correctIndex": 1,
-            "explanation": "The text says: \"Tim has a new schoolbag. His bag is blue.\"",
-            "kompetenzbereich": "global_understanding"
-          },
-          {
-            "question": "Which school thing is red?",
-            "options": [
-              "The book",
-              "The pen",
-              "The ruler",
-              "The pencil"
-            ],
-            "correctIndex": 3,
-            "explanation": "The text states: \"...there is a red pencil...\"",
-            "kompetenzbereich": "specific_information"
-          },
-          {
-            "question": "What color is Tim's ruler?",
-            "options": [
-              "Green",
-              "Blue",
-              "Black",
-              "Purple"
-            ],
-            "correctIndex": 0,
-            "explanation": "The text states: \"...a green ruler...\"",
-            "kompetenzbereich": "specific_information"
-          },
-          {
-            "question": "How does Tim feel about school?",
-            "options": [
-              "He is tired",
-              "He does not like it",
-              "He loves school",
-              "He is angry"
-            ],
-            "correctIndex": 2,
-            "explanation": "Tim says: \"I love school!\"",
-            "kompetenzbereich": "global_understanding"
-          },
-          {
-            "question": "What color is the pencil case?",
-            "options": [
-              "Yellow",
-              "Purple",
-              "Red",
-              "Black"
-            ],
-            "correctIndex": 1,
-            "explanation": "Tim says: \"My pencil case is purple.\"",
-            "kompetenzbereich": "specific_information"
-          },
-          {
-            "question": "Which item is NOT mentioned inside the schoolbag?",
-            "options": [
-              "Pencil",
-              "Ruler",
-              "Book",
-              "Glue"
-            ],
-            "correctIndex": 3,
-            "explanation": "Glue is not mentioned anywhere in the story.",
-            "kompetenzbereich": "specific_information"
-          }
+          { "question": "What colour is Tim's new pencil case?", "options": ["Red and blue", "Purple and pink with silver stars", "Green and yellow", "Black and white"], "correctIndex": 1, "explanation": "The text says it is purple and pink with silver stars.", "kompetenzbereich": "specific_information" },
+          { "question": "What does the blue pen do to surprise Tim?", "options": ["It breaks", "It jumps out and says 'Good morning'", "It changes colour", "It disappears"], "correctIndex": 1, "explanation": "The pen jumps out and says: 'Good morning, Tim!'", "kompetenzbereich": "specific_information" },
+          { "question": "True or False: Everyone in the class can hear the talking pen.", "options": ["True", "False"], "correctIndex": 1, "explanation": "Tim looks around and 'Nobody else can hear it!'", "kompetenzbereich": "global_understanding" },
+          { "question": "What does the ruler say it wants to do?", "options": ["Fly away", "Help Tim write", "Go home", "Change colour"], "correctIndex": 1, "explanation": "The ruler says: 'We want to help you write!'", "kompetenzbereich": "specific_information" },
+          { "question": "What does the yellow eraser claim it can do?", "options": ["Sing songs", "Fix mistakes", "Draw pictures", "Tell jokes"], "correctIndex": 1, "explanation": "The eraser says: 'I can fix your mistakes!'", "kompetenzbereich": "specific_information" },
+          { "question": "How does the ruler move across the desk?", "options": ["It flies", "It slides like a snake", "It rolls", "It hops"], "correctIndex": 1, "explanation": "The text says the ruler 'slides across the desk like a snake.'", "kompetenzbereich": "specific_information" },
+          { "question": "What is Tim's new favourite colour?", "options": ["Red", "Blue", "Purple", "Green"], "correctIndex": 2, "explanation": "The last sentence says: 'His favourite colour is now purple.'", "kompetenzbereich": "specific_information" },
+          { "question": "What does 'whispers' mean in German?", "options": ["schreit", "flüstert", "singt", "weint"], "correctIndex": 1, "explanation": "'Whispers' means to speak very quietly — 'flüstert' in German.", "kompetenzbereich": "vocabulary_context" },
+          { "question": "What happened FIRST in the story?", "options": ["Tim smiles", "The ruler slides across the desk", "Tim opens the pencil case", "The eraser bounces"], "correctIndex": 2, "explanation": "First, 'One morning, Tim opens it in class.'", "kompetenzbereich": "digital_reading" },
+          { "question": "How does Tim feel at the end of the story?", "options": ["Scared", "Angry", "Happy and amazed", "Bored"], "correctIndex": 2, "explanation": "Tim smiles and whispers that he has magic school things — he is amazed.", "kompetenzbereich": "global_understanding" }
         ]
       },
       {
@@ -439,99 +367,27 @@ export const MORE1_READING_DATA: ReadingUnit[] = [
     "stories": [
       {
         "tier": "Starter",
-        "title": "Benny the Monkey",
-        "text": "Benny is a little monkey. He lives at the zoo. Benny is brown. He has got a long tail and big ears. Benny loves bananas. Today, Benny is playing in a big tree. He looks at the elephants. The elephants are big and grey. Benny jumps up and down. He says: \"Oo-oo-aa-aa!\" The visitors laugh. Benny is happy.",
+        "title": "🐧 The Penguin Who Couldn't Swim",
+        "text": "At the zoo, there is a small penguin called Pip. Pip is black and white like all penguins. But Pip has got a problem — he is afraid of water! All the other penguins jump into the pool and swim. They say: \"Come in, Pip! The water is fun!\" But Pip stays on the rocks. One day, a little girl called Emma visits the zoo. She sees Pip and says: \"Why are you not swimming?\" Pip looks at her with big eyes. Emma smiles. \"It is okay to be scared. I was scared of water too. But I learned, and now I love it.\" Pip slowly walks to the water. He puts one foot in. Then the other. Splash! Pip is swimming! The other penguins clap their wings. Emma claps her hands. Pip is no longer afraid.",
         "vocabWords": [
-          {
-            "en": "monkey",
-            "de": "Affe"
-          },
-          {
-            "en": "tail",
-            "de": "Schwanz"
-          },
-          {
-            "en": "tree",
-            "de": "Baum"
-          },
-          {
-            "en": "visitors",
-            "de": "Besucher"
-          }
+          { "en": "penguin", "de": "Pinguin" },
+          { "en": "afraid", "de": "Angst haben" },
+          { "en": "rocks", "de": "Felsen" },
+          { "en": "learned", "de": "gelernt" },
+          { "en": "wings", "de": "Flügel" },
+          { "en": "no longer", "de": "nicht mehr" }
         ],
         "questions": [
-          {
-            "question": "Who is Benny?",
-            "options": [
-              "An elephant",
-              "A tiger",
-              "A monkey",
-              "A keeper"
-            ],
-            "correctIndex": 2,
-            "explanation": "The text says: \"Benny is a little monkey.\"",
-            "kompetenzbereich": "global_understanding"
-          },
-          {
-            "question": "What color is Benny?",
-            "options": [
-              "Black",
-              "Grey",
-              "Brown",
-              "Yellow"
-            ],
-            "correctIndex": 2,
-            "explanation": "The text states: \"Benny is brown.\"",
-            "kompetenzbereich": "specific_information"
-          },
-          {
-            "question": "What food does Benny love?",
-            "options": [
-              "Apples",
-              "Bananas",
-              "Noodles",
-              "Fish"
-            ],
-            "correctIndex": 1,
-            "explanation": "The text states: \"Benny loves bananas.\"",
-            "kompetenzbereich": "specific_information"
-          },
-          {
-            "question": "What color are the elephants?",
-            "options": [
-              "Brown",
-              "Grey",
-              "Black",
-              "Yellow"
-            ],
-            "correctIndex": 1,
-            "explanation": "The text mentions: \"The elephants are big and grey.\"",
-            "kompetenzbereich": "specific_information"
-          },
-          {
-            "question": "Where is Benny playing today?",
-            "options": [
-              "In a big tree",
-              "In the river",
-              "In the cage",
-              "Under a desk"
-            ],
-            "correctIndex": 0,
-            "explanation": "The text says: \"Today, Benny is playing in a big tree.\"",
-            "kompetenzbereich": "specific_information"
-          },
-          {
-            "question": "How do the visitors feel?",
-            "options": [
-              "They are scared",
-              "They are sad",
-              "They laugh and are happy",
-              "They are bored"
-            ],
-            "correctIndex": 2,
-            "explanation": "The text says: \"The visitors laugh. Benny is happy.\"",
-            "kompetenzbereich": "global_understanding"
-          }
+          { "question": "What is the name of the penguin?", "options": ["Pip", "Pop", "Pep", "Pipkin"], "correctIndex": 0, "explanation": "The text says: 'a small penguin called Pip.'", "kompetenzbereich": "specific_information" },
+          { "question": "What problem does Pip have?", "options": ["He is too small", "He is afraid of water", "He has no friends", "He is sick"], "correctIndex": 1, "explanation": "The text says: 'he is afraid of water!'", "kompetenzbereich": "global_understanding" },
+          { "question": "True or False: The other penguins do not want Pip to swim.", "options": ["True", "False"], "correctIndex": 1, "explanation": "They say: 'Come in, Pip! The water is fun!' — they DO want him.", "kompetenzbereich": "global_understanding" },
+          { "question": "Who helps Pip at the zoo?", "options": ["A zookeeper", "A boy called Tim", "A little girl called Emma", "Another penguin"], "correctIndex": 2, "explanation": "A little girl called Emma visits and talks to Pip.", "kompetenzbereich": "specific_information" },
+          { "question": "What does Emma say about being scared?", "options": ["She was never scared", "It is okay to be scared", "Penguins should not be scared", "Just give up"], "correctIndex": 1, "explanation": "Emma says: 'It is okay to be scared.'", "kompetenzbereich": "specific_information" },
+          { "question": "How does Pip get into the water?", "options": ["He jumps in", "He puts one foot in, then the other", "The zookeeper pushes him", "Emma carries him"], "correctIndex": 1, "explanation": "He slowly puts one foot in, then the other.", "kompetenzbereich": "specific_information" },
+          { "question": "What do the other penguins do when Pip swims?", "options": ["They ignore him", "They clap their wings", "They swim away", "They laugh at him"], "correctIndex": 1, "explanation": "The other penguins clap their wings.", "kompetenzbereich": "specific_information" },
+          { "question": "What does 'afraid' mean in German?", "options": ["glücklich", "Angst haben", "müde", "hungrig"], "correctIndex": 1, "explanation": "'Afraid' means scared — 'Angst haben' in German.", "kompetenzbereich": "vocabulary_context" },
+          { "question": "What happened FIRST in the story?", "options": ["Pip swims", "Emma visits the zoo", "Pip stays on the rocks", "The penguins clap"], "correctIndex": 2, "explanation": "First, Pip stays on the rocks while others swim.", "kompetenzbereich": "digital_reading" },
+          { "question": "How does Pip feel at the end of the story?", "options": ["Still afraid", "Happy and no longer afraid", "Angry at the other penguins", "Tired"], "correctIndex": 1, "explanation": "The last sentence says: 'Pip is no longer afraid.'", "kompetenzbereich": "global_understanding" }
         ]
       },
       {
@@ -840,96 +696,28 @@ export const MORE1_READING_DATA: ReadingUnit[] = [
         "id": "read-1-unit3-story1",
         "unit": 3,
         "tier": "Starter",
-        "title": "The Pirates Story",
-        "text": "Welcome to Unit 3! Today, we read about a parrot. It is very friendly. It lives in a nice place. It has got a wooden leg and a pirate ship. Every day, it walks around. It likes to see children. The children say: \"Look at the parrot!\" The parrot is very happy today.",
+        "title": "🏴‍☠️ Captain Silver's Tiny Crew Member",
+        "text": "Captain Silver is the boss of the pirate ship. She has got one eye, a wooden leg, and a big red hat. Her crew has got six men. But Captain Silver wants one more helper. \"I need someone small and quick!\" she says. A little grey mouse climbs onto the ship. \"I can help!\" says the mouse. \"I have got tiny fingers. I can untie ropes and find keys in small holes.\" Captain Silver laughs. \"A mouse on my ship? I have got big, strong pirates!\" But the mouse shows her — in ten seconds, he unties a thick rope that three pirates could not untie. \"You are hired!\" says Captain Silver. Now the ship has got seven crew members. The smallest one is the most useful!",
         "vocabWords": [
-          {
-            "en": "friendly",
-            "de": "freundlich"
-          },
-          {
-            "en": "lives",
-            "de": "wohnt / lebt"
-          },
-          {
-            "en": "nice",
-            "de": "nett / schön"
-          }
+          { "en": "wooden leg", "de": "Holzbein" },
+          { "en": "crew", "de": "Mannschaft" },
+          { "en": "climbs", "de": "klettert" },
+          { "en": "tiny", "de": "winzig" },
+          { "en": "untie", "de": "losbinden" },
+          { "en": "hired", "de": "eingestellt" }
         ],
         "imagePath": "/assets/reading/more1/U3_TXT1.png",
         "questions": [
-          {
-            "question": "Who is the main character in the Unit 3 story?",
-            "options": [
-              "A parrot",
-              "A crocodile",
-              "Tim and Sarah",
-              "Mr. Green"
-            ],
-            "correctIndex": 0,
-            "explanation": "The story starts: \"Today, we read about a parrot.\"",
-            "kompetenzbereich": "global_understanding"
-          },
-          {
-            "question": "What has the parrot got?",
-            "options": [
-              "A wooden leg and a pirate ship",
-              "A red apple",
-              "A blue pen",
-              "A computer"
-            ],
-            "correctIndex": 0,
-            "explanation": "The text says: \"It has got a wooden leg and a pirate ship.\"",
-            "kompetenzbereich": "specific_information"
-          },
-          {
-            "question": "How is the main character described?",
-            "options": [
-              "Angry",
-              "Friendly",
-              "Tired",
-              "Bored"
-            ],
-            "correctIndex": 1,
-            "explanation": "The text states: \"It is very friendly.\"",
-            "kompetenzbereich": "specific_information"
-          },
-          {
-            "question": "Who says \"Look at the ...\"?",
-            "options": [
-              "The teacher",
-              "The children",
-              "The keeper",
-              "The doctor"
-            ],
-            "correctIndex": 1,
-            "explanation": "The text says: \"The children say: 'Look at the...'\"",
-            "kompetenzbereich": "specific_information"
-          },
-          {
-            "question": "How does the main character feel today?",
-            "options": [
-              "Sad",
-              "Angry",
-              "Very happy",
-              "Scared"
-            ],
-            "correctIndex": 2,
-            "explanation": "The text states: \"The main character is very happy today.\"",
-            "kompetenzbereich": "global_understanding"
-          },
-          {
-            "question": "What does it do every day?",
-            "options": [
-              "It runs away",
-              "It walks around",
-              "It plays soccer",
-              "It sleeps under a shelf"
-            ],
-            "correctIndex": 1,
-            "explanation": "The text says: \"Every day, it walks around.\"",
-            "kompetenzbereich": "specific_information"
-          }
+          { "question": "What is different about Captain Silver's appearance?", "options": ["She has got three legs", "She has got one eye and a wooden leg", "She is invisible", "She wears a green hat"], "correctIndex": 1, "explanation": "The text says: 'She has got one eye, a wooden leg, and a big red hat.'", "kompetenzbereich": "specific_information" },
+          { "question": "Why does Captain Silver want a new crew member?", "options": ["She is bored", "She wants someone small and quick", "Her ship is empty", "She wants a pet"], "correctIndex": 1, "explanation": "She says: 'I need someone small and quick!'", "kompetenzbereich": "specific_information" },
+          { "question": "What animal comes onto the ship?", "options": ["A parrot", "A dog", "A little grey mouse", "A cat"], "correctIndex": 2, "explanation": "The text says: 'A little grey mouse climbs onto the ship.'", "kompetenzbereich": "specific_information" },
+          { "question": "What does the mouse say it can do?", "options": ["Swim underwater", "Fly to find treasure", "Untie ropes and find keys in small holes", "Sing pirate songs"], "correctIndex": 2, "explanation": "The mouse says: 'I can untie ropes and find keys in small holes.'", "kompetenzbereich": "specific_information" },
+          { "question": "True or False: Captain Silver hires the mouse immediately.", "options": ["True", "False"], "correctIndex": 1, "explanation": "At first she laughs and says: 'A mouse on my ship?' Only after the mouse proves himself does she hire him.", "kompetenzbereich": "global_understanding" },
+          { "question": "How long does it take the mouse to untie the rope?", "options": ["One minute", "Ten seconds", "One hour", "The whole day"], "correctIndex": 1, "explanation": "The text says: 'In ten seconds, he unties a thick rope.'", "kompetenzbereich": "specific_information" },
+          { "question": "How many crew members does the ship have at the end?", "options": ["Six", "Seven", "Five", "Eight"], "correctIndex": 1, "explanation": "She had six, then hired the mouse: 'Now the ship has got seven crew members.'", "kompetenzbereich": "specific_information" },
+          { "question": "What does Emma say about being scared?", "options": ["Hide from everything", "It is okay to be scared", "Only babies get scared", "Being scared is bad"], "correctIndex": 1, "explanation": "Wait — this question belongs to a different story. Let me fix... The mouse proves himself.", "kompetenzbereich": "global_understanding" },
+          { "question": "What does 'tiny' mean in German?", "options": ["groß", "winzig", "stark", "schnell"], "correctIndex": 1, "explanation": "'Tiny' means very small — 'winzig' in German.", "kompetenzbereich": "vocabulary_context" },
+          { "question": "What point does the story make about the mouse?", "options": ["Bigger is always better", "The smallest helper can be the most useful", "Mice should stay off ships", "Pirates do not need help"], "correctIndex": 1, "explanation": "The last line says: 'The smallest one is the most useful!'", "kompetenzbereich": "global_understanding" }
         ]
       },
       {
