@@ -43,7 +43,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Asking for Names and Spelling",
         "scene": "Scene: An international school reception desk",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U1_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U1_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U1_TXT1.txt",
         "imagePath": "/assets/listening/more1/U1_TXT1.png",
         "questions": [
@@ -128,7 +128,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Midnight in the Classroom",
         "scene": "Scene: A quiet classroom at midnight",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U1_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U1_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U1_TXT2.txt",
         "imagePath": "/assets/listening/more1/U1_TXT2.png",
         "questions": [
@@ -213,7 +213,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Giving Classroom Instructions",
         "scene": "Scene: A classroom lesson",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U1_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U1_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U1_TXT3.txt",
         "imagePath": "/assets/listening/more1/U1_TXT3.png",
         "questions": [
@@ -298,7 +298,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Midnight Story reflection",
         "scene": "Scene: Tim reflecting on his school day",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U1_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U1_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U1_TXT4.txt",
         "imagePath": "/assets/listening/more1/U1_TXT4.png",
         "questions": [
@@ -390,7 +390,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Finding the Animals",
         "scene": "Scene: At the zoo monkey enclosure",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U2_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U2_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U2_TXT1.txt",
         "imagePath": "/assets/listening/more1/U2_TXT1.png",
         "questions": [
@@ -475,7 +475,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about Yourself and others",
         "scene": "Scene: Zoo visitor check-in desk",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U2_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U2_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U2_TXT2.txt",
         "imagePath": "/assets/listening/more1/U2_TXT2.png",
         "questions": [
@@ -560,7 +560,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Day with the Zoo Animals",
         "scene": "Scene: Clara reflecting on her zoo trip",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U2_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U2_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U2_TXT3.txt",
         "imagePath": "/assets/listening/more1/U2_TXT3.png",
         "questions": [
@@ -645,7 +645,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "The Zoo Quiz",
         "scene": "Scene: A teacher asking a question on a field trip",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U2_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U2_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U2_TXT4.txt",
         "imagePath": "/assets/listening/more1/U2_TXT4.png",
         "questions": [
@@ -737,7 +737,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about Pirates",
         "scene": "Scene: A talk about Pirates",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U3_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U3_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U3_TXT1.txt",
         "imagePath": "/assets/listening/more1/U3_TXT1.png",
         "questions": [
@@ -822,7 +822,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U3_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U3_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U3_TXT2.txt",
         "imagePath": "/assets/listening/more1/U3_TXT2.png",
         "questions": [
@@ -907,7 +907,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the pirate",
         "scene": "Scene: The narrator describing a friendly pirate",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U3_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U3_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U3_TXT3.txt",
         "imagePath": "/assets/listening/more1/U3_TXT3.png",
         "questions": [
@@ -992,7 +992,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the Pirates",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U3_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U3_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U3_TXT4.txt",
         "imagePath": "/assets/listening/more1/U3_TXT4.png",
         "questions": [
@@ -1084,7 +1084,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about Emotions",
         "scene": "Scene: A talk about Emotions",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U4_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U4_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U4_TXT1.txt",
         "imagePath": "/assets/listening/more1/U4_TXT1.png",
         "questions": [
@@ -1169,7 +1169,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U4_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U4_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U4_TXT2.txt",
         "imagePath": "/assets/listening/more1/U4_TXT2.png",
         "questions": [
@@ -1254,7 +1254,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the student",
         "scene": "Scene: The narrator describing a friendly student",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U4_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U4_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U4_TXT3.txt",
         "imagePath": "/assets/listening/more1/U4_TXT3.png",
         "questions": [
@@ -1339,7 +1339,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the Emotions",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U4_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U4_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U4_TXT4.txt",
         "imagePath": "/assets/listening/more1/U4_TXT4.png",
         "questions": [
@@ -1431,7 +1431,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about This is our Band",
         "scene": "Scene: A talk about This is our Band",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U5_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U5_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U5_TXT1.txt",
         "imagePath": "/assets/listening/more1/U5_TXT1.png",
         "questions": [
@@ -1516,7 +1516,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U5_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U5_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U5_TXT2.txt",
         "imagePath": "/assets/listening/more1/U5_TXT2.png",
         "questions": [
@@ -1601,7 +1601,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the singer",
         "scene": "Scene: The narrator describing a friendly singer",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U5_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U5_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U5_TXT3.txt",
         "imagePath": "/assets/listening/more1/U5_TXT3.png",
         "questions": [
@@ -1686,7 +1686,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the This is our Band",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U5_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U5_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U5_TXT4.txt",
         "imagePath": "/assets/listening/more1/U5_TXT4.png",
         "questions": [
@@ -1778,7 +1778,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about The World's Best Detective",
         "scene": "Scene: A talk about The World's Best Detective",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U6_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U6_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U6_TXT1.txt",
         "imagePath": "/assets/listening/more1/U6_TXT1.png",
         "questions": [
@@ -1863,7 +1863,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U6_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U6_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U6_TXT2.txt",
         "imagePath": "/assets/listening/more1/U6_TXT2.png",
         "questions": [
@@ -1948,7 +1948,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the detective",
         "scene": "Scene: The narrator describing a friendly detective",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U6_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U6_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U6_TXT3.txt",
         "imagePath": "/assets/listening/more1/U6_TXT3.png",
         "questions": [
@@ -2033,7 +2033,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the The World's Best Detective",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U6_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U6_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U6_TXT4.txt",
         "imagePath": "/assets/listening/more1/U6_TXT4.png",
         "questions": [
@@ -2125,7 +2125,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about I love Noodles",
         "scene": "Scene: A talk about I love Noodles",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U7_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U7_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U7_TXT1.txt",
         "imagePath": "/assets/listening/more1/U7_TXT1.png",
         "questions": [
@@ -2210,7 +2210,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U7_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U7_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U7_TXT2.txt",
         "imagePath": "/assets/listening/more1/U7_TXT2.png",
         "questions": [
@@ -2295,7 +2295,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the chef",
         "scene": "Scene: The narrator describing a friendly chef",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U7_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U7_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U7_TXT3.txt",
         "imagePath": "/assets/listening/more1/U7_TXT3.png",
         "questions": [
@@ -2380,7 +2380,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the I love Noodles",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U7_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U7_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U7_TXT4.txt",
         "imagePath": "/assets/listening/more1/U7_TXT4.png",
         "questions": [
@@ -2472,7 +2472,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about Clothes",
         "scene": "Scene: A talk about Clothes",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U8_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U8_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U8_TXT1.txt",
         "imagePath": "/assets/listening/more1/U8_TXT1.png",
         "questions": [
@@ -2557,7 +2557,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U8_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U8_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U8_TXT2.txt",
         "imagePath": "/assets/listening/more1/U8_TXT2.png",
         "questions": [
@@ -2642,7 +2642,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the model",
         "scene": "Scene: The narrator describing a friendly model",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U8_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U8_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U8_TXT3.txt",
         "imagePath": "/assets/listening/more1/U8_TXT3.png",
         "questions": [
@@ -2727,7 +2727,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the Clothes",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U8_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U8_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U8_TXT4.txt",
         "imagePath": "/assets/listening/more1/U8_TXT4.png",
         "questions": [
@@ -2819,7 +2819,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about Shopping",
         "scene": "Scene: A talk about Shopping",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U9_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U9_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U9_TXT1.txt",
         "imagePath": "/assets/listening/more1/U9_TXT1.png",
         "questions": [
@@ -2904,7 +2904,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U9_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U9_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U9_TXT2.txt",
         "imagePath": "/assets/listening/more1/U9_TXT2.png",
         "questions": [
@@ -2989,7 +2989,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the rabbit",
         "scene": "Scene: The narrator describing a friendly rabbit",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U9_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U9_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U9_TXT3.txt",
         "imagePath": "/assets/listening/more1/U9_TXT3.png",
         "questions": [
@@ -3074,7 +3074,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the Shopping",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U9_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U9_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U9_TXT4.txt",
         "imagePath": "/assets/listening/more1/U9_TXT4.png",
         "questions": [
@@ -3166,7 +3166,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about In a Shop",
         "scene": "Scene: A talk about In a Shop",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U10_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U10_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U10_TXT1.txt",
         "imagePath": "/assets/listening/more1/U10_TXT1.png",
         "questions": [
@@ -3251,7 +3251,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U10_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U10_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U10_TXT2.txt",
         "imagePath": "/assets/listening/more1/U10_TXT2.png",
         "questions": [
@@ -3336,7 +3336,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the shopkeeper",
         "scene": "Scene: The narrator describing a friendly shopkeeper",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U10_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U10_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U10_TXT3.txt",
         "imagePath": "/assets/listening/more1/U10_TXT3.png",
         "questions": [
@@ -3421,7 +3421,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the In a Shop",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U10_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U10_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U10_TXT4.txt",
         "imagePath": "/assets/listening/more1/U10_TXT4.png",
         "questions": [
@@ -3513,7 +3513,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about What's the Time?",
         "scene": "Scene: A talk about What's the Time?",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U11_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U11_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U11_TXT1.txt",
         "imagePath": "/assets/listening/more1/U11_TXT1.png",
         "questions": [
@@ -3598,7 +3598,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U11_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U11_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U11_TXT2.txt",
         "imagePath": "/assets/listening/more1/U11_TXT2.png",
         "questions": [
@@ -3683,7 +3683,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the player",
         "scene": "Scene: The narrator describing a friendly player",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U11_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U11_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U11_TXT3.txt",
         "imagePath": "/assets/listening/more1/U11_TXT3.png",
         "questions": [
@@ -3768,7 +3768,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the What's the Time?",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U11_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U11_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U11_TXT4.txt",
         "imagePath": "/assets/listening/more1/U11_TXT4.png",
         "questions": [
@@ -3860,7 +3860,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about The Birthday Cake",
         "scene": "Scene: A talk about The Birthday Cake",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U12_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U12_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U12_TXT1.txt",
         "imagePath": "/assets/listening/more1/U12_TXT1.png",
         "questions": [
@@ -3945,7 +3945,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U12_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U12_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U12_TXT2.txt",
         "imagePath": "/assets/listening/more1/U12_TXT2.png",
         "questions": [
@@ -4030,7 +4030,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the birthday girl",
         "scene": "Scene: The narrator describing a friendly birthday girl",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U12_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U12_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U12_TXT3.txt",
         "imagePath": "/assets/listening/more1/U12_TXT3.png",
         "questions": [
@@ -4115,7 +4115,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the The Birthday Cake",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U12_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U12_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U12_TXT4.txt",
         "imagePath": "/assets/listening/more1/U12_TXT4.png",
         "questions": [
@@ -4207,7 +4207,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about Help!",
         "scene": "Scene: A talk about Help!",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U13_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U13_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U13_TXT1.txt",
         "imagePath": "/assets/listening/more1/U13_TXT1.png",
         "questions": [
@@ -4292,7 +4292,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U13_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U13_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U13_TXT2.txt",
         "imagePath": "/assets/listening/more1/U13_TXT2.png",
         "questions": [
@@ -4377,7 +4377,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the fireman",
         "scene": "Scene: The narrator describing a friendly fireman",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U13_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U13_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U13_TXT3.txt",
         "imagePath": "/assets/listening/more1/U13_TXT3.png",
         "questions": [
@@ -4462,7 +4462,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the Help!",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U13_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U13_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U13_TXT4.txt",
         "imagePath": "/assets/listening/more1/U13_TXT4.png",
         "questions": [
@@ -4554,7 +4554,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about It's my Favourite",
         "scene": "Scene: A talk about It's my Favourite",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U14_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U14_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U14_TXT1.txt",
         "imagePath": "/assets/listening/more1/U14_TXT1.png",
         "questions": [
@@ -4639,7 +4639,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U14_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U14_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U14_TXT2.txt",
         "imagePath": "/assets/listening/more1/U14_TXT2.png",
         "questions": [
@@ -4724,7 +4724,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the reader",
         "scene": "Scene: The narrator describing a friendly reader",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U14_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U14_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U14_TXT3.txt",
         "imagePath": "/assets/listening/more1/U14_TXT3.png",
         "questions": [
@@ -4809,7 +4809,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the It's my Favourite",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U14_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U14_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U14_TXT4.txt",
         "imagePath": "/assets/listening/more1/U14_TXT4.png",
         "questions": [
@@ -4901,7 +4901,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Talking about What are you Going to Do?",
         "scene": "Scene: A talk about What are you Going to Do?",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U15_TXT1.mp3",
+        "audioPath": "/assets/listening/more1/U15_TXT1.wav",
         "transcriptPath": "/assets/listening/more1/U15_TXT1.txt",
         "imagePath": "/assets/listening/more1/U15_TXT1.png",
         "questions": [
@@ -4986,7 +4986,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Saying what they have got",
         "scene": "Scene: Discussing their collection",
         "type": "dialogue",
-        "audioPath": "/assets/listening/more1/U15_TXT2.mp3",
+        "audioPath": "/assets/listening/more1/U15_TXT2.wav",
         "transcriptPath": "/assets/listening/more1/U15_TXT2.txt",
         "imagePath": "/assets/listening/more1/U15_TXT2.png",
         "questions": [
@@ -5071,7 +5071,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "A Story about the camper",
         "scene": "Scene: The narrator describing a friendly camper",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U15_TXT3.mp3",
+        "audioPath": "/assets/listening/more1/U15_TXT3.wav",
         "transcriptPath": "/assets/listening/more1/U15_TXT3.txt",
         "imagePath": "/assets/listening/more1/U15_TXT3.png",
         "questions": [
@@ -5156,7 +5156,7 @@ export const MORE1_LISTENING_DATA: ListeningUnit[] = [
         "title": "Information about the What are you Going to Do?",
         "scene": "Scene: An informational report about the unit theme",
         "type": "monologue",
-        "audioPath": "/assets/listening/more1/U15_TXT4.mp3",
+        "audioPath": "/assets/listening/more1/U15_TXT4.wav",
         "transcriptPath": "/assets/listening/more1/U15_TXT4.txt",
         "imagePath": "/assets/listening/more1/U15_TXT4.png",
         "questions": [
