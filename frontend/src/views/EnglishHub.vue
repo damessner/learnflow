@@ -359,6 +359,10 @@ function getReadingTitle(r: any) {
   return r.completed ? `Completions: ${r.completedCount}/4 | Avg: ${r.score}% (Grade: ${r.grade || '—'})` : 'Not started'
 }
 
+function getListeningTitle(l: any) {
+  return l.completed ? `Completions: ${l.completedCount}/4 | Avg: ${l.score}% (Grade: ${l.grade || '—'})` : 'Not started'
+}
+
 function getUnitTheme(unit: number) {
   return MORE1_THEMES[unit - 1] || ''
 }
