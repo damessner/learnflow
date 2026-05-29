@@ -86,168 +86,141 @@
       </button>
     </div>
 
-    <!-- Tab 1: Activities (Aktivitäten) -->
-    <div v-if="tab === 'activities'" class="fade-in">
-      <!-- Daily Mix active session UI -->
-      <div v-if="mixing" class="card" style="margin: 1rem 0; border-color: var(--primary)">
-        <h3>Daily Mix ({{ mixIndex + 1 }} / {{ dailyMix.length }})</h3>
-        <div v-if="currentMixItem?.subject_switch" class="subject-switch-banner">
-          Context Shift: switching to <strong>{{ currentMixItem.subject || 'a new subject' }}</strong>
-        </div>
-        <div style="padding: 2rem 0; text-align: center; font-size: 1.2rem">
-          Review Topic: <strong>{{ currentMixItem?.topic }}</strong>
-        </div>
-
-        <div v-if="!showAnswer">
-          <div class="form-group" style="margin-top: 1rem">
-            <label style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; display: block;">
-              Type out what you remember about this concept (Active Recall):
-            </label>
-            <textarea
-              v-model="recallInput"
-              rows="3"
-              placeholder="Write your explanation, key points, formulas, etc. here..."
-              style="resize: vertical"
-            ></textarea>
-          </div>
-          <div style="text-align: center; margin-top: 1rem">
-            <button class="btn-primary" @click="revealAnswer">I've got it / Show Details</button>
-          </div>
-        </div>
-
-        <div v-else>
-          <!-- Active Recall Comparison -->
-          <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; text-align: left; flex-wrap: wrap">
-            <div style="flex: 1; min-width: 250px; padding: 1rem; background: var(--border-color); border-radius: 6px;">
-              <h5 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--text-muted)">Your Recall:</h5>
-              <p style="white-space: pre-wrap; font-size: 0.95rem">{{ recallInput || '(Nothing written)' }}</p>
-            </div>
-            <div style="flex: 1; min-width: 250px; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px;">
-              <h5 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--primary)">Correct Explanation:</h5>
-              <p style="font-size: 0.95rem">{{ currentMixItem?.description || 'No description available.' }}</p>
-            </div>
-          </div>
-
-          <div style="text-align: center">
-            <h4>Metacognition Check</h4>
-            <p style="color: var(--text-muted); font-size: 0.9rem">Compare your recall above and rate your accuracy:</p>
-            <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem">
-              <button class="btn-sm btn-danger" @click="answerMix(false, 1)">Forgot entirely (1)</button>
-              <button class="btn-sm" @click="answerMix(true, 3)">Hard to recall (3)</button>
-              <button class="btn-sm" style="background: var(--success); color: white; border: none" @click="answerMix(true, 5)">Easy (5)</button>
-            </div>
-          </div>
+    <!-- Tab 1: Classes 🏫 (new default) -->
+    <div v-if="tab === 'classes'" class="fade-in">
+      <!-- Join Class -->
+      <div class="card mb-4" style="margin-bottom: 1rem;">
+        <div class="flex items-center gap-3">
+          <input v-model="classCode" placeholder="Klassencode eingeben..." class="flex-1" />
+          <button class="btn-primary" :disabled="joining" @click="joinClass">Beitreten</button>
         </div>
       </div>
 
-      <div style="display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap;">
-        <!-- Join Class -->
-        <div style="flex: 1; min-width: 280px;" class="card">
-          <h3 style="margin-top: 0">Join Class by Code</h3>
-          <div class="form-group" style="margin-top: 0.5rem;">
-            <div style="display: flex; gap: 0.5rem">
-              <input v-model="classCode" placeholder="Enter class code" />
-              <button class="btn-primary" :disabled="joining" @click="joinClass">Join</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Daily Mix Promo -->
-        <div v-if="dailyMix.length > 0 && !mixing" style="flex: 1; min-width: 280px;" class="card">
-          <h3 style="margin-top: 0">Your Daily Mix</h3>
-          <p style="font-size: 0.9rem; color: var(--text-muted)">
-            Spaced repetition & interleaving session ready! {{ dailyMix.length }} items to review.
-          </p>
-          <button class="btn-primary" @click="startDailyMix">Start Active Recall Session</button>
-        </div>
+      <!-- Class Cards Grid -->
+      <div v-if="myClasses.length === 0" class="text-center py-6 text-secondary">
+        <p class="text-lg">🏫 Du bist noch in keiner Klasse.</p>
+        <p class="text-sm">Tritt einer Klasse bei oder frage deine Lehrkraft nach dem Code.</p>
       </div>
 
-      <div class="grid grid-2" style="margin-top: 1rem">
-        <!-- Announcements -->
-        <div class="card">
-          <h3>Announcements</h3>
-          <div v-if="announcements.length === 0" style="color: var(--text-muted)">No announcements</div>
-          <div
-            v-for="a in announcements"
-            :key="a.id"
-            style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color)"
-          >
-            <strong>{{ a.title }}</strong>
-            <p style="font-size: 0.85rem; color: var(--text-muted)">{{ a.content }}</p>
+      <div v-else class="classes-grid">
+        <div v-for="c in myClasses" :key="c.id" class="class-card card card-lift">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-bold">{{ c.name }}</h3>
+              <p class="text-sm text-secondary">{{ c.teacher_name || '—' }}</p>
+            </div>
+            <span v-if="c.newCount > 0" class="badge badge-danger">+{{ c.newCount }} neu</span>
           </div>
-        </div>
 
-        <!-- My Submissions / Assignments -->
-        <div class="card">
-          <h3>My Assignments</h3>
-          <div v-if="submissions.length === 0" style="color: var(--text-muted)">No submissions yet</div>
-          <div
-            v-for="s in submissions"
-            :key="s.id"
-            style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;"
-          >
-            <router-link :to="`/student/assignment/${s.assignment_id}`" style="font-weight: 600">
-              {{ s.worksheet_title }}
-            </router-link>
-            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
-              <span
-                v-if="s.due_date"
-                :class="['badge', new Date(s.due_date) < new Date() && s.score == null ? 'badge-danger' : '']"
-              >
-                {{ new Date(s.due_date).toLocaleDateString() }}
+          <!-- Pending Assignments -->
+          <div v-if="c.assignments?.length" class="mt-3">
+            <p class="text-xs font-bold text-secondary mb-2">📋 Ausstehende Aufgaben:</p>
+            <div v-for="a in c.assignments.slice(0, 5)" :key="a.id" class="assignment-row flex items-center justify-between py-1">
+              <router-link :to="`/student/assignment/${a.id}`" class="text-sm font-semibold">{{ a.title }}</router-link>
+              <span class="text-xs" :class="a.due_date && new Date(a.due_date) < new Date() ? 'text-danger' : 'text-muted'">
+                {{ a.due_date ? new Date(a.due_date).toLocaleDateString() : '' }}
               </span>
-              <span v-if="s.score != null" class="badge">{{ s.score }}/{{ s.max_score }}</span>
-              <span v-else style="color: var(--warning); font-size: 0.85rem; font-weight: 500">Not submitted</span>
             </div>
           </div>
-        </div>
+          <div v-else class="mt-3 text-xs text-muted">Keine ausstehenden Aufgaben 🎉</div>
 
-        <!-- My Classes -->
-        <div class="card">
-          <h3>My Classes</h3>
-          <div v-if="myClasses.length === 0" style="color: var(--text-muted)">No classes yet</div>
-          <div
-            v-for="c in myClasses"
-            :key="c.id"
-            style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color)"
-          >
-            <strong>{{ c.name }}</strong>
-            <span class="badge" style="margin-left: 0.5rem">{{ c.class_code }}</span>
-          </div>
+          <button class="btn-secondary btn-sm w-full justify-center mt-3" @click="router.push(`/student/course/${c.id}`)">
+            Klasse öffnen ➔
+          </button>
+        </div>
+      </div>
+
+      <!-- Submissions overview moved below -->
+      <div class="card mt-4">
+        <h3 class="font-bold mb-2">📝 Meine Abgaben</h3>
+        <div v-if="submissions.length === 0" class="text-sm text-muted">Noch keine Abgaben</div>
+        <div v-for="s in submissions.slice(0, 10)" :key="s.id" class="flex items-center justify-between py-1 border-bottom">
+          <router-link :to="`/student/assignment/${s.assignment_id}`" class="text-sm font-semibold">{{ s.worksheet_title }}</router-link>
+          <span v-if="s.score != null" class="badge">{{ s.score }}/{{ s.max_score }}</span>
+          <span v-else class="text-xs text-warning">Nicht abgegeben</span>
         </div>
       </div>
     </div>
 
-    <!-- Tab 2: Courses & Grammar (Kurse & Grammatik) -->
-    <div v-if="tab === 'courses'" class="fade-in flex flex-col gap-md" style="display: flex; flex-direction: column; gap: 1rem;">
+    <!-- Tab 2: English 🇬🇧 (grade-linked) -->
+    <div v-if="tab === 'english'" class="fade-in">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="text-2xl">🇬🇧</span>
+        <div>
+          <h2 class="text-lg font-bold">English — {{ textbook === 'more1' ? 'MORE! 1' : textbook }}</h2>
+          <p class="text-sm text-secondary" v-if="studentGrade">Klasse {{ studentGrade }} entdeckt</p>
+        </div>
+      </div>
 
-      <!-- Tool Cards Row -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+      <div v-if="!isAvailable" class="card text-center py-6">
+        <span class="text-4xl">🚧</span>
+        <h3 class="mt-2">Coming Soon</h3>
+        <p class="text-sm text-secondary">MORE! Inhalte für Klasse {{ studentGrade }} sind in Entwicklung.</p>
+      </div>
 
-        <!-- Grammar Academy Banner -->
-        <div
-          class="card"
-          style="
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%), var(--bg-card);
-            border: 2px solid var(--primary-soft);
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            padding: 1.5rem;
-          "
-        >
-          <div style="flex: 1; text-align: left;">
-            <h3 style="margin-top: 0; background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 1.35rem; display: inline-block;">
-              🏆 Grammar Academy
-            </h3>
-            <p style="margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--text-secondary);">
-              Master 15 English grammar units with Explorer, Pioneer & Master quests. Earn badges and unlock your AI Finisher Quiz!
-            </p>
-            <div style="display: flex; gap: 0.4rem; margin-top: 0.75rem; flex-wrap: wrap;">
-              <span style="font-size: 0.78rem; background: rgba(99,102,241,0.12); color: var(--primary); padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600;">🧭 Explorer</span>
-              <span style="font-size: 0.78rem; background: rgba(139,92,246,0.12); color: #7c3aed; padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600;">🔍 Pioneer</span>
-              <span style="font-size: 0.78rem; background: rgba(245,158,11,0.12); color: #b45309; padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600;">🏆 Master</span>
+      <div v-else class="flex flex-col gap-4">
+        <!-- Grammar Section -->
+        <div class="english-section">
+          <button class="section-header" @click="englishSections.grammar = !englishSections.grammar">
+            <span>🏆 Grammar</span>
+            <span>{{ englishSections.grammar ? '▼' : '▶' }}</span>
+          </button>
+          <div v-if="englishSections.grammar" class="section-body fade-in">
+            <p class="text-sm text-secondary mb-3">15 Units mit Explorer, Pioneer, Master & AI Quiz</p>
+            <button class="btn-primary w-full justify-center" @click="router.push('/grammar-academy')">
+              🧭 Grammar Academy öffnen
+            </button>
+          </div>
+        </div>
+
+        <!-- Vocabulary Section -->
+        <div class="english-section">
+          <button class="section-header" @click="englishSections.vocab = !englishSections.vocab">
+            <span>📚 Vocabulary</span>
+            <span>{{ englishSections.vocab ? '▼' : '▶' }}</span>
+          </button>
+          <div v-if="englishSections.vocab" class="section-body fade-in">
+            <p class="text-sm text-secondary mb-3">15 Units mit Starter/Practice/Challenge + Final Quiz</p>
+            <div class="unit-chips">
+              <button
+                v-for="u in 15"
+                :key="u"
+                class="unit-chip"
+                @click="router.push(`/vocabulary/more1/${u}`)"
+              >Unit {{ u }}</button>
             </div>
+          </div>
+        </div>
+
+        <!-- Writing Coach Section -->
+        <div class="english-section">
+          <button class="section-header" @click="englishSections.writing = !englishSections.writing">
+            <span>✍️ Writing Coach</span>
+            <span>{{ englishSections.writing ? '▼' : '▶' }}</span>
+          </button>
+          <div v-if="englishSections.writing" class="section-body fade-in">
+            <p class="text-sm text-secondary mb-3">AI-unterstütztes Schreibtraining</p>
+            <button class="btn-primary w-full justify-center" @click="router.push('/writing-coach')">
+              ✍️ Writing Coach öffnen
+            </button>
+          </div>
+        </div>
+
+        <!-- Listening / Reading -- Coming Soon -->
+        <div class="english-section disabled">
+          <div class="section-header">
+            <span>🎧 Listening</span>
+            <span class="text-muted">⏳ Coming Soon</span>
+          </div>
+        </div>
+        <div class="english-section disabled">
+          <div class="section-header">
+            <span>📖 Reading</span>
+            <span class="text-muted">⏳ Coming Soon</span>
+          </div>
+        </div>
+      </div>
+    </div>
           </div>
           <button class="btn-primary" style="width: 100%; padding: 0.75rem;" @click="router.push('/grammar-academy')">
             Akademie betreten ➔
@@ -542,10 +515,10 @@ const learningStore = useLearningStore()
 const uiStore = useUiStore()
 const authStore = useAuthStore()
 
-const tab = ref('activities')
+const tab = ref('classes')
 const tabs = [
-  { key: 'activities', label: 'Aktivitäten 📅' },
-  { key: 'courses', label: 'Kurse & Grammatik 📚' },
+  { key: 'classes', label: '🏫 Meine Klassen' },
+  { key: 'english', label: '🇬🇧 English' },
   { key: 'stats', label: 'Statistiken & Abzeichen 🏆' }
 ]
 
@@ -573,6 +546,15 @@ const gamification = ref(null)
 const masteryList = ref([])
 const classCode = ref('')
 const joining = ref(false)
+
+// English tab state
+const englishSections = ref({ grammar: true, vocab: false, writing: false })
+const studentGrade = computed(() => {
+  const match = (authStore.user?.class_name || '').match(/^(\d)/)
+  return match ? parseInt(match[1]) : 1
+})
+const textbook = computed(() => `more${studentGrade.value}`)
+const isAvailable = computed(() => studentGrade.value === 1)
 
 const emojiModalOpen = ref(false)
 const emojiList = [
@@ -796,3 +778,62 @@ async function sendToProtege() {
   protegeLoading.value = false
 }
 </script>
+
+<style scoped>
+.classes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+.class-card {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+.assignment-row {
+  border-bottom: 1px solid var(--border-color);
+}
+.english-section {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-card);
+}
+.english-section.disabled {
+  opacity: 0.5;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: var(--bg-hover);
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.section-body {
+  padding: 1rem 1.25rem;
+}
+.unit-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.unit-chip {
+  padding: 0.3rem 0.7rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-card);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.unit-chip:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+</style>

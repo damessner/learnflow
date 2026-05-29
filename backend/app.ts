@@ -25,6 +25,8 @@ import adminRoutes from './routes/admin'
 import workspaceRoutes from './routes/workspaces'
 import languageRoutes from './routes/language'
 import grammarRoutes from './routes/grammar'
+import vocabularyRoutes from './routes/vocabulary'
+import englishRoutes from './routes/english'
 
 function uploadContentType(filePath: string): string | null {
   const ext = path.extname(filePath).toLowerCase()
@@ -120,6 +122,8 @@ export function createApp(): express.Application {
   app.use('/api/workspaces', workspaceRoutes)
   app.use('/api/language', languageRoutes)
   app.use('/api/grammar', grammarRoutes)
+  app.use('/api/vocabulary', vocabularyRoutes)
+  app.use('/api/english', englishRoutes)
 
   app.use(errorHandler)
 

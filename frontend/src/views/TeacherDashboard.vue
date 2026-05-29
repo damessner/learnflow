@@ -1,5 +1,11 @@
 <template>
   <div class="page">
+    <TeacherOnboardingModal
+      :visible="showOnboarding"
+      @complete="onOnboardingComplete"
+      @skip="showOnboarding = false"
+    />
+
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
       <h2 class="page-title">Teacher Dashboard</h2>
     </div>
@@ -1862,16 +1868,19 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 import { useWorksheetsStore } from '../stores/worksheets'
+import { useUiStore } from '../stores/ui'
+import TeacherOnboardingModal from '../components/TeacherOnboardingModal.vue'
+import { useCoursesStore } from '../stores/courses'
+import { useWorkspacesStore } from '../stores/workspaces'
 import { useClassesStore } from '../stores/classes'
 import { useSubmissionsStore } from '../stores/submissions'
 import { useLearningStore } from '../stores/learning'
-import { useUiStore } from '../stores/ui'
-import { useCoursesStore } from '../stores/courses'
-import { useWorkspacesStore } from '../stores/workspaces'
 import { api } from '../services/api'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const wsStore = useWorksheetsStore()
 const classesStore = useClassesStore()
 const submissionsStore = useSubmissionsStore()
@@ -1879,6 +1888,26 @@ const learningStore = useLearningStore()
 const uiStore = useUiStore()
 const coursesStore = useCoursesStore()
 const workspaceStore = useWorkspacesStore()
+
+// Onboarding
+const showOnboarding = ref(false)
+onMounted(() => {
+  if (authStore.user && !authStore.user.onboarding_done) {
+    showOnboarding.value = true
+  }
+})
+
+async function onOnboardingComplete(payload: { classId: string; gradeLevel: string }) {
+  try {
+    await fetch('/api/auth/set-class', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    showOnboarding.value = false
+    if (authStore.user) (authStore.user as any).onboarding_done = 1
+  } catch (_e) { showOnboarding.value = false }
+}
 
 const tab = ref('worksheets')
 const tabs = [

@@ -8,11 +8,9 @@
         </router-link>
         <nav class="header-nav">
           <template v-if="authStore.isAuthenticated">
-            <!-- Student Navigation -->
+            <!-- Student Navigation — all inside dashboard tabs -->
             <template v-if="authStore.role === 'student'">
-              <router-link to="/student" class="nav-link">Dashboard</router-link>
-              <router-link to="/writing-coach" class="nav-link">Writing Coach</router-link>
-              <router-link to="/grammar-academy" class="nav-link">Grammar Academy 🏆</router-link>
+              <router-link to="/student" class="nav-link">🏫 Dashboard</router-link>
             </template>
 
             <!-- Teacher / Admin Navigation -->
@@ -20,7 +18,7 @@
               <router-link to="/teacher" class="nav-link">Dashboard</router-link>
               <router-link to="/teacher/builder" class="nav-link">Create Worksheet</router-link>
               <router-link to="/teacher/bank" class="nav-link">LearnFlow Bank</router-link>
-              <router-link to="/teacher/stories" class="nav-link">Stories</router-link>
+              <router-link to="/teacher/english" class="nav-link">🇬🇧 English</router-link>
               <router-link v-if="authStore.role === 'admin'" to="/admin" class="nav-link">Admin</router-link>
             </template>
           </template>

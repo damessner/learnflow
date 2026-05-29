@@ -12,6 +12,8 @@ const StoryGenerator = () => import('../views/StoryGenerator.vue')
 const LearnFlowBank = () => import('../views/LearnFlowBank.vue')
 const WritingCoach = () => import('../views/WritingCoach.vue')
 const GrammarAcademy = () => import('../views/GrammarAcademy.vue')
+const EnglishHub = () => import('../views/EnglishHub.vue')
+const VocabularyUnit = () => import('../views/VocabularyUnit.vue')
 
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
@@ -79,6 +81,22 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/grammar-academy/:topicId/:level',
     component: GrammarAcademy,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/teacher/english',
+    name: 'english-hub',
+    component: EnglishHub,
+    meta: { requiresAuth: true, role: ['teacher', 'admin'] },
+  },
+  {
+    path: '/teacher/english/:textbook/:unit',
+    component: EnglishHub,
+    meta: { requiresAuth: true, role: ['teacher', 'admin'] },
+  },
+  {
+    path: '/vocabulary/:textbook/:unit',
+    component: VocabularyUnit,
     meta: { requiresAuth: true },
   },
 ]

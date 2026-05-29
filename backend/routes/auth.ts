@@ -394,4 +394,26 @@ router.post('/teacher-token', requireAuth, requireRole('admin'), async (req, res
   }
 })
 
+// ─── POST /api/auth/set-class ───────────────────────────────────────────────
+// Set the user's primary class and mark onboarding as done
+// Body: { classId: string, gradeLevel?: string }
+router.post('/set-class', requireAuth, async (req, res, next) => {
+  try {
+    const knex = getKnex()
+    const userId = req.user!.userId
+    const { classId, gradeLevel } = req.body
+
+    const updateData: Record<string, unknown> = { onboarding_done: 1 }
+    if (classId) updateData.class_id = classId
+    if (gradeLevel) updateData.grade_level = gradeLevel
+
+    await knex('users').where({ id: userId }).update(updateData)
+
+    const user = await knex('users').where({ id: userId }).first()
+    res.json({ user: sanitizeUser(user) })
+  } catch (err) {
+    next(err)
+  }
+})
+
 export default router
