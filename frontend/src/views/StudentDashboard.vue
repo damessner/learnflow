@@ -66,7 +66,7 @@
     <!-- DETAIL VIEW: INSIDE A CLASS -->
     <div v-else class="fade-in">
       <!-- Back Button -->
-      <button @click="backToClassList" class="btn-back mb-3">
+      <button v-if="!isStandalone()" @click="backToClassList" class="btn-back mb-3">
         ← Back to Classes
       </button>
 
@@ -239,45 +239,47 @@
       </div>
 
       <!-- WORKSHEETS SECTION -->
-      <h3 class="text-lg font-bold mb-3">Homework & Worksheets</h3>
-      <div v-if="loadingAssignments" class="text-center py-4 text-secondary">
-        Loading worksheets...
-      </div>
-      <div v-else-if="classAssignments.length === 0" class="card text-center py-4 text-secondary">
-        🎉 No worksheets assigned for this class yet.
-      </div>
-      <div v-else class="worksheets-grid">
-        <div
-          v-for="a in classAssignments"
-          :key="a.assignment_id"
-          class="worksheet-card card"
-          :class="{ 'completed-gray': a.submitted }"
-        >
-          <div class="flex justify-between items-start">
-            <div>
-              <span class="badge" :class="a.submitted ? 'badge-success' : 'badge-primary'">
-                {{ a.submitted ? '✓ Completed' : 'Unfinished' }}
-              </span>
-              <h4 class="text-base font-bold mt-2">{{ a.worksheet_title }}</h4>
-              <p class="text-xs text-secondary mt-1">{{ a.worksheet_description || 'No description' }}</p>
+      <div v-if="!isStandalone()">
+        <h3 class="text-lg font-bold mb-3">Homework & Worksheets</h3>
+        <div v-if="loadingAssignments" class="text-center py-4 text-secondary">
+          Loading worksheets...
+        </div>
+        <div v-else-if="classAssignments.length === 0" class="card text-center py-4 text-secondary">
+          🎉 No worksheets assigned for this class yet.
+        </div>
+        <div v-else class="worksheets-grid">
+          <div
+            v-for="a in classAssignments"
+            :key="a.assignment_id"
+            class="worksheet-card card"
+            :class="{ 'completed-gray': a.submitted }"
+          >
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="badge" :class="a.submitted ? 'badge-success' : 'badge-primary'">
+                  {{ a.submitted ? '✓ Completed' : 'Unfinished' }}
+                </span>
+                <h4 class="text-base font-bold mt-2">{{ a.worksheet_title }}</h4>
+                <p class="text-xs text-secondary mt-1">{{ a.worksheet_description || 'No description' }}</p>
+              </div>
+              <span class="text-2xl">{{ a.submitted ? '📁' : '📄' }}</span>
             </div>
-            <span class="text-2xl">{{ a.submitted ? '📁' : '📄' }}</span>
-          </div>
 
-          <div class="worksheet-footer flex justify-between items-center mt-3 pt-2 border-top">
-            <span class="text-xs text-secondary">
-              {{ a.due_date ? 'Due: ' + new Date(a.due_date).toLocaleDateString() : 'No due date' }}
-            </span>
-            <div class="flex items-center gap-2">
-              <span v-if="a.submitted" class="score-badge">
-                Score: {{ a.score }}/{{ a.max_score }}
+            <div class="worksheet-footer flex justify-between items-center mt-3 pt-2 border-top">
+              <span class="text-xs text-secondary">
+                {{ a.due_date ? 'Due: ' + new Date(a.due_date).toLocaleDateString() : 'No due date' }}
               </span>
-              <router-link
-                :to="`/student/assignment/${a.assignment_id}`"
-                class="btn-sm btn-primary"
-              >
-                {{ a.submitted ? 'Review' : 'Start ➔' }}
-              </router-link>
+              <div class="flex items-center gap-2">
+                <span v-if="a.submitted" class="score-badge">
+                  Score: {{ a.score }}/{{ a.max_score }}
+                </span>
+                <router-link
+                  :to="`/student/assignment/${a.assignment_id}`"
+                  class="btn-sm btn-primary"
+                >
+                  {{ a.submitted ? 'Review' : 'Start ➔' }}
+                </router-link>
+              </div>
             </div>
           </div>
         </div>
@@ -317,6 +319,7 @@ import { CURRICULUM_TASKS } from '../data/writingTasks'
 import { MORE1_READING_DATA, type ReadingUnit } from '../data/readingData'
 import { MORE1_LISTENING_DATA } from '../data/listeningData'
 import { MORE1_READING_OPTIONS_BC } from '../data/readingDataSupplement'
+import { isStandalone } from '../utils/standalone'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -432,7 +435,19 @@ const streakLevel = computed(() => {
 })
 
 onMounted(async () => {
-  await loadClasses()
+  if (isStandalone()) {
+    selectedClass.value = { id: 'standalone-class', name: '1B MORE! 1 English Academy', description: 'Standalone English Hub' }
+    textbookOpen.value = true
+    textbookTab.value = 'grammar'
+    try {
+      const readRes = await api.get('/english/reading/my-progress')
+      readingProgressList.value = readRes.progress || []
+      const listenRes = await api.get('/english/listening/my-progress')
+      listeningProgressList.value = listenRes.progress || []
+    } catch (_e) {}
+  } else {
+    await loadClasses()
+  }
   try {
     const gam = await learningStore.fetchGamification()
     gamification.value = gam

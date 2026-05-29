@@ -1,5 +1,6 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 import Login from '../views/Login.vue'
+import { isStandalone } from '../utils/standalone'
 const StudentDashboard = () => import('../views/StudentDashboard.vue')
 const TeacherDashboard = () => import('../views/TeacherDashboard.vue')
 const WorksheetPlayer = () => import('../views/WorksheetPlayer.vue')
@@ -18,7 +19,7 @@ const ReadingPlay = () => import('../views/ReadingPlay.vue')
 const ListeningPlay = () => import('../views/ListeningPlay.vue')
 
 const routes: RouteRecordRaw[] = [
-  { path: '/', redirect: '/login' },
+  { path: '/', redirect: () => isStandalone() ? '/student' : '/login' },
   { path: '/login', component: Login },
   {
     path: '/register-teacher',
@@ -115,11 +116,14 @@ const routes: RouteRecordRaw[] = [
 
 // Vite can expose an empty BASE_URL depending on how it was built/served.
 // Vue Router needs a sane base so internal navigations resolve correctly.
+// On GitHub Pages (standalone mode) we use hash history because the static
+// host cannot rewrite all paths to index.html.
 const historyBase = import.meta.env.BASE_URL || '/'
 
 const router = createRouter({
-  // Use Vite's BASE_URL so hard-refresh/deep links work when deployed under a sub-path.
-  history: createWebHistory(historyBase),
+  history: isStandalone()
+    ? createWebHashHistory()
+    : createWebHistory(historyBase),
   routes,
 })
 
@@ -158,6 +162,9 @@ function getStoredUser() {
 }
 
 router.beforeEach((to) => {
+  // In standalone/GitHub Pages mode a guest session is pre-seeded — always allow.
+  if (isStandalone()) return
+
   const user = getStoredUser()
   const role = user.role
   const isAuthenticated = !!role
