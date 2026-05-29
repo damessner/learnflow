@@ -1061,7 +1061,7 @@ const criteriaScores = ref({
   style: 0
 })
 
-const rightActiveTab = ref<'coach' | 'outline'>('coach')
+const rightActiveTab = ref<'coach' | 'outline' | 'wordbank'>('coach')
 const activeHighlightSection = ref<string | null>(null)
 const expandedHints = ref<Record<number, boolean>>({})
 
@@ -1178,6 +1178,9 @@ function startCustomTask() {
     grade: filters.value.grade,
     subject: filters.value.subject,
     typeLabel: 'Freies Schreiben',
+    exemplarText: '',
+    preWritingQuestions: [],
+    wordBank: { categories: [], phrases: [] },
     sections: [
       { key: 'intro', label: 'Einleitung', placeholder: 'Schreibe hier den Beginn deines Textes...', minWords: 15 },
       { key: 'body', label: 'Hauptteil', placeholder: 'Schreibe hier den Hauptinhalt...', minWords: 40 },
@@ -1427,8 +1430,9 @@ function generateSocraticFeedback() {
   // Determine spelling error count (Mocked based on misspelled words in text or forced for teaching purposes)
   let errors = 0
   const wrongWords = activeTask.value.commonSpellingErrors.wrong
+  const fullText = Object.values(editorContent.value).join(' ').toLowerCase()
   
-  wrongWords.forEach((w) => {
+  wrongWords.forEach((w: string) => {
     if (fullText.includes(w.toLowerCase())) {
       errors++
     }
