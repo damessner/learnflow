@@ -316,7 +316,7 @@ import { useClassesStore } from '../stores/classes'
 import { useLearningStore } from '../stores/learning'
 import { api } from '../services/api'
 import { CURRICULUM_TASKS } from '../data/writingTasks'
-import { MORE1_READING_DATA, type ReadingUnit } from '../data/readingData'
+import { MORE1_READING_DATA, normalizeStory, type ReadingUnit, type ReadingStory } from '../data/readingData'
 import { MORE1_LISTENING_DATA } from '../data/listeningData'
 import { MORE1_READING_OPTIONS_BC } from '../data/readingDataSupplement'
 import { isStandalone } from '../utils/standalone'
@@ -345,7 +345,7 @@ const readingProgressList = ref<any[]>([])
 const mergedReadingData = computed(() => {
   return MORE1_READING_DATA.map((unit: ReadingUnit) => {
     const supplement = MORE1_READING_OPTIONS_BC.find((u: ReadingUnit) => u.unit === unit.unit)
-    const allStories = [...unit.stories]
+    const allStories = [...unit.stories.map((s, i) => normalizeStory(s as ReadingStory, unit.unit, i))]
     if (supplement) allStories.push(...supplement.stories)
     return { ...unit, stories: allStories }
   })

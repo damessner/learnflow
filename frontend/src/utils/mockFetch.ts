@@ -3,8 +3,8 @@ import { GRAMMAR_TOPICS } from '../data/grammarData';
 
 if (isStandalone()) {
   const originalFetch = window.fetch;
-  window.fetch = async function (input, init) {
-    const url = typeof input === 'string' ? input : input.url;
+  window.fetch = async function (input: RequestInfo | URL, init?: RequestInit) {
+    const url = typeof input === 'string' ? input : ('url' in input ? (input as Request).url : String(input));
     const method = (init?.method || 'GET').toUpperCase();
     
     // Intercept /api paths

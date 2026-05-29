@@ -6097,7 +6097,7 @@ export function getReadingUnit(unit: number): ReadingUnit | undefined {
 export function getReadingStory(unit: number, storyId: string): ReadingStory | undefined {
   const u = getReadingUnit(unit);
   if (!u) return undefined;
-  const idx = u.stories.findIndex((s) => s.id === storyId || genStoryId(unit, s.tier, idx) === storyId);
+  const idx = u.stories.findIndex((s, i) => s.id === storyId || genStoryId(unit, s.tier, i) === storyId);
   if (idx === -1) return undefined;
   return normalizeStory(u.stories[idx], unit, idx);
 }
