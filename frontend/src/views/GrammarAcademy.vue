@@ -885,59 +885,24 @@ async function getWorksheetQuestions(topicId: string, level: string): Promise<an
     ]
   }
 
-  // If we have hardcoded questions, use them
+  // If we have hardcoded questions (topics 1-3), use them immediately
   const key = `${topicId}-${level}`
   if (qs[key]) return qs[key]
 
-  // Fallback: generate ~15 varied questions based on topic ID
-  const unitNum = parseInt(topicId.split('-')[1]) || 4
-  const topicName = topicId.split('-').slice(2).join(' ') || 'grammar'
-
-  if (level === 'explorer') {
-    const questions = []
-    const patterns = [
-      { q: (t: string) => `Which sentence correctly uses ${t}?`, opts: ['Correct sentence', 'Wrong sentence 1', 'Wrong sentence 2'], correct: 0 },
-      { q: (t: string) => `True or False: "${t}" is always easy to learn.`, opts: ['True', 'False'], correct: 1 },
-      { q: (t: string) => `Choose the correct form for ${t}:`, opts: ['Correct form', 'Wrong form 1', 'Wrong form 2'], correct: 0 },
-      { q: (t: string) => `What is the first step to master ${t}?`, opts: ['Learn the rule', 'Skip the rule', 'Guess'], correct: 0 },
-      { q: (t: string) => `Which word is related to ${t}?`, opts: ['Related word', 'Unrelated word 1', 'Unrelated word 2'], correct: 0 },
-      { q: (t: string) => `Complete the rule for ${t}: "We use this when..."`, opts: ['Correct completion', 'Wrong completion 1', 'Wrong completion 2'], correct: 0 },
-      { q: (t: string) => `True or False: "There are no exceptions in ${t}."`, opts: ['True', 'False'], correct: 1 },
-      { q: (t: string) => `Which of these is an example of ${t}?`, opts: ['Correct example', 'Wrong example 1', 'Wrong example 2'], correct: 0 },
-      { q: (t: string) => `What is the opposite of the main rule in ${t}?`, opts: ['Correct opposite', 'Wrong answer 1', 'Wrong answer 2'], correct: 0 },
-      { q: (t: string) => `Choose the best explanation for ${t}:`, opts: ['Best explanation', 'Poor explanation', 'Wrong explanation'], correct: 0 },
-      { q: (t: string) => `Which time expression fits ${t}?`, opts: ['Correct time expression', 'Wrong time expression', 'Not a time word'], correct: 0 },
-      { q: (t: string) => `True or False: "${t} is only used in writing."`, opts: ['True', 'False'], correct: 1 },
-      { q: (t: string) => `Identify the correct pattern for ${t}:`, opts: ['Correct pattern', 'Incorrect pattern 1', 'Incorrect pattern 2'], correct: 0 },
-      { q: (t: string) => `What do you need to add when using ${t}?`, opts: ['Correct addition', 'Wrong addition', 'Nothing'], correct: 0 },
-      { q: (t: string) => `How many forms does ${t} have?`, opts: ['Correct number', 'Wrong number 1', 'Wrong number 2'], correct: 0 }
-    ]
-    for (const p of patterns) {
-      questions.push({ question: p.q(topicName), options: p.opts, correctIndex: p.correct, explanation: `Mastering ${topicName} takes practice!` })
+  // For topics 4-15: fetch the actual questions from the backend
+  // This ensures frontend questions always match backend evaluation
+  try {
+    const res = await fetch(`/api/grammar/topics/${topicId}/questions/${level}`)
+    if (res.ok) {
+      const data = await res.json()
+      return data.questions || []
     }
-    return questions
-  } else if (level === 'pioneer') {
-    const questions = []
-    for (let i = 1; i <= 15; i++) {
-      questions.push({
-        sentence: `Fill in the blank with the correct ${topicName} form: "She ___ (${i === 1 ? 'be' : 'verb'}) to school every day."`,
-        placeholder: 'blank',
-        correctAnswer: i % 3 === 0 ? (i % 2 === 0 ? 'goes' : 'is') : (i % 2 === 0 ? 'are' : 'play'),
-        explanation: `Practice makes perfect with ${topicName}!`
-      })
-    }
-    return questions
-  } else {
-    const questions = []
-    for (let i = 1; i <= 15; i++) {
-      questions.push({
-        question: `Correct this sentence related to ${topicName}: "Sentence with a mistake ${i}"`,
-        correctAnswers: ['Corrected sentence version.', 'Another correct version.'],
-        explanation: `Always check the grammar rule for ${topicName}.`
-      })
-    }
-    return questions
+  } catch (e) {
+    console.error('Failed to fetch grammar questions:', e)
   }
+
+  // Ultimate fallback: return empty array so UI shows error
+  return []
 }
 
 function resetWorksheetPlayer() {

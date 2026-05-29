@@ -1634,6 +1634,31 @@ router.get('/topics', requireAuth, async (req: Request, res: Response, next: Nex
   }
 })
 
+// ─── GET /api/grammar/topics/:id/questions/:level ──────────────────────────
+// Returns the actual questions for a topic+level so the frontend always matches
+router.get('/topics/:id/questions/:level', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const topicId = req.params.id as string
+    const level = req.params.level as string
+
+    if (!['explorer', 'pioneer', 'master'].includes(level)) {
+      res.status(400).json({ error: 'Invalid level' })
+      return
+    }
+
+    const topic = GRAMMAR_TOPICS.find((t) => t.id === topicId)
+    if (!topic) {
+      res.status(404).json({ error: 'Topic not found' })
+      return
+    }
+
+    const questions = level === 'explorer' ? topic.explorer : level === 'pioneer' ? topic.pioneer : topic.master
+    res.json({ questions, level, topicId })
+  } catch (err) {
+    next(err)
+  }
+})
+
 // ─── POST /api/grammar/topics/:id/submit-worksheet ─────────────────────────
 router.post('/topics/:id/submit-worksheet', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {

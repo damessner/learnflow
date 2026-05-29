@@ -272,6 +272,7 @@
 import { ref, onMounted } from 'vue'
 import { useUiStore } from '../stores/ui'
 import { api } from '../services/api'
+import { MORE1_VOCABULARY } from '../data/vocabularyData'
 
 const MORE1_UNITS = [
   { unit: 1, title: 'Time for School', theme: 'colours, school things, classroom' },
@@ -324,12 +325,7 @@ onMounted(async () => {
     if (res.ok) {
       const data = await res.json()
       classes.value = data.classes || []
-      
-      // Auto-select first class if available
-      if (classes.value.length > 0) {
-        selectedClassId.value = classes.value[0].id
-        await loadClassMatrix(classes.value[0].id)
-      }
+      // Don't auto-select — let the teacher choose to preview curriculum or pick a class
     }
   } catch (_e) {}
 })
@@ -348,7 +344,7 @@ async function loadClassMatrix(classId: string) {
     const res = await api.get(`/english/more1/class-matrix/${classId}`)
     matrixData.value = res.matrix || []
   } catch (e: any) {
-    uiStore.showToast(e.message || 'Failed to load progress matrix', 'error')
+    console.error('Failed to load class matrix:', e.message)
     matrixData.value = []
   } finally {
     loadingMatrix.value = false
@@ -360,7 +356,9 @@ function showPreview() {
 }
 
 function vocabWordCount(unit: number) {
-  return 0 // placeholder — can import from vocabularyData if needed
+  const vu = MORE1_VOCABULARY.find(u => u.unit === unit)
+  if (!vu) return 0
+  return vu.categories.reduce((sum, c) => sum + c.words.length, 0) + (vu.phrases?.length || 0)
 }
 
 function promptSelectClass() {

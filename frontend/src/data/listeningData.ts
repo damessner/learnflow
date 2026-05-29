@@ -20,6 +20,7 @@ export interface ListeningTask {
   audioPath: string
   transcriptPath: string
   imagePath: string
+  transcriptText: string   // The actual spoken script
   questions: ListeningQuestion[]
 }
 
