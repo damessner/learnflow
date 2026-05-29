@@ -1180,7 +1180,7 @@ function startCustomTask() {
     typeLabel: 'Freies Schreiben',
     exemplarText: '',
     preWritingQuestions: [],
-    wordBank: { categories: [], phrases: [] },
+    wordBank: { starters: [], vocabulary: [], connectors: [] },
     sections: [
       { key: 'intro', label: 'Einleitung', placeholder: 'Schreibe hier den Beginn deines Textes...', minWords: 15 },
       { key: 'body', label: 'Hauptteil', placeholder: 'Schreibe hier den Hauptinhalt...', minWords: 40 },

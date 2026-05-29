@@ -20,9 +20,9 @@
       </div>
     </div>
 
-    <!-- LEVEL 1: NO CLASS SELECTED (Show Textbook Selection Cards) -->
-    <div v-if="!selectedClassId" class="textbook-grid fade-in">
-      <div class="textbook-card card card-lift" @click="promptSelectClass">
+    <!-- LEVEL 1: NO CLASS SELECTED (Show Textbook Selection Cards / Preview) -->
+    <div v-if="!selectedClassId && !previewMode" class="textbook-grid fade-in">
+      <div class="textbook-card card card-lift" @click="showPreview">
         <span class="text-4xl">📘</span>
         <h3>MORE! 1</h3>
         <p class="text-sm text-secondary">Grade 5 (1. Klasse)</p>
@@ -48,8 +48,29 @@
       </div>
     </div>
 
-    <!-- LEVEL 2: CLASS SELECTED (Show Graphical Matrix Grid) -->
-    <div v-else class="fade-in">
+    <!-- LEVEL 2: CURRICULUM PREVIEW (No class needed) -->
+    <div v-else-if="previewMode" class="fade-in">
+      <div class="flex items-center gap-3 mb-4">
+        <button @click="previewMode = false" class="btn-secondary btn-sm">← Back</button>
+        <h3 class="text-lg font-bold">📘 MORE! 1 — Curriculum Overview</h3>
+        <span class="text-sm text-secondary">All 15 units with grammar, vocabulary & writing content</span>
+      </div>
+      <div class="preview-grid">
+        <div v-for="u in MORE1_UNITS" :key="u.unit" class="preview-card card">
+          <span class="preview-unit-badge">Unit {{ u.unit }}</span>
+          <h4 class="text-base font-bold mt-2">{{ u.title }}</h4>
+          <p class="text-xs text-secondary mt-1">{{ u.theme }}</p>
+          <div class="flex flex-wrap gap-1 mt-3">
+            <span class="chip-preview">🔤 Grammar</span>
+            <span class="chip-preview">📚 Vocabulary ({{ vocabWordCount(u.unit) }} words)</span>
+            <span class="chip-preview">✍️ Writing</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEVEL 3: CLASS SELECTED (Show Graphical Matrix Grid) -->
+    <div v-else-if="selectedClassId" class="fade-in">
       <!-- Loading State -->
       <div v-if="loadingMatrix" class="text-center py-6 card">
         <div class="loader mb-2"></div>
@@ -252,12 +273,31 @@ import { ref, onMounted } from 'vue'
 import { useUiStore } from '../stores/ui'
 import { api } from '../services/api'
 
+const MORE1_UNITS = [
+  { unit: 1, title: 'Time for School', theme: 'colours, school things, classroom' },
+  { unit: 2, title: 'At the Zoo', theme: 'animals' },
+  { unit: 3, title: 'Pirates', theme: 'body parts' },
+  { unit: 4, title: 'Emotions', theme: 'feelings' },
+  { unit: 5, title: 'This is our Band', theme: 'musicians, instruments, movement' },
+  { unit: 6, title: "The World's Best Detective", theme: 'action verbs' },
+  { unit: 7, title: 'I love Noodles', theme: 'food' },
+  { unit: 8, title: 'Clothes', theme: 'clothing' },
+  { unit: 9, title: 'Shopping', theme: 'pets' },
+  { unit: 10, title: 'In a Shop', theme: 'numbers, demonstratives, shopping' },
+  { unit: 11, title: "What's the Time?", theme: 'free time, time expressions' },
+  { unit: 12, title: 'The Birthday Cake', theme: 'rooms, months, ordinal numbers' },
+  { unit: 13, title: 'Help!', theme: 'emergency services, accidents' },
+  { unit: 14, title: "It's my Favourite", theme: 'TV programmes, books' },
+  { unit: 15, title: 'What are you Going to Do?', theme: 'future plans' },
+]
+
 const uiStore = useUiStore()
 
 const classes = ref<any[]>([])
 const selectedClassId = ref('')
 const loadingMatrix = ref(false)
 const matrixData = ref<any[]>([])
+const previewMode = ref(false)
 const activeStudent = ref<any>(null)
 
 const MORE1_THEMES = [
@@ -313,6 +353,14 @@ async function loadClassMatrix(classId: string) {
   } finally {
     loadingMatrix.value = false
   }
+}
+
+function showPreview() {
+  previewMode.value = true
+}
+
+function vocabWordCount(unit: number) {
+  return 0 // placeholder — can import from vocabularyData if needed
 }
 
 function promptSelectClass() {
